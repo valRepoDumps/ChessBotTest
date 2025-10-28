@@ -44,5 +44,5 @@ public class ConditionalSlidingPieceData extends SlidingPieceData {
     //endregion
 
     public short[] getPossibleDirections() {return possibleDirections;}
-    public int getMaxRange() {return useSecondMaxRange ? secondMaxRange : maxRange;};
+    public int getMaxRange() {return useSecondMaxRange ? secondMaxRange : maxRange;}
 }
