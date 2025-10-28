@@ -1,7 +1,9 @@
 package ChessResources;
 
+import ChessResources.Pieces.PieceDatas.ConditionalSlidingPieceData;
 import ChessResources.Pieces.PieceDatas.PieceDatas;
 import ChessResources.Pieces.PieceDatas.PieceData;
+import ChessResources.Pieces.PieceDatas.SlidingPieceData;
 
 import javax.swing.*;
 import java.awt.*;
@@ -46,7 +48,7 @@ public class ChessBoard {
     //endregion
 
     private IntConsumer onSquareClicked = null;
-    public ChessBoard(PieceDatas pieceDatas, String piecePlacement)
+    public ChessBoard(String piecePlacement)
     {
         for (int row = 0; row < BOARD_SIZE; ++row)
         {
@@ -89,19 +91,25 @@ public class ChessBoard {
 
                     switch(c)
                     {
-                        case 'k': boardSquares[i*BOARD_SIZE+currCol] = PieceDatas.BKING_DATA; break;
-                        case 'q': boardSquares[i*BOARD_SIZE+currCol] = PieceDatas.BQUEEN_DATA; break;
-                        case 'b': boardSquares[i*BOARD_SIZE+currCol] = PieceDatas.BBISHOP_DATA; break;
-                        case 'n': boardSquares[i*BOARD_SIZE+currCol] = PieceDatas.BKNIGHT_DATA; break;
-                        case 'r': boardSquares[i*BOARD_SIZE+currCol] = PieceDatas.BROOK_DATA; break;
-                        case 'p': boardSquares[i*BOARD_SIZE+currCol] = PieceDatas.BPAWN_DATA; break;
+                        case 'k': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.BKING_DATA); break;
+                        case 'q': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.BQUEEN_DATA); break;
+                        case 'b': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.BBISHOP_DATA); break;
+                        case 'n': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.BKNIGHT_DATA); break;
+                        case 'r': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.BROOK_DATA); break;
+                        case 'p':
+                            if (i <= 2) boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.BPAWN_DATA);
+                            else boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.MOVED_BPAWN_DATA);
+                            break;
 
-                        case 'K': boardSquares[i*BOARD_SIZE+currCol] = PieceDatas.WKING_DATA; break;
-                        case 'Q': boardSquares[i*BOARD_SIZE+currCol] = PieceDatas.WQUEEN_DATA; break;
-                        case 'B': boardSquares[i*BOARD_SIZE+currCol] = PieceDatas.WBISHOP_DATA; break;
-                        case 'N': boardSquares[i*BOARD_SIZE+currCol] = PieceDatas.WKNIGHT_DATA; break;
-                        case 'R': boardSquares[i*BOARD_SIZE+currCol] = PieceDatas.WROOK_DATA; break;
-                        case 'P': boardSquares[i*BOARD_SIZE+currCol] = PieceDatas.WPAWN_DATA; break;
+                        case 'K': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WKING_DATA); break;
+                        case 'Q': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WQUEEN_DATA); break;
+                        case 'B': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WBISHOP_DATA); break;
+                        case 'N': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WKNIGHT_DATA); break;
+                        case 'R': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WROOK_DATA); break;
+                        case 'P':
+                            if (i >= 6) boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WPAWN_DATA);
+                            else boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.MOVED_WPAWN_DATA);
+                            break;
 
                         default: throw new IllegalArgumentException("Incorrect FEN format!");
                     }
@@ -145,13 +153,11 @@ public class ChessBoard {
     //region HELPER_FUNCS
     public static boolean isValidSpaceId(int spaceId)
     {
-        return spaceId >= 0 && spaceId < BOARD_SIZE;
+        return spaceId >= 0 && spaceId < BOARD_SIZE*BOARD_SIZE;
     }
 
     public static int convertSquareNotationToSpaceId(char colId, char rowId)
     {
-        int row = -1, col = -1;
-
         if (colId < 'a' || colId > 'h' || rowId < '1' || rowId > '8')
             throw new IllegalArgumentException("Invalid files and ranks input ("
                     + colId +", " + rowId+").");
@@ -159,7 +165,7 @@ public class ChessBoard {
         return (colId - 'a')* BOARD_SIZE + 8 - ('8'-rowId);
     }
 
-    private static boolean validateBoardIdx(int row, int col, Exception e) throws Exception
+    private static boolean isValidBoardIdx(int row, int col, Exception e) throws Exception
     {
         if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE)
         {
@@ -171,9 +177,34 @@ public class ChessBoard {
         }
         return true;
     }
+
+    public static PieceData copyPiece(PieceData pieceData)
+    {
+        if (pieceData instanceof ConditionalSlidingPieceData)
+        {
+            return new ConditionalSlidingPieceData((ConditionalSlidingPieceData) pieceData);
+        }
+        else if (pieceData instanceof SlidingPieceData)
+        {
+            return new SlidingPieceData((SlidingPieceData) pieceData);
+        }
+        else
+        {
+            return new PieceData(pieceData);
+        }
+    }
     //endregion
 
     //region BOARD_GRAPHICS
+    public JButton getGraphic(int spaceId)
+    {
+        if (isValidSpaceId(spaceId)) return boardGraphicSquareList[spaceId];
+        else {
+            System.out.println("Invalid spaceId at getGraphic");
+            return null;
+        }
+    }
+
     private void makeBoardGraphic()
     {
         boardGraphic.setLayout(new GridLayout(BOARD_SIZE, BOARD_SIZE));
@@ -233,6 +264,32 @@ public class ChessBoard {
     public void unHighlightSpace(int spaceId)
     {
         boardGraphicSquareList[spaceId].setBorder(null);
+    }
+    //endregion
+
+    //region PIECE_FUNCS
+    public void movePiece(int spaceIdToMove, int spaceIdArriveAt)
+    {
+        if (isValidSpaceId(spaceIdToMove) && isValidSpaceId(spaceIdArriveAt))
+        {
+            PieceData piece = boardSquares[spaceIdToMove];
+            boardSquares[spaceIdToMove] = PieceDatas.NO_PIECE;
+            boardSquares[spaceIdArriveAt] = piece;
+        }
+        else {
+            System.out.println("Invalid spaceId at movePiece");
+        }
+
+        updateBoardGraphic();
+    }
+
+    public PieceData getPiece(int spaceId)
+    {
+        if (isValidSpaceId(spaceId)) return boardSquares[spaceId];
+        else {
+            System.out.println("Invalid spaceId at getPiece");
+            return null;
+        }
     }
     //endregion
 }

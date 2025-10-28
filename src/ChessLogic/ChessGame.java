@@ -1,18 +1,16 @@
 package ChessLogic;
 
 import ChessResources.ChessBoard;
-import ChessResources.ChessSpaces;
+import ChessResources.Pieces.PieceDatas.ConditionalSlidingPieceData;
 import ChessResources.Pieces.PieceDatas.PieceData;
 import ChessResources.Pieces.PieceDatas.PieceDatas;
 import ChessResources.PossibleMoves;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.HashMap;
 
 public class ChessGame {
 
-    protected final PieceDatas pieceDatas;
     public final ChessBoard chessBoard;
 
     public boolean blackHaveCastleRights;
@@ -29,7 +27,6 @@ public class ChessGame {
     public static final int INVALID_SPACE_ID = -1;
     public int selectedSpaceId = INVALID_SPACE_ID;
     //endregion
-    public PossibleMoves possibleMoves;
 
     public ChessGame(String fen) {
         possibleMoves = new PossibleMoves(this);
@@ -40,8 +37,7 @@ public class ChessGame {
             throw new IllegalArgumentException("Invalid FEN: Must include 6 arguments.");
         }
 
-        this.pieceDatas = new PieceDatas();
-        this.chessBoard = new ChessBoard(pieceDatas, args[0], possibleMoves);
+        this.chessBoard = new ChessBoard(args[0]);
 
         //region ASSIGN_SIDE_TO_MOVE
         if (args[1].equals("w")) sideToMove = PieceData.WHITE;
@@ -69,6 +65,7 @@ public class ChessGame {
         this.halfMovesSinceCaptureOrPawnMove = Integer.parseInt(args[4]);
         this.totalMovesElapsed = Integer.parseInt(args[5]);
         chessBoard.setOnSquareClicked(this::playerClick);
+        possibleMoves.generateMoves();
     }
 
     public ChessGame() {
@@ -77,7 +74,8 @@ public class ChessGame {
 
     private void playerClick(int spaceId)
     {
-        Icon piece = clickedSpace.getIcon();
+        System.out.println(spaceId);
+        Icon piece = chessBoard.getGraphic(spaceId).getIcon();
 
         //ensure valid choice before proceeding. Wont handle cases where sleected row exceed max and min
         // posisble, as it shouldt happen
@@ -86,45 +84,55 @@ public class ChessGame {
             if (piece != null) {
                 selectedSpaceId = spaceId;
                 chessBoard.highlightSpace(spaceId);
-                colorPossibleMoves(selectedSpaceId);
+                possibleMoves.highlightPossibleMoves(selectedSpaceId, chessBoard);
             }
         }
         else
         {
             chessBoard.unHighlightSpace(spaceId);
-            movePiece(selectedSpaceId, spaceId);
+            chessBoard.unHighlightSpace(selectedSpaceId);
 
-            //reset col and row
-            selectedSpaceId = INVALID_SPACE_ID;
+            if (movePiece(selectedSpaceId, spaceId)) //piece moved
+            {
+                selectedSpaceId = INVALID_SPACE_ID;
+            }
+            else//case user choose an unmoveable square
+            {
+                possibleMoves.unHighlightPossibleMoves(selectedSpaceId,chessBoard);
+                //unhighlight possible moves relating to previous selected space id
+
+                selectedSpaceId = spaceId;
+                chessBoard.highlightSpace(spaceId);
+                if (piece != null)
+                {
+                    possibleMoves.highlightPossibleMoves(selectedSpaceId, chessBoard);
+                }
+            }
         }
     }
 
-    public void movePiece(int spaceIdToMove, int spaceIdArriveAt)
+    public boolean movePiece(int spaceIdToMove, int spaceIdArriveAt)
     {
-        possibleMoves.generateMoves();
-
+        PieceData piece = chessBoard.getPiece(spaceIdToMove);
         if (possibleMoves.possibleMoves.containsKey(spaceIdToMove) &&
                 possibleMoves.possibleMoves.get(spaceIdToMove).containSpace(spaceIdArriveAt)
         ) {
-            PieceData piece = boardSquares[spaceIdToMove];
-            boardSquares[spaceIdToMove] = PieceDatas.NO_PIECE;
-            boardSquares[spaceIdArriveAt] = piece;
+            chessBoard.movePiece(spaceIdToMove, spaceIdArriveAt);
 
-        }
-
-        updateBoardGraphic();
-        possibleMoves.clearPossibleMoves();
-        possibleMoves.generateMoves();
-    }
-
-    private void colorPossibleMoves(int spaceId)
-    {
-        if (possibleMoves.possibleMoves.containsKey(spaceId)) {
-            for (int space : possibleMoves.possibleMoves.get(spaceId).chessMoves)
+            if (piece instanceof ConditionalSlidingPieceData
+            && ((ConditionalSlidingPieceData) piece).useSecondMaxRange)
             {
-
+                ((ConditionalSlidingPieceData) piece).useSecondMaxRange = false; //if pawn no longer allows 2 moves.
             }
+
+            sideToMove = !sideToMove;//change move side
+
+            //generate possible moves after changing side
+            possibleMoves.clearPossibleMoves();
+            possibleMoves.generateMoves();
+            return true;
         }
+        return false;
     }
 
 }

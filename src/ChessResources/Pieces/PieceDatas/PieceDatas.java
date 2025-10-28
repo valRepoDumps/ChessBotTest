@@ -6,12 +6,12 @@ public class PieceDatas
 {
     //region PIECES_CONSTS
     public static final PieceData MOVED_BPAWN_DATA = new ConditionalSlidingPieceData(PieceData.BPAWN,
-            new short[]{ChessBoard.NORTH}, 1, false, 2);
+            new short[]{ChessBoard.SOUTH}, 1, false, 2);
     public static final PieceData MOVED_WPAWN_DATA = new ConditionalSlidingPieceData(PieceData.WPAWN,
             new short[]{ChessBoard.NORTH}, 1, false, 2);
 
     public static final PieceData BPAWN_DATA = new ConditionalSlidingPieceData(PieceData.BPAWN,
-            new short[]{ChessBoard.NORTH}, 1, true, 2);
+            new short[]{ChessBoard.SOUTH}, 1, true, 2);
     public static final PieceData WPAWN_DATA = new ConditionalSlidingPieceData(PieceData.WPAWN,
             new short[]{ChessBoard.NORTH}, 1, true, 2);
     public static final PieceData BROOK_DATA = new SlidingPieceData(PieceData.BROOK,
@@ -64,7 +64,7 @@ public class PieceDatas
         };
     }
 
-    public ConditionalSlidingPieceData makePawn(short pieceId, boolean pawnMoved)
+    public static ConditionalSlidingPieceData makePawn(short pieceId, boolean pawnMoved)
     {
         return new ConditionalSlidingPieceData(pieceId, pawnMoved);
     }

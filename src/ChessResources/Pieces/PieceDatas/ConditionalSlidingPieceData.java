@@ -1,8 +1,8 @@
 package ChessResources.Pieces.PieceDatas;
 
 public class ConditionalSlidingPieceData extends SlidingPieceData {
-    boolean useSecondMaxRange;
-    int secondMaxRange;
+    public boolean useSecondMaxRange;
+    public int secondMaxRange;
 
     //region CONSTRUCTOR
     ConditionalSlidingPieceData(short pieceId, boolean useSecondMaxRange)
@@ -34,5 +34,15 @@ public class ConditionalSlidingPieceData extends SlidingPieceData {
         this.useSecondMaxRange = useSecondMaxRange;
         this.secondMaxRange = secondMaxRange;
     }
+
+    public ConditionalSlidingPieceData(ConditionalSlidingPieceData piece)
+    {
+        super(piece);
+        this.useSecondMaxRange = piece.useSecondMaxRange;
+        this.secondMaxRange = piece.secondMaxRange;
+    }
     //endregion
+
+    public short[] getPossibleDirections() {return possibleDirections;}
+    public int getMaxRange() {return useSecondMaxRange ? secondMaxRange : maxRange;};
 }

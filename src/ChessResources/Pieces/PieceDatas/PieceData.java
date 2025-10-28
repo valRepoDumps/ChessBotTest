@@ -46,6 +46,14 @@ public class PieceData {
         this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + name + ".png");
     }
 
+    public PieceData(PieceData piece)
+    {
+        this.color = piece.color;
+        this.value = piece.value;
+        this.name = piece.name;
+        this.graphic = piece.graphic;
+    }
+
     public PieceData(short pieceId)
     {
         switch(pieceId) {

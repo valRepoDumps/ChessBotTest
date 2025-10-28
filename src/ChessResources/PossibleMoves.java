@@ -1,6 +1,7 @@
 package ChessResources;
 
 import ChessLogic.ChessGame;
+import ChessResources.Pieces.PieceDatas.ConditionalSlidingPieceData;
 import ChessResources.Pieces.PieceDatas.PieceData;
 import ChessResources.Pieces.PieceDatas.PieceDatas;
 import ChessResources.Pieces.PieceDatas.SlidingPieceData;
@@ -8,7 +9,7 @@ import ChessResources.Pieces.PieceDatas.SlidingPieceData;
 import java.util.HashMap;
 
 public class PossibleMoves {
-    protected HashMap<Integer, ChessSpaces> possibleMoves = new HashMap<>();
+    public HashMap<Integer, ChessSpaces> possibleMoves = new HashMap<>();
     protected ChessGame chessGame;
 
     public int[][] numSquaresToEdge = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][8];
@@ -34,11 +35,21 @@ public class PossibleMoves {
             }
         }
     }
+
     private void generateSlidingMoves(int startSquare, SlidingPieceData piece)
     {
+        int maxRange = piece.maxRange;
+        if (piece instanceof ConditionalSlidingPieceData)
+        {
+            if (((ConditionalSlidingPieceData)piece).useSecondMaxRange)
+            {
+                maxRange = ((ConditionalSlidingPieceData) piece).secondMaxRange;
+            }
+        }
+
         for (int direction : piece.possibleDirections)
         {
-            for (int n = 0; n < piece.maxRange && n < numSquaresToEdge[startSquare][direction]; ++n)
+            for (int n = 0; n < maxRange && n < numSquaresToEdge[startSquare][direction]; ++n)
             {
                 int targetSquare = startSquare + ChessBoard.directionOffsets[direction]*(n+1);
                 if (targetSquare >= 64) break;
@@ -88,4 +99,25 @@ public class PossibleMoves {
     {
         possibleMoves = new HashMap<>();
     }
+
+    public void highlightPossibleMoves(int spaceId, ChessBoard chessBoard)
+    {
+        if (possibleMoves.containsKey(spaceId)) {
+            for (int space : possibleMoves.get(spaceId).chessMoves)
+            {
+                chessBoard.highlightSpace(space);
+            }
+        }
+    }
+
+    public void unHighlightPossibleMoves(int spaceId, ChessBoard chessBoard)
+    {
+        if (possibleMoves.containsKey(spaceId)) {
+            for (int space : possibleMoves.get(spaceId).chessMoves)
+            {
+                chessBoard.unHighlightSpace(space);
+            }
+        }
+    }
+
 }

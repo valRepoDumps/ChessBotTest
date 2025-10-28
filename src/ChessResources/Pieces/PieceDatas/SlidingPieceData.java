@@ -49,5 +49,15 @@ public class SlidingPieceData extends PieceData {
         this.possibleDirections = possibleDirections;
         this.maxRange = maxRange;
     }
+
+    public SlidingPieceData(SlidingPieceData piece)
+    {
+        super(piece);
+        this.possibleDirections = piece.possibleDirections;
+        this.maxRange = piece.maxRange;
+    }
+
+    public short[] getPossibleDirections() {return possibleDirections;}
+    public int getMaxRange() {return maxRange;}
 }
 
