@@ -48,6 +48,7 @@ public class PieceData {
 
     public PieceData(PieceData piece)
     {
+        this.pieceId = piece.pieceId;
         this.color = piece.color;
         this.value = piece.value;
         this.name = piece.name;
