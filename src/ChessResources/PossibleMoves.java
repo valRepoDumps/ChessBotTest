@@ -1,10 +1,12 @@
 package ChessResources;
 
 import ChessLogic.ChessGame;
+import ChessResources.Pieces.PieceDatas.JumpingPieceData;
 import ChessResources.Pieces.PieceDatas.PieceData;
 import ChessResources.Pieces.PieceDatas.PieceDatas;
 import ChessResources.Pieces.PieceDatas.SlidingPieceData;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class PossibleMoves {
@@ -30,6 +32,10 @@ public class PossibleMoves {
                 if (piece instanceof SlidingPieceData)
                 {
                     generateSlidingMoves(startSquare, (SlidingPieceData) piece);
+                }
+                else if (piece instanceof JumpingPieceData)
+                {
+                    generateJumpingMoves(startSquare, (JumpingPieceData) piece);
                 }
             }
         }
@@ -82,6 +88,24 @@ public class PossibleMoves {
                 numSquaresToEdge[squareIdx][ChessBoard.SOUTH_WEST] = Math.min(numSouth, col);
                 numSquaresToEdge[squareIdx][ChessBoard.SOUTH_EAST] = Math.min(numSouth, numEast);
 
+            }
+        }
+    }
+
+    private void generateJumpingMoves(int startSquare, JumpingPieceData piece)
+    {
+        int[] moves = piece.getPossibleMoves(chessGame.chessBoard, startSquare);
+        System.out.println(Arrays.toString(moves));
+        for (int move : moves)
+        {
+            if (ChessBoard.isValidSpaceId(move) && !chessGame.chessBoard.isAlliedPieceAt(move, piece.color))
+            {
+                if (possibleMoves.containsKey(startSquare)) {
+                    possibleMoves.get(startSquare).addMoves(move);
+                }
+                else {
+                    possibleMoves.put(startSquare, new ChessSpaces(move));
+                }
             }
         }
     }

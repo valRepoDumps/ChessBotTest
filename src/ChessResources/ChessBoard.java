@@ -1,5 +1,6 @@
 package ChessResources;
 
+import ChessResources.Pieces.PieceDatas.JumpingPieceData;
 import ChessResources.Pieces.PieceDatas.PieceDatas;
 import ChessResources.Pieces.PieceDatas.PieceData;
 import ChessResources.Pieces.PieceDatas.SlidingPieceData;
@@ -14,6 +15,8 @@ public class ChessBoard {
     public static final int BOARD_SIZE = 8;
     public  static final int SQUARE_PIXEL_SIZE = 100;
     //endregion
+
+    public static final int INVALID_SPACE_ID = -1;
 
     //region DIRECTIONAL_OFFSETS
     //assume board 0 index is in top left.
@@ -181,6 +184,10 @@ public class ChessBoard {
         {
             return new SlidingPieceData((SlidingPieceData) pieceData);
         }
+        else if (pieceData instanceof JumpingPieceData)
+        {
+            return new JumpingPieceData((JumpingPieceData) pieceData);
+        }
         else
         {
             return new PieceData(pieceData);
@@ -291,6 +298,14 @@ public class ChessBoard {
         if (boardSquares[spaceId] == PieceDatas.NO_PIECE) return false;//no enemy piece
 
         return boardSquares[spaceId].color != pieceColor;
+    }
+
+    public boolean isAlliedPieceAt(int spaceId, boolean pieceColor)
+    {
+        if (!isValidSpaceId(spaceId)) return false;
+        if (boardSquares[spaceId] == PieceDatas.NO_PIECE) return false; //no alied piece.
+
+        return boardSquares[spaceId].color == pieceColor;
     }
     //endregion
 }

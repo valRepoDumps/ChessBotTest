@@ -18,8 +18,8 @@ public class PieceDatas
     public static final PieceData BKING_DATA = new SlidingPieceData(PieceData.BKING);
     public static final PieceData WKING_DATA = new SlidingPieceData(PieceData.WKING);
 
-    public static final PieceData BKNIGHT_DATA = new PieceData(PieceData.BKNIGHT);
-    public static final PieceData WKNIGHT_DATA = new PieceData(PieceData.WKNIGHT);
+    public static final PieceData BKNIGHT_DATA = new JumpingPieceData(PieceData.BKNIGHT);
+    public static final PieceData WKNIGHT_DATA = new JumpingPieceData(PieceData.WKNIGHT);
 
     public static final PieceData NO_PIECE = null;
     public final static int PIECES_DIFF = 16;
@@ -35,7 +35,7 @@ public class PieceDatas
             case PieceData.BPAWN, PieceData.WPAWN, PieceData.BROOK, PieceData.WROOK,
                  PieceData.BBISHOP, PieceData.WBISHOP, PieceData.BQUEEN, PieceData.WQUEEN,
                  PieceData.BKING, PieceData.WKING -> new SlidingPieceData(pieceId);
-            case PieceData.BKNIGHT, PieceData.WKNIGHT -> new PieceData(pieceId);
+            case PieceData.BKNIGHT, PieceData.WKNIGHT -> new JumpingPieceData(pieceId);
             default -> null;
         };
     }
