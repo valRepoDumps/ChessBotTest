@@ -1,6 +1,5 @@
 package ChessResources;
 
-import ChessResources.Pieces.PieceDatas.ConditionalSlidingPieceData;
 import ChessResources.Pieces.PieceDatas.PieceDatas;
 import ChessResources.Pieces.PieceDatas.PieceData;
 import ChessResources.Pieces.PieceDatas.SlidingPieceData;
@@ -10,6 +9,7 @@ import java.awt.*;
 import java.util.function.IntConsumer;
 
 public class ChessBoard {
+    //region DATA
     //region BOARD_SIZE
     public static final int BOARD_SIZE = 8;
     public  static final int SQUARE_PIXEL_SIZE = 100;
@@ -19,14 +19,14 @@ public class ChessBoard {
     //assume board 0 index is in top left.
     public static final int[] directionOffsets = {8, -8, -1, 1, 7, -7, 9, -9};
     //use SOUTH,NORTH,... with directionOffsets to calculate movement.
-    public static final int SOUTH = 0;
-    public static final int NORTH = 1;
-    public static final int WEST = 2;
-    public static final int EAST = 3;
-    public static final int SOUTH_WEST = 4;
-    public static final int NORTH_EAST = 5;
-    public static final int SOUTH_EAST = 6;
-    public static final int NORTH_WEST = 7;
+    public static final short SOUTH = 0;
+    public static final short NORTH = 1;
+    public static final short WEST = 2;
+    public static final short EAST = 3;
+    public static final short SOUTH_WEST = 4;
+    public static final short NORTH_EAST = 5;
+    public static final short SOUTH_EAST = 6;
+    public static final short NORTH_WEST = 7;
     //endregion
 
     //region BOARD_DATAS
@@ -48,6 +48,9 @@ public class ChessBoard {
     //endregion
 
     private IntConsumer onSquareClicked = null;
+
+    //endregion
+
     public ChessBoard(String piecePlacement)
     {
         for (int row = 0; row < BOARD_SIZE; ++row)
@@ -96,20 +99,14 @@ public class ChessBoard {
                         case 'b': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.BBISHOP_DATA); break;
                         case 'n': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.BKNIGHT_DATA); break;
                         case 'r': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.BROOK_DATA); break;
-                        case 'p':
-                            if (i <= 2) boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.BPAWN_DATA);
-                            else boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.MOVED_BPAWN_DATA);
-                            break;
+                        case 'p': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.BPAWN_DATA); break;
 
                         case 'K': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WKING_DATA); break;
                         case 'Q': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WQUEEN_DATA); break;
                         case 'B': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WBISHOP_DATA); break;
                         case 'N': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WKNIGHT_DATA); break;
                         case 'R': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WROOK_DATA); break;
-                        case 'P':
-                            if (i >= 6) boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WPAWN_DATA);
-                            else boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.MOVED_WPAWN_DATA);
-                            break;
+                        case 'P': boardSquares[i*BOARD_SIZE+currCol] = copyPiece(PieceDatas.WPAWN_DATA); break;
 
                         default: throw new IllegalArgumentException("Incorrect FEN format!");
                     }
@@ -180,11 +177,7 @@ public class ChessBoard {
 
     public static PieceData copyPiece(PieceData pieceData)
     {
-        if (pieceData instanceof ConditionalSlidingPieceData)
-        {
-            return new ConditionalSlidingPieceData((ConditionalSlidingPieceData) pieceData);
-        }
-        else if (pieceData instanceof SlidingPieceData)
+        if (pieceData instanceof SlidingPieceData)
         {
             return new SlidingPieceData((SlidingPieceData) pieceData);
         }
@@ -290,6 +283,14 @@ public class ChessBoard {
             System.out.println("Invalid spaceId at getPiece");
             return null;
         }
+    }
+
+    public boolean isEnemyPieceAt(int spaceId, boolean pieceColor)
+    {
+        if (!isValidSpaceId(spaceId)) return false;
+        if (boardSquares[spaceId] == PieceDatas.NO_PIECE) return false;//no enemy piece
+
+        return boardSquares[spaceId].color != pieceColor;
     }
     //endregion
 }

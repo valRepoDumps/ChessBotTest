@@ -1,13 +1,10 @@
 package ChessLogic;
 
 import ChessResources.ChessBoard;
-import ChessResources.Pieces.PieceDatas.ConditionalSlidingPieceData;
 import ChessResources.Pieces.PieceDatas.PieceData;
-import ChessResources.Pieces.PieceDatas.PieceDatas;
 import ChessResources.PossibleMoves;
 
 import javax.swing.*;
-import java.awt.*;
 
 public class ChessGame {
 
@@ -118,12 +115,6 @@ public class ChessGame {
                 possibleMoves.possibleMoves.get(spaceIdToMove).containSpace(spaceIdArriveAt)
         ) {
             chessBoard.movePiece(spaceIdToMove, spaceIdArriveAt);
-
-            if (piece instanceof ConditionalSlidingPieceData
-            && ((ConditionalSlidingPieceData) piece).useSecondMaxRange)
-            {
-                ((ConditionalSlidingPieceData) piece).useSecondMaxRange = false; //if pawn no longer allows 2 moves.
-            }
 
             sideToMove = !sideToMove;//change move side
 
