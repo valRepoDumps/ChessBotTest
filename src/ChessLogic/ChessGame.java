@@ -1,6 +1,7 @@
 package ChessLogic;
 
 import ChessResources.ChessBoard;
+import ChessResources.ChessSpaces;
 import ChessResources.Pieces.PieceDatas.PieceData;
 import ChessResources.Pieces.PieceDatas.PieceDatas;
 import ChessResources.Pieces.PieceDatas.SlidingPieceData;
@@ -23,15 +24,18 @@ public class ChessGame {
     public int halfMovesSinceCaptureOrPawnMove;
     public int totalMovesElapsed;
 
-    PossibleMoves possibleMoves;
-
+    PossibleMoves[] possibleMoves;
+    static final int BLACK_PM = 0;
+    static final int WHITE_PM = 1;
     //region SELECTED_ROW_AND_COL
     public static final int INVALID_SPACE_ID = -1;
     public int selectedSpaceId = INVALID_SPACE_ID;
     //endregion
 
     public ChessGame(String fen) {
-        possibleMoves = new PossibleMoves(this);
+        possibleMoves = new PossibleMoves[]{new PossibleMoves(this, PieceData.BLACK),
+                new PossibleMoves(this, PieceData.WHITE)};
+
         //fen translator.
         String[] args = fen.trim().split(" ");
 
@@ -69,7 +73,8 @@ public class ChessGame {
         this.halfMovesSinceCaptureOrPawnMove = Integer.parseInt(args[4]);
         this.totalMovesElapsed = Integer.parseInt(args[5]);
         chessBoard.setOnSquareClicked(this::playerClick);
-        possibleMoves.generateMoves();
+        possibleMoves[BLACK_PM].generateMoves();
+        possibleMoves[WHITE_PM].generateMoves();
     }
 
     public ChessGame() {
@@ -79,16 +84,17 @@ public class ChessGame {
     private void playerClick(int spaceId)
     {
         System.out.println("Click: " + spaceId);
-        Icon piece = chessBoard.getGraphic(spaceId).getIcon();
+        PieceData piece = chessBoard.getPiece(spaceId);
 
         //ensure valid choice before proceeding. Wont handle cases where sleected row exceed max and min
         // posisble, as it shouldt happen
         if (selectedSpaceId == INVALID_SPACE_ID)
         {
-            if (piece != null) {
+            if (piece != null && PieceData.getColor(piece) == sideToMove) {
                 selectedSpaceId = spaceId;
                 chessBoard.highlightSpace(spaceId);
-                possibleMoves.highlightPossibleMoves(selectedSpaceId, chessBoard);
+                possibleMoves[sideToMove == PieceData.WHITE? WHITE_PM : BLACK_PM]
+                        .highlightPossibleMoves(selectedSpaceId, chessBoard);
             }
         }
         else
@@ -102,14 +108,16 @@ public class ChessGame {
             }
             else//case user choose an unmoveable square
             {
-                possibleMoves.unHighlightPossibleMoves(selectedSpaceId,chessBoard);
+                possibleMoves[sideToMove == PieceData.WHITE? WHITE_PM : BLACK_PM]
+                        .unHighlightPossibleMoves(selectedSpaceId, chessBoard);
                 //unhighlight possible moves relating to previous selected space id
 
                 selectedSpaceId = spaceId;
                 chessBoard.highlightSpace(spaceId);
                 if (piece != null)
                 {
-                    possibleMoves.highlightPossibleMoves(selectedSpaceId, chessBoard);
+                    possibleMoves[sideToMove == PieceData.WHITE? WHITE_PM : BLACK_PM]
+                            .highlightPossibleMoves(selectedSpaceId, chessBoard);
                 }
             }
         }
@@ -118,8 +126,10 @@ public class ChessGame {
     public boolean movePiece(int spaceIdToMove, int spaceIdArriveAt)
     {
         PieceData piece = chessBoard.getPiece(spaceIdToMove);
-        if (possibleMoves.possibleMoves.containsKey(spaceIdToMove) &&
-                possibleMoves.possibleMoves.get(spaceIdToMove).containSpace(spaceIdArriveAt)
+        if (possibleMoves[sideToMove == PieceData.WHITE? WHITE_PM : BLACK_PM]
+                .possibleMoves.containsKey(spaceIdToMove) &&
+            possibleMoves[sideToMove == PieceData.WHITE? WHITE_PM : BLACK_PM]
+                    .possibleMoves.get(spaceIdToMove).containSpace(spaceIdArriveAt)
         ) {
             int spaceIdCaptureAt = spaceIdArriveAt;
             //region ENPASSANT LOGIC
@@ -234,10 +244,28 @@ public class ChessGame {
             sideToMove = !sideToMove;//change move side
 
             //generate possible moves after changing side
-            possibleMoves.clearPossibleMoves();
-            possibleMoves.generateMoves();
+            possibleMoves[BLACK_PM].clearPossibleMoves();
+            possibleMoves[BLACK_PM].generateMoves();
+
+            possibleMoves[WHITE_PM].clearPossibleMoves();
+            possibleMoves[WHITE_PM].generateMoves();
             return true;
         }
         return false;
+    }
+
+    public boolean spaceNotUnderThreat(int spaceId, boolean color)
+    {
+        //ensure spaceId valid.
+        for (ChessSpaces moves : possibleMoves[color == PieceData.WHITE? BLACK_PM : WHITE_PM].possibleMoves.values())
+        {
+            if (moves.containSpace(spaceId)) return false;
+        }
+        return true;
+    }
+
+    public boolean spaceNotUnderThreatAndEmpty(int spaceId, boolean color)
+    {
+        return spaceNotUnderThreat(spaceId, color) && chessBoard.isEmptySpaceAt(spaceId);
     }
 }

@@ -12,12 +12,13 @@ import java.util.HashMap;
 public class PossibleMoves {
     public HashMap<Integer, ChessSpaces> possibleMoves = new HashMap<>();
     protected ChessGame chessGame;
-
+    protected boolean color;
     public int[][] numSquaresToEdge = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][8];
 
-    public PossibleMoves(ChessGame chessGame)
+    public PossibleMoves(ChessGame chessGame, boolean color)
     {
         this.chessGame = chessGame;
+        this.color = color;
         precomputeSquaresToEdgeData();
     }
 
@@ -27,7 +28,7 @@ public class PossibleMoves {
         {
             PieceData piece = chessGame.chessBoard.boardSquares[startSquare];
 
-            if (piece != PieceDatas.NO_PIECE && piece.color == chessGame.sideToMove)
+            if (piece != PieceDatas.NO_PIECE && piece.color == color)
             {
                 if (piece instanceof SlidingPieceData)
                 {
@@ -37,6 +38,7 @@ public class PossibleMoves {
                 {
                     generateJumpingMoves(startSquare, (IrregularPieceData) piece);
                 }
+
             }
         }
     }

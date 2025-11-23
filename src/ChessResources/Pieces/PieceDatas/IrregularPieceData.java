@@ -78,57 +78,65 @@ public class IrregularPieceData extends PieceData{
                 int r = ChessBoard.getRow(spaceId), c = ChessBoard.getCol(spaceId);
                 if (r>0)
                 {
-                    if (!chessBoard.isAlliedPieceAt(ChessBoard.getNorthSpaceId(spaceId, 1), ChessBoard.WHITE))
+                    if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                            ChessBoard.getNorthSpaceId(spaceId, 1), WHITE))
                         possibleSquares[NORTH] = ChessBoard.getNorthSpaceId(spaceId, 1);
 
                     if (c > 0)
                     {
-                        if (!chessBoard.isAlliedPieceAt(ChessBoard.getNorthWestSpaceId(spaceId, 1), ChessBoard.WHITE))
+                        if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                                ChessBoard.getNorthWestSpaceId(spaceId, 1), WHITE))
                             possibleSquares[NORTHWEST] = ChessBoard.getNorthWestSpaceId(spaceId, 1);
                     }
                     if (c < ChessBoard.BOARD_SIZE-1)
                     {
-                        if (!chessBoard.isAlliedPieceAt(ChessBoard.getNorthEastSpaceId(spaceId, 1), ChessBoard.WHITE))
+                        if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                                ChessBoard.getNorthEastSpaceId(spaceId, 1), WHITE))
                             possibleSquares[NORTHEAST] = ChessBoard.getNorthEastSpaceId(spaceId, 1);
                     }
                 }
                 if(r<ChessBoard.BOARD_SIZE-1)
                 {
-                    if (!chessBoard.isAlliedPieceAt(ChessBoard.getSouthSpaceId(spaceId, 1), ChessBoard.WHITE))
+                    if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                            ChessBoard.getSouthSpaceId(spaceId, 1), WHITE))
                         possibleSquares[SOUTH] = ChessBoard.getSouthSpaceId(spaceId, 1);
                     if (c > 0)
                     {
-                        if (!chessBoard.isAlliedPieceAt(ChessBoard.getSouthWestSpaceId(spaceId, 1), ChessBoard.WHITE))
+                        if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                                ChessBoard.getSouthWestSpaceId(spaceId, 1), WHITE))
                             possibleSquares[SOUTHWEST] = ChessBoard.getSouthWestSpaceId(spaceId, 1);
                     }
                     if (c < ChessBoard.BOARD_SIZE-1)
                     {
-                        if (!chessBoard.isAlliedPieceAt(ChessBoard.getSouthEastSpaceId(spaceId, 1), ChessBoard.WHITE))
+                        if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                                ChessBoard.getSouthEastSpaceId(spaceId, 1), WHITE))
                             possibleSquares[SOUTHEAST] = ChessBoard.getSouthEastSpaceId(spaceId, 1);
                     }
                 }
 
                 if (c > 0)
                 {
-                    if (!chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 1), ChessBoard.WHITE)) {
+                    if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                            ChessBoard.getWestSpaceId(spaceId, 1), WHITE)) {
                         possibleSquares[WEST] = ChessBoard.getWestSpaceId(spaceId, 1);
 
                         if (((ChessGame)game).whiteCastleRightsQueenSide)
                         { //allow castle if no piece in the space between king and rook
-                            if (!chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 2), ChessBoard.WHITE)
-                                    && !chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 3), ChessBoard.WHITE))
-                                possibleSquares[CASTLE_QUEEN_SIDE] = ChessBoard.getWestSpaceId(spaceId, 3);
+                            if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                                    ChessBoard.getWestSpaceId(spaceId, 2), WHITE))
+                                possibleSquares[CASTLE_QUEEN_SIDE] = ChessBoard.getWestSpaceId(spaceId, 2);
                         }
                     }
                 }
                 if (c < ChessBoard.BOARD_SIZE-1)
                 {
-                    if (!chessBoard.isAlliedPieceAt(ChessBoard.getEastSpaceId(spaceId, 1), ChessBoard.WHITE)) {
+                    if (((ChessGame) game).spaceNotUnderThreatAndEmpty(ChessBoard.getEastSpaceId(spaceId, 1), WHITE)) {
                         possibleSquares[EAST] = ChessBoard.getEastSpaceId(spaceId, 1);
 
                         if (((ChessGame)game).whiteCastleRightsKingSide)
                         {
-                            if (!chessBoard.isAlliedPieceAt(ChessBoard.getEastSpaceId(spaceId, 2), ChessBoard.WHITE))
+                            if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                                    ChessBoard.getEastSpaceId(spaceId, 2), WHITE))
                             {
                                 possibleSquares[CASTLE_KING_SIDE] = ChessBoard.getEastSpaceId(spaceId, 2);
                             }
@@ -153,57 +161,66 @@ public class IrregularPieceData extends PieceData{
                 int r = ChessBoard.getRow(spaceId), c = ChessBoard.getCol(spaceId);
                 if (r>0)
                 {
-                    if (!chessBoard.isAlliedPieceAt(ChessBoard.getNorthSpaceId(spaceId, 1), ChessBoard.WHITE))
+                    if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                            ChessBoard.getNorthSpaceId(spaceId, 1), BLACK))
                         possibleSquares[NORTH] = ChessBoard.getNorthSpaceId(spaceId, 1);
 
                     if (c > 0)
                     {
-                        if (!chessBoard.isAlliedPieceAt(ChessBoard.getNorthWestSpaceId(spaceId, 1), ChessBoard.WHITE))
+                        if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                                ChessBoard.getNorthWestSpaceId(spaceId, 1), BLACK))
                             possibleSquares[NORTHWEST] = ChessBoard.getNorthWestSpaceId(spaceId, 1);
                     }
                     if (c < ChessBoard.BOARD_SIZE-1)
                     {
-                        if (!chessBoard.isAlliedPieceAt(ChessBoard.getNorthEastSpaceId(spaceId, 1), ChessBoard.WHITE))
+                        if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                                ChessBoard.getNorthEastSpaceId(spaceId, 1), BLACK))
                             possibleSquares[NORTHEAST] = ChessBoard.getNorthEastSpaceId(spaceId, 1);
                     }
                 }
                 if(r<ChessBoard.BOARD_SIZE-1)
                 {
-                    if (!chessBoard.isAlliedPieceAt(ChessBoard.getSouthSpaceId(spaceId, 1), ChessBoard.WHITE))
+                    if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                            ChessBoard.getSouthSpaceId(spaceId, 1), BLACK))
                         possibleSquares[SOUTH] = ChessBoard.getSouthSpaceId(spaceId, 1);
                     if (c > 0)
                     {
-                        if (!chessBoard.isAlliedPieceAt(ChessBoard.getSouthWestSpaceId(spaceId, 1), ChessBoard.WHITE))
+                        if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                                ChessBoard.getSouthWestSpaceId(spaceId, 1), BLACK))
                             possibleSquares[SOUTHWEST] = ChessBoard.getSouthWestSpaceId(spaceId, 1);
                     }
                     if (c < ChessBoard.BOARD_SIZE-1)
                     {
-                        if (!chessBoard.isAlliedPieceAt(ChessBoard.getSouthEastSpaceId(spaceId, 1), ChessBoard.WHITE))
+                        if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                                ChessBoard.getSouthEastSpaceId(spaceId, 1), BLACK))
                             possibleSquares[SOUTHEAST] = ChessBoard.getSouthEastSpaceId(spaceId, 1);
                     }
                 }
 
                 if (c > 0)
                 {
-                    if (!chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 1), ChessBoard.BLACK)) {
+                    if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                            ChessBoard.getWestSpaceId(spaceId, 1), BLACK)) {
                         possibleSquares[WEST] = ChessBoard.getWestSpaceId(spaceId, 1);
 
                         if (((ChessGame)game).blackCastleRightsQueenSide)
                         { //allow castle if no piece in the space between king and rook
-                            if (!chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 2), ChessBoard.BLACK)
-                                    && !chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 3), ChessBoard.BLACK))
-                                possibleSquares[CASTLE_QUEEN_SIDE] = ChessBoard.getWestSpaceId(spaceId, 3);
+                            if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                                    ChessBoard.getWestSpaceId(spaceId, 2), BLACK))
+                                possibleSquares[CASTLE_QUEEN_SIDE] = ChessBoard.getWestSpaceId(spaceId, 2);
                         }
                     }
                 }
                 if (c < ChessBoard.BOARD_SIZE-1)
                 {
-                    if (!chessBoard.isAlliedPieceAt(ChessBoard.getEastSpaceId(spaceId, 1), ChessBoard.BLACK)) {
+                    if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                            ChessBoard.getEastSpaceId(spaceId, 1), BLACK)) {
                         possibleSquares[EAST] = ChessBoard.getEastSpaceId(spaceId, 1);
 
                         if (((ChessGame)game).blackCastleRightsKingSide)
                         {
-                            if (!chessBoard.isAlliedPieceAt(ChessBoard.getEastSpaceId(spaceId, 2), ChessBoard.BLACK))
+                            if (((ChessGame) game).spaceNotUnderThreatAndEmpty(
+                                    ChessBoard.getEastSpaceId(spaceId, 2), BLACK))
                             {
                                 possibleSquares[CASTLE_KING_SIDE] = ChessBoard.getEastSpaceId(spaceId, 2);
                             }
