@@ -2,6 +2,7 @@ package ChessLogic;
 
 import ChessResources.ChessBoard;
 import ChessResources.Pieces.PieceDatas.PieceData;
+import ChessResources.Pieces.PieceDatas.PieceDatas;
 import ChessResources.Pieces.PieceDatas.SlidingPieceData;
 import ChessResources.PossibleMoves;
 
@@ -161,6 +162,73 @@ public class ChessGame {
             }
             //endregion
 
+            //region CASTLING_LOGIC
+            if (piece.pieceId == PieceData.WKING)
+            {
+                if (ChessBoard.getCol(spaceIdToMove) - ChessBoard.getCol(spaceIdArriveAt) > 1)
+                {
+                    int rookSpaceId = ChessBoard.BOARD_SIZE*(ChessBoard.BOARD_SIZE-1);
+                    int rookMoveId = ChessBoard.getEastSpaceId(spaceIdArriveAt, 1); //rook should be to the east of new king.
+                    assert(whiteCastleRightsQueenSide); //should be true
+                    assert(chessBoard.boardSquares[rookSpaceId].equals(PieceDatas.WROOK_DATA));
+                    chessBoard.movePieceCapture(rookSpaceId, rookMoveId, rookMoveId);
+                }
+                else if (ChessBoard.getCol(spaceIdToMove) - ChessBoard.getCol(spaceIdArriveAt) < -1)
+                {
+                    int rookSpaceId = ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE-1;
+                    int rookMoveId = ChessBoard.getWestSpaceId(spaceIdArriveAt, 1); //rook should be to the west of new king.
+                    assert(whiteCastleRightsKingSide); //should be true
+                    assert(chessBoard.boardSquares[rookSpaceId].equals(PieceDatas.WROOK_DATA));
+                    chessBoard.movePieceCapture(rookSpaceId, rookMoveId, rookMoveId);
+                }
+
+                whiteCastleRightsQueenSide = false;
+                whiteCastleRightsKingSide = false;
+            }
+            else if (piece.pieceId == PieceData.BKING)
+            {
+                if (ChessBoard.getCol(spaceIdToMove) - ChessBoard.getCol(spaceIdArriveAt) > 1)
+                {
+                    int rookSpaceId = 0;
+                    int rookMoveId = ChessBoard.getEastSpaceId(spaceIdArriveAt, 1); //rook should be to the east of new king.
+                    assert(blackCastleRightsQueenSide); //should be true
+                    assert(chessBoard.boardSquares[rookSpaceId].equals(PieceDatas.BROOK_DATA));
+                    chessBoard.movePieceCapture(rookSpaceId, rookMoveId, rookMoveId);
+                }
+                else if (ChessBoard.getCol(spaceIdToMove) - ChessBoard.getCol(spaceIdArriveAt) < -1)
+                {
+                    int rookSpaceId = ChessBoard.BOARD_SIZE-1;
+                    int rookMoveId = ChessBoard.getWestSpaceId(spaceIdArriveAt, 1); //rook should be to the west of new king.
+                    assert(blackCastleRightsKingSide); //should be true
+                    assert(chessBoard.boardSquares[rookSpaceId].equals(PieceDatas.BROOK_DATA));
+                    chessBoard.movePieceCapture(rookSpaceId, rookMoveId, rookMoveId);
+                }
+                blackCastleRightsQueenSide = false;
+                blackCastleRightsKingSide = false;
+            }
+            else if (piece.pieceId == PieceData.WROOK) //these rook funcs wont work if i ever want to implement chess960.
+            {
+                if (whiteCastleRightsKingSide && ChessBoard.getCol(spaceIdToMove) == 7)
+                {
+                    whiteCastleRightsKingSide = false;
+                }
+                else if (whiteCastleRightsQueenSide && ChessBoard.getCol(spaceIdToMove) == 0)
+                {
+                    whiteCastleRightsQueenSide = false;
+                }
+            }
+            else if (piece.pieceId == PieceData.BROOK)
+            {
+                if (blackCastleRightsKingSide && ChessBoard.getCol(spaceIdToMove) == 7)
+                {
+                   blackCastleRightsKingSide = false;
+                }
+                else if (blackCastleRightsQueenSide && ChessBoard.getCol(spaceIdToMove) == 0)
+                {
+                    blackCastleRightsQueenSide = false;
+                }
+            }
+            //endregion
             System.out.println("SpaceIdCapture: " + spaceIdCaptureAt);
             chessBoard.movePieceCapture(spaceIdToMove, spaceIdArriveAt, spaceIdCaptureAt);
             sideToMove = !sideToMove;//change move side

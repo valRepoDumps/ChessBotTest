@@ -113,11 +113,11 @@ public class IrregularPieceData extends PieceData{
                     if (!chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 1), ChessBoard.WHITE)) {
                         possibleSquares[WEST] = ChessBoard.getWestSpaceId(spaceId, 1);
 
-                        if (((ChessGame)game).whiteCastleRightsKingSide)
+                        if (((ChessGame)game).whiteCastleRightsQueenSide)
                         { //allow castle if no piece in the space between king and rook
                             if (!chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 2), ChessBoard.WHITE)
                                     && !chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 3), ChessBoard.WHITE))
-                                possibleSquares[CASTLE_KING_SIDE] = ChessBoard.getWestSpaceId(spaceId, 3);
+                                possibleSquares[CASTLE_QUEEN_SIDE] = ChessBoard.getWestSpaceId(spaceId, 3);
                         }
                     }
                 }
@@ -126,7 +126,7 @@ public class IrregularPieceData extends PieceData{
                     if (!chessBoard.isAlliedPieceAt(ChessBoard.getEastSpaceId(spaceId, 1), ChessBoard.WHITE)) {
                         possibleSquares[EAST] = ChessBoard.getEastSpaceId(spaceId, 1);
 
-                        if (((ChessGame)game).whiteCastleRightsQueenSide)
+                        if (((ChessGame)game).whiteCastleRightsKingSide)
                         {
                             if (!chessBoard.isAlliedPieceAt(ChessBoard.getEastSpaceId(spaceId, 2), ChessBoard.WHITE))
                             {
@@ -185,27 +185,27 @@ public class IrregularPieceData extends PieceData{
 
                 if (c > 0)
                 {
-                    if (!chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 1), ChessBoard.WHITE)) {
+                    if (!chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 1), ChessBoard.BLACK)) {
                         possibleSquares[WEST] = ChessBoard.getWestSpaceId(spaceId, 1);
 
-                        if (((ChessGame)game).whiteCastleRightsKingSide)
-                        { //allow castle if no piece in the sapce between king and rook
-                            if (!chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 2), ChessBoard.WHITE))
-                                possibleSquares[CASTLE_KING_SIDE] = ChessBoard.getWestSpaceId(spaceId, 2);
+                        if (((ChessGame)game).blackCastleRightsQueenSide)
+                        { //allow castle if no piece in the space between king and rook
+                            if (!chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 2), ChessBoard.BLACK)
+                                    && !chessBoard.isAlliedPieceAt(ChessBoard.getWestSpaceId(spaceId, 3), ChessBoard.BLACK))
+                                possibleSquares[CASTLE_QUEEN_SIDE] = ChessBoard.getWestSpaceId(spaceId, 3);
                         }
                     }
                 }
                 if (c < ChessBoard.BOARD_SIZE-1)
                 {
-                    if (!chessBoard.isAlliedPieceAt(ChessBoard.getEastSpaceId(spaceId, 1), ChessBoard.WHITE)) {
+                    if (!chessBoard.isAlliedPieceAt(ChessBoard.getEastSpaceId(spaceId, 1), ChessBoard.BLACK)) {
                         possibleSquares[EAST] = ChessBoard.getEastSpaceId(spaceId, 1);
 
-                        if (((ChessGame)game).whiteCastleRightsQueenSide)
+                        if (((ChessGame)game).blackCastleRightsKingSide)
                         {
-                            if (!chessBoard.isAlliedPieceAt(ChessBoard.getEastSpaceId(spaceId, 2), ChessBoard.WHITE)
-                                    && !chessBoard.isAlliedPieceAt(ChessBoard.getEastSpaceId(spaceId, 3), ChessBoard.WHITE)
-                            ) {
-                                possibleSquares[CASTLE_KING_SIDE] = ChessBoard.getEastSpaceId(spaceId, 3);
+                            if (!chessBoard.isAlliedPieceAt(ChessBoard.getEastSpaceId(spaceId, 2), ChessBoard.BLACK))
+                            {
+                                possibleSquares[CASTLE_KING_SIDE] = ChessBoard.getEastSpaceId(spaceId, 2);
                             }
                         }
                     }
