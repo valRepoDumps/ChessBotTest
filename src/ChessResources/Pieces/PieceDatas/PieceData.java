@@ -33,6 +33,7 @@ public class PieceData {
     public ImageIcon graphic;
 
     public PieceData(short pieceId, boolean color, int value, String name, ImageIcon graphic) {
+        this.pieceId = pieceId;
         this.color = color;
         this.value = value;
         this.name = name;
@@ -57,6 +58,7 @@ public class PieceData {
 
     public PieceData(short pieceId)
     {
+        this.pieceId = pieceId;
         switch(pieceId) {
             case BPAWN: this.color = BLACK;this.value = 1;this.name = "black_pawn";break;
             case BKNIGHT: this.color = BLACK;this.value = 3;this.name = "black_knight";break;

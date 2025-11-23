@@ -1,7 +1,7 @@
 package ChessResources;
 
 import ChessLogic.ChessGame;
-import ChessResources.Pieces.PieceDatas.JumpingPieceData;
+import ChessResources.Pieces.PieceDatas.IrregularPieceData;
 import ChessResources.Pieces.PieceDatas.PieceData;
 import ChessResources.Pieces.PieceDatas.PieceDatas;
 import ChessResources.Pieces.PieceDatas.SlidingPieceData;
@@ -33,9 +33,9 @@ public class PossibleMoves {
                 {
                     generateSlidingMoves(startSquare, (SlidingPieceData) piece);
                 }
-                else if (piece instanceof JumpingPieceData)
+                else if (piece instanceof IrregularPieceData)
                 {
-                    generateJumpingMoves(startSquare, (JumpingPieceData) piece);
+                    generateJumpingMoves(startSquare, (IrregularPieceData) piece);
                 }
             }
         }
@@ -43,8 +43,8 @@ public class PossibleMoves {
 
     private void generateSlidingMoves(int startSquare, SlidingPieceData piece)
     {
-        int maxRange = piece.getMaxRange(chessGame.chessBoard, startSquare);
-        short[] possibleDirections = piece.getPossibleDirections(chessGame.chessBoard, startSquare);
+        int maxRange = piece.getMaxRange(chessGame, startSquare);
+        short[] possibleDirections = piece.getPossibleDirections(chessGame, startSquare);
         System.out.println(piece.pieceId + ": " + piece.name);
         for (short direction : possibleDirections)
         {
@@ -92,9 +92,9 @@ public class PossibleMoves {
         }
     }
 
-    private void generateJumpingMoves(int startSquare, JumpingPieceData piece)
+    private void generateJumpingMoves(int startSquare, IrregularPieceData piece)
     {
-        int[] moves = piece.getPossibleMoves(chessGame.chessBoard, startSquare);
+        int[] moves = piece.getPossibleMoves(chessGame, startSquare);
         System.out.println(Arrays.toString(moves));
         for (int move : moves)
         {

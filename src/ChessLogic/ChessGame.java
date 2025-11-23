@@ -2,6 +2,7 @@ package ChessLogic;
 
 import ChessResources.ChessBoard;
 import ChessResources.Pieces.PieceDatas.PieceData;
+import ChessResources.Pieces.PieceDatas.SlidingPieceData;
 import ChessResources.PossibleMoves;
 
 import javax.swing.*;
@@ -10,11 +11,14 @@ public class ChessGame {
 
     public final ChessBoard chessBoard;
 
-    public boolean blackHaveCastleRights;
-    public boolean whiteHaveCastleRights;
+    public boolean blackCastleRightsQueenSide;
+    public boolean blackCastleRightsKingSide;
+    public boolean whiteCastleRightsQueenSide;
+    public boolean whiteCastleRightsKingSide;
 
     public boolean sideToMove;
-    public int enPassantTarget = -1; //row, col format.
+    public static final int INVALID_ENPASSANT_TARGET = -1;
+    public int enPassantTarget = -1; //spaceId format.
     public int halfMovesSinceCaptureOrPawnMove;
     public int totalMovesElapsed;
 
@@ -44,8 +48,10 @@ public class ChessGame {
         //endregion
 
         //region ASSIGN_CASTLING_RIGHTS
-        blackHaveCastleRights = args[2].contains("kq");
-        whiteHaveCastleRights = args[2].contains("KQ");
+        blackCastleRightsKingSide  = args[2].contains("k");
+        blackCastleRightsQueenSide = args[2].contains("q");
+        whiteCastleRightsKingSide  = args[2].contains("K");
+        whiteCastleRightsQueenSide = args[2].contains("Q");
         //endregion
 
         //region ASSIGN_EN_PASSANT_TARGET
@@ -71,7 +77,7 @@ public class ChessGame {
 
     private void playerClick(int spaceId)
     {
-        System.out.println(spaceId);
+        System.out.println("Click: " + spaceId);
         Icon piece = chessBoard.getGraphic(spaceId).getIcon();
 
         //ensure valid choice before proceeding. Wont handle cases where sleected row exceed max and min
@@ -114,8 +120,49 @@ public class ChessGame {
         if (possibleMoves.possibleMoves.containsKey(spaceIdToMove) &&
                 possibleMoves.possibleMoves.get(spaceIdToMove).containSpace(spaceIdArriveAt)
         ) {
-            chessBoard.movePiece(spaceIdToMove, spaceIdArriveAt);
+            int spaceIdCaptureAt = spaceIdArriveAt;
+            //region ENPASSANT LOGIC
+            enPassantTarget = INVALID_ENPASSANT_TARGET;
+            if (piece.pieceId == PieceData.BPAWN || piece.pieceId == PieceData.WPAWN)
+            {
+                if (chessBoard.isEmptySpaceAt(spaceIdArriveAt) && (
+                        ChessBoard.isImmediateWest(spaceIdToMove, spaceIdArriveAt) ||
+                        ChessBoard.isImmediateEast(spaceIdToMove, spaceIdArriveAt)))
+                {//if the spaceIdArriveAt is east or west of pawn, must be diagonal move. With no piece -> enpassant
 
+                    short northId = chessBoard.getPieceIdAt(spaceIdArriveAt +
+                            ChessBoard.directionOffsets[ChessBoard.NORTH]);
+                    short southId = chessBoard.getPieceIdAt(spaceIdArriveAt +
+                            ChessBoard.directionOffsets[ChessBoard.SOUTH]);
+
+                    if (northId == PieceData.BPAWN || northId == PieceData.WPAWN)
+                    {
+                        spaceIdCaptureAt = spaceIdArriveAt + ChessBoard.directionOffsets[ChessBoard.NORTH];
+                    }
+                    else //assumes once pawn do enpassant, must exist a valid capture piece.
+                    {
+                        spaceIdCaptureAt = spaceIdArriveAt + ChessBoard.directionOffsets[ChessBoard.SOUTH];
+                    }
+                }
+                //en passant logic
+                if (Math.abs(ChessBoard.getRow(spaceIdToMove) - ChessBoard.getRow(spaceIdArriveAt)) == 2) //pawn moved 2 space
+                {
+                    if (piece.pieceId == PieceData.BPAWN)
+                    {
+                        this.enPassantTarget = spaceIdArriveAt + ChessBoard.directionOffsets[ChessBoard.NORTH];
+                        //no need to check column and row validity, always exist North in case pawn moved 2 space in standard board.
+                    }
+                    else //case white pawn
+                    {
+                        this.enPassantTarget = spaceIdArriveAt + ChessBoard.directionOffsets[ChessBoard.SOUTH];
+                        //same as above.
+                    }
+                }
+            }
+            //endregion
+
+            System.out.println("SpaceIdCapture: " + spaceIdCaptureAt);
+            chessBoard.movePieceCapture(spaceIdToMove, spaceIdArriveAt, spaceIdCaptureAt);
             sideToMove = !sideToMove;//change move side
 
             //generate possible moves after changing side
@@ -125,5 +172,4 @@ public class ChessGame {
         }
         return false;
     }
-
 }
