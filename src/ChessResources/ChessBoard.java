@@ -1,6 +1,6 @@
 package ChessResources;
 
-import ChessResources.Pieces.PieceDatas.JumpingPieceData;
+import ChessResources.Pieces.PieceDatas.IrregularPieceData;
 import ChessResources.Pieces.PieceDatas.PieceDatas;
 import ChessResources.Pieces.PieceDatas.PieceData;
 import ChessResources.Pieces.PieceDatas.SlidingPieceData;
@@ -151,6 +151,7 @@ public class ChessBoard {
     //endregion
 
     //region HELPER_FUNCS
+
     public static boolean isValidSpaceId(int spaceId)
     {
         return spaceId >= 0 && spaceId < BOARD_SIZE*BOARD_SIZE;
@@ -184,14 +185,80 @@ public class ChessBoard {
         {
             return new SlidingPieceData((SlidingPieceData) pieceData);
         }
-        else if (pieceData instanceof JumpingPieceData)
+        else if (pieceData instanceof IrregularPieceData)
         {
-            return new JumpingPieceData((JumpingPieceData) pieceData);
+            return new IrregularPieceData((IrregularPieceData) pieceData);
         }
         else
         {
             return new PieceData(pieceData);
         }
+    }
+
+    //region IMMEDIATE_SPACE_FUNCS
+    public static boolean isImmediateNorth(int currSpaceId, int targetSpaceId)
+    {
+        return getRow(targetSpaceId) == getRow(currSpaceId) - 1;
+    }
+    public static int getNorthSpaceId(int currSpaceId, int offset)
+    { //user ensure valid input. should use isImmediateNorth check first.
+        return currSpaceId + offset*directionOffsets[NORTH];
+    }
+
+    public static boolean isImmediateSouth(int currSpaceId, int targetSpaceId)
+    {
+        return getRow(targetSpaceId) == getRow(currSpaceId) + 1;
+    }
+    public static int getSouthSpaceId(int currSpaceId, int offset)
+    { //user ensure valid input.
+        return currSpaceId + offset*directionOffsets[SOUTH];
+    }
+
+    public static boolean isImmediateEast(int currSpaceId, int targetSpaceId)
+    {
+        return getCol(targetSpaceId) == getCol(currSpaceId) + 1;
+    }
+    public static int getEastSpaceId(int currSpaceId, int offset)
+    { //user ensure good input
+        return currSpaceId + offset*directionOffsets[EAST];
+    }
+
+    public static boolean isImmediateWest(int currSpaceId, int targetSpaceId)
+    {
+        return getCol(targetSpaceId) == getCol(currSpaceId) - 1;
+    }
+    public static int getWestSpaceId(int currSpaceId, int offset)
+    { //user ensure good input
+        return currSpaceId + offset*directionOffsets[WEST];
+    }
+
+    public static int getNorthEastSpaceId(int currSpaceId, int offset)
+    { //user ensure good input
+        return currSpaceId + directionOffsets[NORTH_EAST]*offset;
+    }
+    public static int getNorthWestSpaceId(int currSpaceId, int offset)
+    { //user ensure good input
+        return currSpaceId + directionOffsets[NORTH_WEST]*offset;
+    }
+    public static int getSouthEastSpaceId(int currSpaceId, int offset)
+    { //user ensure good input
+        return currSpaceId + directionOffsets[SOUTH_EAST]*offset;
+    }
+    public static int getSouthWestSpaceId(int currSpaceId, int offset)
+    { //user ensure good input
+        return currSpaceId + directionOffsets[SOUTH_WEST]*offset;
+    }
+    //endregion
+    public static int getCol(int spaceId)
+    {
+        assert spaceId >= 0 && spaceId < BOARD_SIZE*BOARD_SIZE;
+        return spaceId % BOARD_SIZE;
+    }
+
+    public static int getRow(int spaceId)
+    {
+        assert spaceId >= 0 && spaceId < BOARD_SIZE*BOARD_SIZE;
+        return spaceId / BOARD_SIZE;
     }
     //endregion
 
@@ -269,7 +336,7 @@ public class ChessBoard {
 
     //region PIECE_FUNCS
     public void movePiece(int spaceIdToMove, int spaceIdArriveAt)
-    {
+    {//move piece and just overwrite piece in that location.
         if (isValidSpaceId(spaceIdToMove) && isValidSpaceId(spaceIdArriveAt))
         {
             PieceData piece = boardSquares[spaceIdToMove];
@@ -279,7 +346,13 @@ public class ChessBoard {
         else {
             System.out.println("Invalid spaceId at movePiece");
         }
+    }
 
+    public void movePieceCapture(int spaceIdToMove, int spaceIdArriveAt, int spaceIdCaptureAt)
+    { //all input should be valid.
+        movePiece(spaceIdToMove, spaceIdArriveAt);
+
+        if (spaceIdArriveAt != spaceIdCaptureAt) setPieceAt(spaceIdCaptureAt, PieceDatas.NO_PIECE);
         updateBoardGraphic();
     }
 
@@ -292,6 +365,11 @@ public class ChessBoard {
         }
     }
 
+    public boolean isPieceAt(int spaceId)
+    {
+        if (!isValidSpaceId(spaceId)) return false;
+        return boardSquares[spaceId] != PieceDatas.NO_PIECE;
+    }
     public boolean isEnemyPieceAt(int spaceId, boolean pieceColor)
     {
         if (!isValidSpaceId(spaceId)) return false;
@@ -306,6 +384,19 @@ public class ChessBoard {
         if (boardSquares[spaceId] == PieceDatas.NO_PIECE) return false; //no alied piece.
 
         return boardSquares[spaceId].color == pieceColor;
+    }
+
+    public boolean isEmptySpaceAt(int spaceId)
+    {
+        if (!isValidSpaceId(spaceId)) return false;
+        return boardSquares[spaceId] == PieceDatas.NO_PIECE;
+    }
+
+    public short getPieceIdAt(int spaceId)
+    {
+        if (!isValidSpaceId(spaceId)) return PieceData.INVALID_PIECES;
+        if (boardSquares[spaceId] == PieceDatas.NO_PIECE) return PieceData.INVALID_PIECES;
+        else return boardSquares[spaceId].pieceId;
     }
     //endregion
 }

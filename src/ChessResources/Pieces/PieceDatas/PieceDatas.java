@@ -1,9 +1,5 @@
 package ChessResources.Pieces.PieceDatas;
 
-import ChessResources.ChessBoard;
-
-import java.util.function.BiFunction;
-
 public class PieceDatas
 {
     //region PIECES_CONSTS
@@ -15,11 +11,12 @@ public class PieceDatas
     public static final PieceData WBISHOP_DATA = new SlidingPieceData(PieceData.WBISHOP);
     public static final PieceData BQUEEN_DATA = new SlidingPieceData(PieceData.BQUEEN);
     public static final PieceData WQUEEN_DATA = new SlidingPieceData(PieceData.WQUEEN);
-    public static final PieceData BKING_DATA = new SlidingPieceData(PieceData.BKING);
-    public static final PieceData WKING_DATA = new SlidingPieceData(PieceData.WKING);
 
-    public static final PieceData BKNIGHT_DATA = new JumpingPieceData(PieceData.BKNIGHT);
-    public static final PieceData WKNIGHT_DATA = new JumpingPieceData(PieceData.WKNIGHT);
+    public static final PieceData BKING_DATA = new IrregularPieceData(PieceData.BKING);
+    public static final PieceData WKING_DATA = new IrregularPieceData(PieceData.WKING);
+
+    public static final PieceData BKNIGHT_DATA = new IrregularPieceData(PieceData.BKNIGHT);
+    public static final PieceData WKNIGHT_DATA = new IrregularPieceData(PieceData.WKNIGHT);
 
     public static final PieceData NO_PIECE = null;
     public final static int PIECES_DIFF = 16;
@@ -35,7 +32,7 @@ public class PieceDatas
             case PieceData.BPAWN, PieceData.WPAWN, PieceData.BROOK, PieceData.WROOK,
                  PieceData.BBISHOP, PieceData.WBISHOP, PieceData.BQUEEN, PieceData.WQUEEN,
                  PieceData.BKING, PieceData.WKING -> new SlidingPieceData(pieceId);
-            case PieceData.BKNIGHT, PieceData.WKNIGHT -> new JumpingPieceData(pieceId);
+            case PieceData.BKNIGHT, PieceData.WKNIGHT -> new IrregularPieceData(pieceId);
             default -> null;
         };
     }
