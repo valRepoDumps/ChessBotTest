@@ -158,13 +158,6 @@ public class SlidingPieceData extends PieceData {
     public static BiFunction<Object, Integer, Integer> QUEEN_RANGE_FUNC =
             (game, spaceId) -> NO_RANGE_LIMIT;
 
-    //region KING FUNCS
-    public static BiFunction<Object, Integer, short[]> KING_DIR_FUNC =
-            (Object game, Integer spaceId) -> new short[]{ChessBoardUI.NORTH, ChessBoardUI.SOUTH, ChessBoardUI.WEST, ChessBoardUI.EAST,
-                    ChessBoardUI.NORTH_WEST, ChessBoardUI.NORTH_EAST, ChessBoardUI.SOUTH_WEST, ChessBoardUI.SOUTH_EAST};
-    public static BiFunction<Object, Integer, Integer> KING_RANGE_FUNC =
-            (game, spaceId) -> 1;
-    //endregion
     //endregion
 
     public BiFunction<Object, Integer, Integer> maxRangeFunc;
@@ -194,10 +187,6 @@ public class SlidingPieceData extends PieceData {
             case BQUEEN: case WQUEEN:
                 this.maxRangeFunc = QUEEN_RANGE_FUNC;
                 this.directionFunc = QUEEN_DIR_FUNC;
-                break;
-            case BKING: case WKING:
-                this.maxRangeFunc = KING_RANGE_FUNC;
-                this.directionFunc = KING_DIR_FUNC;
                 break;
         }
     }

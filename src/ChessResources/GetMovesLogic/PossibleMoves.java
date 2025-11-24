@@ -49,7 +49,7 @@ public class PossibleMoves {
     {
         int maxRange = piece.getMaxRange(chessGame, startSquare);
         short[] possibleDirections = piece.getPossibleDirections(chessGame, startSquare);
-        System.out.println(piece.pieceId + ": " + piece.name);
+        //System.out.println(piece.pieceId + ": " + piece.name);
         for (short direction : possibleDirections)
         {
             for (int n = 0; n < maxRange && n < numSquaresToEdge[startSquare][direction]; ++n)
@@ -99,7 +99,6 @@ public class PossibleMoves {
     private void generateJumpingMoves(int startSquare, IrregularPieceData piece)
     {
         int[] moves = piece.getPossibleMoves(chessGame, startSquare);
-        System.out.println(Arrays.toString(moves));
         for (int move : moves)
         {
             if (ChessBoardUI.isValidSpaceId(move) && !chessGame.chessBoard.isAlliedPieceAt(move, piece.color))

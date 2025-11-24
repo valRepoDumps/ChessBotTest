@@ -87,8 +87,8 @@ public class MinimalChessGame<Board extends ChessBoard> {
         this.halfMovesSinceCaptureOrPawnMove = Integer.parseInt(args[4]);
         this.totalMovesElapsed = Integer.parseInt(args[5]);
 
-        possibleMoves[BLACK_PM].generateMoves();
-        possibleMoves[WHITE_PM].generateMoves();
+        possibleMoves[sideToMove == PieceData.WHITE? BLACK_PM:WHITE_PM].generateMoves();
+        possibleMoves[sideToMove == PieceData.WHITE? WHITE_PM:BLACK_PM].generateMoves();
     }
 
     public boolean movePiece(int spaceIdToMove, int spaceIdArriveAt)
@@ -235,7 +235,6 @@ public class MinimalChessGame<Board extends ChessBoard> {
             }
             //endregion
 
-            System.out.println("SpaceIdCapture: " + spaceIdCaptureAt);
             chessBoard.movePieceCapture(spaceIdToMove, spaceIdArriveAt, spaceIdCaptureAt);
             if (promotionSpaceId >= 0) //make no further checks, shouldnt be invalid.
             {
@@ -243,12 +242,13 @@ public class MinimalChessGame<Board extends ChessBoard> {
             }
             sideToMove = !sideToMove;//change move side
 
-            //generate possible moves after changing side
-            possibleMoves[BLACK_PM].clearPossibleMoves();
-            possibleMoves[BLACK_PM].generateMoves();
+            //generate possible moves after changing side.
+            // Doing it this way ensure when a new moves is generated, new piece location information is taken into account
+            possibleMoves[sideToMove == PieceData.WHITE? BLACK_PM:WHITE_PM].clearPossibleMoves();
+            possibleMoves[sideToMove == PieceData.WHITE? BLACK_PM:WHITE_PM].generateMoves();
 
-            possibleMoves[WHITE_PM].clearPossibleMoves();
-            possibleMoves[WHITE_PM].generateMoves();
+            possibleMoves[sideToMove == PieceData.WHITE? WHITE_PM:BLACK_PM].clearPossibleMoves();
+            possibleMoves[sideToMove == PieceData.WHITE? WHITE_PM:BLACK_PM].generateMoves();
             return true;
         }
         return false;
@@ -259,7 +259,11 @@ public class MinimalChessGame<Board extends ChessBoard> {
         //ensure spaceId valid.
         for (ChessSpaces moves : possibleMoves[color == PieceData.WHITE? BLACK_PM : WHITE_PM].possibleMoves.values())
         {
-            if (moves.containSpace(spaceId)) return false;
+            if (moves.containSpace(spaceId))
+            {
+                System.out.println("DEBUG THREAT AT: " + spaceId);
+                return false;
+            }
         }
         return true;
     }
