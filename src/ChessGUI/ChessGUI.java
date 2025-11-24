@@ -1,7 +1,7 @@
 package ChessGUI;
 
 import ChessLogic.ChessGame;
-import ChessResources.ChessBoard;
+import ChessResources.ChessBoardUI;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,8 +21,8 @@ public class ChessGUI {
         frame.add(outerPanel, BorderLayout.CENTER);
 
         chessGame = new ChessGame();
-        JPanel boardGraphic = chessGame.chessBoard.boardGraphic;
-        BOARD_PIXEL_SIZE = ChessBoard.BOARD_SIZE * ChessBoard.SQUARE_PIXEL_SIZE;
+        JPanel boardGraphic = chessGame.chessBoardUI.boardGraphic;
+        BOARD_PIXEL_SIZE = ChessBoardUI.BOARD_SIZE * ChessBoardUI.SQUARE_PIXEL_SIZE;
 
         boardGraphic.setPreferredSize(new Dimension(BOARD_PIXEL_SIZE, BOARD_PIXEL_SIZE));
         boardGraphic.setMaximumSize(boardGraphic.getPreferredSize());

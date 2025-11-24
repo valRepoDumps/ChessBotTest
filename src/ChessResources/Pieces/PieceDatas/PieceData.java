@@ -86,5 +86,21 @@ public class PieceData {
             default -> WHITE;
         };
     }
+
+    public static PieceData copyPiece(PieceData pieceData)
+    {
+        if (pieceData instanceof SlidingPieceData)
+        {
+            return new SlidingPieceData((SlidingPieceData) pieceData);
+        }
+        else if (pieceData instanceof IrregularPieceData)
+        {
+            return new IrregularPieceData((IrregularPieceData) pieceData);
+        }
+        else
+        {
+            return new PieceData(pieceData);
+        }
+    }
 }
 

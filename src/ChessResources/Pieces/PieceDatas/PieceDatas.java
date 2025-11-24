@@ -36,5 +36,4 @@ public class PieceDatas
             default -> null;
         };
     }
-
 }
