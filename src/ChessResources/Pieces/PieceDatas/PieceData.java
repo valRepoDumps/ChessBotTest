@@ -77,5 +77,30 @@ public class PieceData {
         }
         this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + this.name + ".png");
     }
+
+    public static boolean getColor(PieceData piece)
+    {
+        return switch (piece.pieceId) {
+            case BPAWN, BKING, BKNIGHT, BROOK, BBISHOP, BQUEEN -> BLACK;
+            case WPAWN, WKING, WKNIGHT, WBISHOP, WROOK, WQUEEN -> WHITE;
+            default -> WHITE;
+        };
+    }
+
+    public static PieceData copyPiece(PieceData pieceData)
+    {
+        if (pieceData instanceof SlidingPieceData)
+        {
+            return new SlidingPieceData((SlidingPieceData) pieceData);
+        }
+        else if (pieceData instanceof IrregularPieceData)
+        {
+            return new IrregularPieceData((IrregularPieceData) pieceData);
+        }
+        else
+        {
+            return new PieceData(pieceData);
+        }
+    }
 }
 

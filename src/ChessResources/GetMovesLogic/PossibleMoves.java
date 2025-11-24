@@ -1,6 +1,8 @@
-package ChessResources;
+package ChessResources.GetMovesLogic;
 
 import ChessLogic.ChessGame;
+import ChessLogic.MinimalChessGame;
+import ChessResources.ChessBoard.ChessBoardUI;
 import ChessResources.Pieces.PieceDatas.IrregularPieceData;
 import ChessResources.Pieces.PieceDatas.PieceData;
 import ChessResources.Pieces.PieceDatas.PieceDatas;
@@ -11,23 +13,24 @@ import java.util.HashMap;
 
 public class PossibleMoves {
     public HashMap<Integer, ChessSpaces> possibleMoves = new HashMap<>();
-    protected ChessGame chessGame;
+    protected MinimalChessGame<?> chessGame;
+    protected boolean color;
+    public int[][] numSquaresToEdge = new int[ChessBoardUI.BOARD_SIZE* ChessBoardUI.BOARD_SIZE][8];
 
-    public int[][] numSquaresToEdge = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][8];
-
-    public PossibleMoves(ChessGame chessGame)
+    public PossibleMoves(MinimalChessGame<?> chessGame, boolean color)
     {
         this.chessGame = chessGame;
+        this.color = color;
         precomputeSquaresToEdgeData();
     }
 
     public void generateMoves()
     {
-        for (int startSquare = 0; startSquare < ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE; ++startSquare)
+        for (int startSquare = 0; startSquare < ChessBoardUI.BOARD_SIZE* ChessBoardUI.BOARD_SIZE; ++startSquare)
         {
-            PieceData piece = chessGame.chessBoard.boardSquares[startSquare];
+            PieceData piece = chessGame.chessBoard.getPiece(startSquare);
 
-            if (piece != PieceDatas.NO_PIECE && piece.color == chessGame.sideToMove)
+            if (piece != PieceDatas.NO_PIECE && piece.color == color)
             {
                 if (piece instanceof SlidingPieceData)
                 {
@@ -37,6 +40,7 @@ public class PossibleMoves {
                 {
                     generateJumpingMoves(startSquare, (IrregularPieceData) piece);
                 }
+
             }
         }
     }
@@ -45,14 +49,14 @@ public class PossibleMoves {
     {
         int maxRange = piece.getMaxRange(chessGame, startSquare);
         short[] possibleDirections = piece.getPossibleDirections(chessGame, startSquare);
-        System.out.println(piece.pieceId + ": " + piece.name);
+        //System.out.println(piece.pieceId + ": " + piece.name);
         for (short direction : possibleDirections)
         {
             for (int n = 0; n < maxRange && n < numSquaresToEdge[startSquare][direction]; ++n)
             {
-                int targetSquare = startSquare + ChessBoard.directionOffsets[direction]*(n+1);
+                int targetSquare = startSquare + ChessBoardUI.directionOffsets[direction]*(n+1);
                 if (targetSquare >= 64) break;
-                PieceData pieceOnTarget = chessGame.chessBoard.boardSquares[targetSquare];
+                PieceData pieceOnTarget = chessGame.chessBoard.getPiece(targetSquare);
 
                 if (pieceOnTarget != PieceDatas.NO_PIECE && pieceOnTarget.color == piece.color) break;
                 //encounter piece of our color, dont move in this dir any more
@@ -70,23 +74,23 @@ public class PossibleMoves {
 
     public void precomputeSquaresToEdgeData()
     {
-        for (int row = 0; row< ChessBoard.BOARD_SIZE; ++row)
+        for (int row = 0; row< ChessBoardUI.BOARD_SIZE; ++row)
         {
-            for (int col = 0; col < ChessBoard.BOARD_SIZE; ++col)
+            for (int col = 0; col < ChessBoardUI.BOARD_SIZE; ++col)
             {
                 int numSouth = 7 - row;
                 int numEast = 7 - col;
 
-                int squareIdx = row*ChessBoard.BOARD_SIZE + col;
+                int squareIdx = row* ChessBoardUI.BOARD_SIZE + col;
 
-                numSquaresToEdge[squareIdx][ChessBoard.NORTH] = row;
-                numSquaresToEdge[squareIdx][ChessBoard.SOUTH] = numSouth;
-                numSquaresToEdge[squareIdx][ChessBoard.EAST] = numEast;
-                numSquaresToEdge[squareIdx][ChessBoard.WEST] = col;
-                numSquaresToEdge[squareIdx][ChessBoard.NORTH_WEST] = Math.min(row, col);
-                numSquaresToEdge[squareIdx][ChessBoard.NORTH_EAST] = Math.min(row, numEast);
-                numSquaresToEdge[squareIdx][ChessBoard.SOUTH_WEST] = Math.min(numSouth, col);
-                numSquaresToEdge[squareIdx][ChessBoard.SOUTH_EAST] = Math.min(numSouth, numEast);
+                numSquaresToEdge[squareIdx][ChessBoardUI.NORTH] = row;
+                numSquaresToEdge[squareIdx][ChessBoardUI.SOUTH] = numSouth;
+                numSquaresToEdge[squareIdx][ChessBoardUI.EAST] = numEast;
+                numSquaresToEdge[squareIdx][ChessBoardUI.WEST] = col;
+                numSquaresToEdge[squareIdx][ChessBoardUI.NORTH_WEST] = Math.min(row, col);
+                numSquaresToEdge[squareIdx][ChessBoardUI.NORTH_EAST] = Math.min(row, numEast);
+                numSquaresToEdge[squareIdx][ChessBoardUI.SOUTH_WEST] = Math.min(numSouth, col);
+                numSquaresToEdge[squareIdx][ChessBoardUI.SOUTH_EAST] = Math.min(numSouth, numEast);
 
             }
         }
@@ -95,10 +99,9 @@ public class PossibleMoves {
     private void generateJumpingMoves(int startSquare, IrregularPieceData piece)
     {
         int[] moves = piece.getPossibleMoves(chessGame, startSquare);
-        System.out.println(Arrays.toString(moves));
         for (int move : moves)
         {
-            if (ChessBoard.isValidSpaceId(move) && !chessGame.chessBoard.isAlliedPieceAt(move, piece.color))
+            if (ChessBoardUI.isValidSpaceId(move) && !chessGame.chessBoard.isAlliedPieceAt(move, piece.color))
             {
                 if (possibleMoves.containsKey(startSquare)) {
                     possibleMoves.get(startSquare).addMoves(move);
@@ -115,22 +118,22 @@ public class PossibleMoves {
         possibleMoves = new HashMap<>();
     }
 
-    public void highlightPossibleMoves(int spaceId, ChessBoard chessBoard)
+    public void highlightPossibleMoves(int spaceId, ChessBoardUI chessBoardUI)
     {
         if (possibleMoves.containsKey(spaceId)) {
             for (int space : possibleMoves.get(spaceId).chessMoves)
             {
-                chessBoard.highlightSpace(space);
+                chessBoardUI.highlightSpace(space);
             }
         }
     }
 
-    public void unHighlightPossibleMoves(int spaceId, ChessBoard chessBoard)
+    public void unHighlightPossibleMoves(int spaceId, ChessBoardUI chessBoardUI)
     {
         if (possibleMoves.containsKey(spaceId)) {
             for (int space : possibleMoves.get(spaceId).chessMoves)
             {
-                chessBoard.unHighlightSpace(space);
+                chessBoardUI.unHighlightSpace(space);
             }
         }
     }
