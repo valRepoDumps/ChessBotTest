@@ -36,4 +36,23 @@ public class PieceDatas
             default -> null;
         };
     }
+
+    public static PieceData getCopyOfPiece(int pieceId)
+    {
+        return switch (pieceId) {
+            case PieceData.BPAWN -> PieceData.copyPiece(BPAWN_DATA);
+            case PieceData.WPAWN -> PieceData.copyPiece(WPAWN_DATA);
+            case PieceData.BROOK -> PieceData.copyPiece(BROOK_DATA);
+            case PieceData.WROOK -> PieceData.copyPiece(WROOK_DATA);
+            case PieceData.BKNIGHT -> PieceData.copyPiece(BKNIGHT_DATA);
+            case PieceData.WKNIGHT -> PieceData.copyPiece(WKNIGHT_DATA);
+            case PieceData.BBISHOP -> PieceData.copyPiece(BBISHOP_DATA);
+            case PieceData.WBISHOP -> PieceData.copyPiece(WBISHOP_DATA);
+            case PieceData.BQUEEN -> PieceData.copyPiece(BQUEEN_DATA);
+            case PieceData.WQUEEN -> PieceData.copyPiece(WQUEEN_DATA);
+            case PieceData.BKING -> PieceData.copyPiece(BKING_DATA);
+            case PieceData.WKING -> PieceData.copyPiece(WKING_DATA);
+            default -> NO_PIECE;
+        };
+    }
 }

@@ -1,6 +1,8 @@
-package ChessResources;
+package ChessResources.GetMovesLogic;
 
 import ChessLogic.ChessGame;
+import ChessLogic.MinimalChessGame;
+import ChessResources.ChessBoard.ChessBoardUI;
 import ChessResources.Pieces.PieceDatas.IrregularPieceData;
 import ChessResources.Pieces.PieceDatas.PieceData;
 import ChessResources.Pieces.PieceDatas.PieceDatas;
@@ -11,11 +13,11 @@ import java.util.HashMap;
 
 public class PossibleMoves {
     public HashMap<Integer, ChessSpaces> possibleMoves = new HashMap<>();
-    protected ChessGame chessGame;
+    protected MinimalChessGame<?> chessGame;
     protected boolean color;
     public int[][] numSquaresToEdge = new int[ChessBoardUI.BOARD_SIZE* ChessBoardUI.BOARD_SIZE][8];
 
-    public PossibleMoves(ChessGame chessGame, boolean color)
+    public PossibleMoves(MinimalChessGame<?> chessGame, boolean color)
     {
         this.chessGame = chessGame;
         this.color = color;
@@ -26,7 +28,7 @@ public class PossibleMoves {
     {
         for (int startSquare = 0; startSquare < ChessBoardUI.BOARD_SIZE* ChessBoardUI.BOARD_SIZE; ++startSquare)
         {
-            PieceData piece = chessGame.chessBoardUI.getPiece(startSquare);
+            PieceData piece = chessGame.chessBoard.getPiece(startSquare);
 
             if (piece != PieceDatas.NO_PIECE && piece.color == color)
             {
@@ -54,7 +56,7 @@ public class PossibleMoves {
             {
                 int targetSquare = startSquare + ChessBoardUI.directionOffsets[direction]*(n+1);
                 if (targetSquare >= 64) break;
-                PieceData pieceOnTarget = chessGame.chessBoardUI.getPiece(targetSquare);
+                PieceData pieceOnTarget = chessGame.chessBoard.getPiece(targetSquare);
 
                 if (pieceOnTarget != PieceDatas.NO_PIECE && pieceOnTarget.color == piece.color) break;
                 //encounter piece of our color, dont move in this dir any more
@@ -100,7 +102,7 @@ public class PossibleMoves {
         System.out.println(Arrays.toString(moves));
         for (int move : moves)
         {
-            if (ChessBoardUI.isValidSpaceId(move) && !chessGame.chessBoardUI.isAlliedPieceAt(move, piece.color))
+            if (ChessBoardUI.isValidSpaceId(move) && !chessGame.chessBoard.isAlliedPieceAt(move, piece.color))
             {
                 if (possibleMoves.containsKey(startSquare)) {
                     possibleMoves.get(startSquare).addMoves(move);

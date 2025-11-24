@@ -1,48 +1,41 @@
-package ChessResources;
+package ChessResources.ChessBoard;
 
-import ChessResources.Pieces.PieceDatas.PieceDatas;
 import ChessResources.Pieces.PieceDatas.PieceData;
-
-import javax.swing.*;
-import java.awt.*;
-import java.util.function.IntConsumer;
+import ChessResources.Pieces.PieceDatas.PieceDatas;
 
 import static ChessResources.Pieces.PieceDatas.PieceData.copyPiece;
 
-public class ChessBoardUI extends ChessBoard {
-    //region DATA
-    //region BOARD_DATAS
-    protected static boolean[] boardSquaresColor = new boolean[BOARD_SIZE*BOARD_SIZE];
+public class ChessBoard {
+    //region BOARD_SIZE
+    public static final int BOARD_SIZE = 8;
+    public  static final int SQUARE_PIXEL_SIZE = 100;
     //endregion
-    //region COLOR
-    public static final Color BLACK_COLOR = Color.DARK_GRAY;
-    public static final Color WHITE_COLOR = Color.WHITE;
-    //endregion
-    //region GRAPHIC
-    public final JPanel boardGraphic = new JPanel();
-    public JButton[] boardGraphicSquareList = new JButton[BOARD_SIZE*BOARD_SIZE];
-    //endregion
-    private IntConsumer onSquareClicked = null;
-    //endregion
+    public static final int INVALID_SPACE_ID = -1;
 
-    public ChessBoardUI(String piecePlacement)
+    //region DIRECTIONAL_OFFSETS
+    //assume board 0 index is in top left.
+    public static final int[] directionOffsets = {8, -8, -1, 1, 7, -7, 9, -9};
+    //use SOUTH,NORTH,... with directionOffsets to calculate movement.
+    public static final short SOUTH = 0;
+    public static final short NORTH = 1;
+    public static final short WEST = 2;
+    public static final short EAST = 3;
+    public static final short SOUTH_WEST = 4;
+    public static final short NORTH_EAST = 5;
+    public static final short SOUTH_EAST = 6;
+    public static final short NORTH_WEST = 7;
+    //endregion
+    public static final boolean BLACK = false;
+    public static final boolean WHITE = true;
+
+    public PieceData[] boardSquares = new PieceData[BOARD_SIZE*BOARD_SIZE];
+
+    public ChessBoard(String piecePlacement)
     {
-        for (int row = 0; row < BOARD_SIZE; ++row)
-        {
-            for (int col = 0; col < BOARD_SIZE; ++col) {
-                setUpSpaces(row, col);
-            }
-        }
         setUpPieces(piecePlacement);
-        makeBoardGraphic(); //create graphic for board.
     }
-
-    public void setOnSquareClicked(IntConsumer handler) {
-        this.onSquareClicked = handler;
-    }
-
     //region SETTING_UP_BOARD
-    private void setUpPieces(String piecesPlacement)
+    protected void setUpPieces(String piecesPlacement)
     {
         clearBoard();
 
@@ -90,13 +83,7 @@ public class ChessBoardUI extends ChessBoard {
         }
     }
 
-    private void setUpSpaces(int row, int col)
-    {
-        if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) return;
-        boardSquaresColor[row*BOARD_SIZE + col] = ((row + col) % 2 == 0) ?  WHITE : BLACK;
-    }
-
-    private void clearBoard()
+    protected void clearBoard()
     {
         for (int spaceId = 0; spaceId < BOARD_SIZE*BOARD_SIZE; ++spaceId)
         {
@@ -110,30 +97,6 @@ public class ChessBoardUI extends ChessBoard {
     }
 
     //endregion
-
-    //region HELPER_FUNCS
-
-    public static int convertSquareNotationToSpaceId(char colId, char rowId)
-    {
-        if (colId < 'a' || colId > 'h' || rowId < '1' || rowId > '8')
-            throw new IllegalArgumentException("Invalid files and ranks input ("
-                    + colId +", " + rowId+").");
-
-        return (colId - 'a')* BOARD_SIZE + 8 - ('8'-rowId);
-    }
-
-    private static boolean isValidBoardIdx(int row, int col, Exception e) throws Exception
-    {
-        if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE)
-        {
-            if (e != null)
-            {
-                throw e;
-            }
-            return false;
-        }
-        return true;
-    }
 
     //region IMMEDIATE_SPACE_FUNCS
     public static boolean isImmediateNorth(int currSpaceId, int targetSpaceId)
@@ -189,6 +152,7 @@ public class ChessBoardUI extends ChessBoard {
         return currSpaceId + directionOffsets[SOUTH_WEST]*offset;
     }
     //endregion
+    //region GET_ROW_COL_FUNCS
     public static int getCol(int spaceId)
     {
         assert spaceId >= 0 && spaceId < BOARD_SIZE*BOARD_SIZE;
@@ -201,89 +165,58 @@ public class ChessBoardUI extends ChessBoard {
         return spaceId / BOARD_SIZE;
     }
     //endregion
-
-    //region BOARD_GRAPHICS
-    public JButton getGraphic(int spaceId)
+    //region PIECE_FUNCS
+    public void setPieceAt(int spaceId, PieceData piece)
     {
-        if (isValidSpaceId(spaceId)) return boardGraphicSquareList[spaceId];
+        if (isValidSpaceId(spaceId)) boardSquares[spaceId] = piece;
+    }
+
+    public PieceData getPiece(int spaceId)
+    {
+        if (isValidSpaceId(spaceId)) return boardSquares[spaceId];
         else {
-            System.out.println("Invalid spaceId at getGraphic");
+            System.out.println("Invalid spaceId at getPiece");
             return null;
         }
     }
 
-    private void makeBoardGraphic()
-    {
-        boardGraphic.setLayout(new GridLayout(BOARD_SIZE, BOARD_SIZE));
-
-        for (int row = 0; row < BOARD_SIZE; ++row)
+    public void movePiece(int spaceIdToMove, int spaceIdArriveAt)
+    {//move piece and just overwrite piece in that location.
+        if (isValidSpaceId(spaceIdToMove) && isValidSpaceId(spaceIdArriveAt))
         {
-            for (int col = 0; col < BOARD_SIZE; ++col) {
-                JButton square = new JButton();
-
-                final int r = row, c = col; //allow to be added to lambda in action event.
-                square.addActionListener(e->onSquareClicked.accept(r*BOARD_SIZE+c));
-
-                square.setPreferredSize(new Dimension(SQUARE_PIXEL_SIZE,SQUARE_PIXEL_SIZE));
-                if (getPiece(row*BOARD_SIZE + col) != PieceDatas.NO_PIECE) {
-                    square.setIcon(getPiece(row*BOARD_SIZE + col).graphic);
-                }
-                square.setBackground(boardSquaresColor[row*BOARD_SIZE + col] == BLACK ? BLACK_COLOR : WHITE_COLOR);
-
-                boardGraphic.add(square);
-                boardGraphicSquareList[row*BOARD_SIZE + col] = square;
-            }
+            PieceData piece = getPiece(spaceIdToMove);
+            setPieceAt(spaceIdToMove, PieceDatas.NO_PIECE);
+            setPieceAt(spaceIdArriveAt, piece);
+        }
+        else {
+            System.out.println("Invalid spaceId at movePiece");
         }
     }
 
-    private void updateBoardGraphic(int spaceId)
+    public boolean isPieceAt(int spaceId)
     {
-        //this is private, so dont need much check.
-        if (getPiece(spaceId) != PieceDatas.NO_PIECE) {
-            boardGraphicSquareList[spaceId].setIcon(getPiece(spaceId).graphic);
-            boardGraphicSquareList[spaceId].setBorder(null); //reset all borders.
-        }
-        else
-        {
-            resetSpace(boardGraphicSquareList[spaceId]);
-        }
-        //System.out.println(spaceId);
+        if (!isValidSpaceId(spaceId)) return false;
+        return getPiece(spaceId) != PieceDatas.NO_PIECE;
     }
 
-    private void updateBoardGraphic()
+    public boolean isEnemyPieceAt(int spaceId, boolean pieceColor)
     {
-        for (int spaceId = 0; spaceId < BOARD_SIZE*BOARD_SIZE; ++spaceId)
-        {
-            updateBoardGraphic(spaceId);
-        }
+        if (!isValidSpaceId(spaceId)) return false;
+        if (getPiece(spaceId) == PieceDatas.NO_PIECE) return false;//no enemy piece
+
+        return getPiece(spaceId).color != pieceColor;
     }
 
-    private void resetSpace(JButton space)
+    public boolean isAlliedPieceAt(int spaceId, boolean pieceColor)
     {
-        space.setIcon(null);
-        space.setBorder(null);
+        if (getPiece(spaceId) == PieceDatas.NO_PIECE) return false; //no alied piece.
+        return getPiece(spaceId).color == pieceColor;
     }
-
-    public void highlightSpace(int spaceId)
-    {
-        if (isValidSpaceId(spaceId))
-            boardGraphicSquareList[spaceId].setBorder(BorderFactory.createLineBorder(Color.RED, 5));
-    }
-
-    public void unHighlightSpace(int spaceId)
-    {
-        boardGraphicSquareList[spaceId].setBorder(null);
-    }
-    //endregion
-
-    //region PIECE_FUNCS
-
     public void movePieceCapture(int spaceIdToMove, int spaceIdArriveAt, int spaceIdCaptureAt)
     { //all input should be valid.
         movePiece(spaceIdToMove, spaceIdArriveAt);
 
         if (spaceIdArriveAt != spaceIdCaptureAt) setPieceAt(spaceIdCaptureAt, PieceDatas.NO_PIECE);
-        updateBoardGraphic();
     }
 
     public short getPieceIdAt(int spaceId)
@@ -292,4 +225,38 @@ public class ChessBoardUI extends ChessBoard {
         else return getPiece(spaceId).pieceId;
     }
     //endregion
+    //region HELPER_FUNCS
+    public static boolean isValidSpaceId(int spaceId)
+    {
+        return spaceId >= 0 && spaceId < BOARD_SIZE*BOARD_SIZE;
+    }
+
+    public boolean isEmptySpaceAt(int spaceId)
+    {
+        return getPiece(spaceId) == PieceDatas.NO_PIECE;
+    }
+    public static int convertSquareNotationToSpaceId(char colId, char rowId)
+    {
+        if (colId < 'a' || colId > 'h' || rowId < '1' || rowId > '8')
+            throw new IllegalArgumentException("Invalid files and ranks input ("
+                    + colId +", " + rowId+").");
+
+        return (colId - 'a')* BOARD_SIZE + 8 - ('8'-rowId);
+    }
+
+    private static boolean isValidBoardIdx(int row, int col, Exception e) throws Exception
+    {
+        if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE)
+        {
+            if (e != null)
+            {
+                throw e;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    //endregion
+
 }

@@ -1,4 +1,4 @@
-package ChessResources;
+package ChessResources.GetMovesLogic;
 
 import java.util.ArrayList;
 import java.util.List;

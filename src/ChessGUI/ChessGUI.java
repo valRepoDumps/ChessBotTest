@@ -1,14 +1,53 @@
 package ChessGUI;
 
 import ChessLogic.ChessGame;
-import ChessResources.ChessBoardUI;
+import ChessResources.ChessBoard.ChessBoardUI;
+import ChessResources.Pieces.PieceDatas.PieceData;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.function.BiFunction;
 
 public class ChessGUI {
     protected static ChessGame chessGame;
     public final int BOARD_PIXEL_SIZE;
+    JPanel boardGraphic;
+
+    BiFunction<Integer, Boolean, Short> choosePiecePromotionUI =
+            (Integer spaceId, Boolean color) ->    {
+                String[] options = {"Queen", "Rook", "Bishop", "Knight"};
+
+                int choice = JOptionPane.showOptionDialog(
+                        boardGraphic,
+                        "Promote pawn to:",
+                        "Promotion",
+                        JOptionPane.DEFAULT_OPTION,
+                        JOptionPane.PLAIN_MESSAGE,
+                        null,
+                        options,
+                        options[0]
+                );
+
+                // If closed or invalid → default to queen
+                if (color == PieceData.WHITE)
+                {
+                    return switch (choice) {
+                        case 1 -> PieceData.WROOK;
+                        case 2 -> PieceData.WBISHOP;
+                        case 3 -> PieceData.WKNIGHT;
+                        default -> PieceData.WQUEEN;
+                    };
+                }
+                else
+                {
+                    return switch (choice) {
+                        case 1 -> PieceData.BROOK;
+                        case 2 -> PieceData.BBISHOP;
+                        case 3 -> PieceData.BKNIGHT;
+                        default -> PieceData.BQUEEN;
+                    };
+                }
+            };
 
     public ChessGUI()
     {
@@ -20,8 +59,8 @@ public class ChessGUI {
         JPanel outerPanel = new JPanel(new GridBagLayout());
         frame.add(outerPanel, BorderLayout.CENTER);
 
-        chessGame = new ChessGame();
-        JPanel boardGraphic = chessGame.chessBoardUI.boardGraphic;
+        chessGame = new ChessGame(this, choosePiecePromotionUI);
+        boardGraphic = chessGame.chessBoard.boardGraphic;
         BOARD_PIXEL_SIZE = ChessBoardUI.BOARD_SIZE * ChessBoardUI.SQUARE_PIXEL_SIZE;
 
         boardGraphic.setPreferredSize(new Dimension(BOARD_PIXEL_SIZE, BOARD_PIXEL_SIZE));
@@ -40,4 +79,5 @@ public class ChessGUI {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
+
 }
