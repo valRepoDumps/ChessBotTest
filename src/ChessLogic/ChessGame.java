@@ -2,13 +2,12 @@ package ChessLogic;
 
 import ChessGUI.ChessGUI;
 import ChessResources.ChessBoard.ChessBoardUI;
-import ChessResources.Pieces.PieceDatas.PieceData;
-import ChessResources.GetMovesLogic.PossibleMoves;
+import ChessResources.ChessErrors.OutOfOldTurns;
+import ChessResources.Pieces.PieceData;
 
 import java.util.function.BiFunction;
 
 public class ChessGame extends MinimalChessGame<ChessBoardUI>{
-
     ChessGUI chessGUI;
     //region SELECTED_ROW_AND_COL
     public static final int INVALID_SPACE_ID = -1;
@@ -19,8 +18,7 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
         String[] args = fen.trim().split(" ");
         this.chessGUI = chessGUI;
         super(fen, new ChessBoardUI(args[0]), choosePromotionPiece);
-;
-        ((ChessBoardUI) chessBoard).setOnSquareClicked(this::playerClick);
+        chessBoard.setOnSquareClicked(this::playerClick);
     }
 
     public ChessGame(ChessGUI chessGUI, BiFunction<Integer, Boolean, Short> choosePromotionPiece) {
@@ -36,10 +34,10 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
         // posisble, as it shouldt happen
         if (selectedSpaceId == INVALID_SPACE_ID)
         {
-            if (piece != null && PieceData.getColor(piece) == sideToMove) {
+            if (piece != null && PieceData.getColor(piece) == gameProperties[SIDE_TO_MOVE]) {
                 selectedSpaceId = spaceId;
                 chessBoard.highlightSpace(spaceId);
-                possibleMoves[sideToMove == PieceData.WHITE? WHITE_PM : BLACK_PM]
+                possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM : BLACK_PM]
                         .highlightPossibleMoves(selectedSpaceId, chessBoard);
             }
         }
@@ -48,13 +46,13 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
             chessBoard.unHighlightSpace(spaceId);
             chessBoard.unHighlightSpace(selectedSpaceId);
 
-            if (movePiece(selectedSpaceId, spaceId)) //piece moved
+            if (movePieceGraphic(selectedSpaceId, spaceId)) //piece moved
             {
                 selectedSpaceId = INVALID_SPACE_ID;
             }
             else//case user choose an unmoveable square
             {
-                possibleMoves[sideToMove == PieceData.WHITE? WHITE_PM : BLACK_PM]
+                possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM : BLACK_PM]
                         .unHighlightPossibleMoves(selectedSpaceId, chessBoard);
                 //unhighlight possible moves relating to previous selected space id
 
@@ -62,18 +60,22 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
                 chessBoard.highlightSpace(spaceId);
                 if (piece != null)
                 {
-                    possibleMoves[sideToMove == PieceData.WHITE? WHITE_PM : BLACK_PM]
+                    possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM : BLACK_PM]
                             .highlightPossibleMoves(selectedSpaceId, chessBoard);
                 }
             }
         }
     }
 
-    public boolean movePiece(int spaceIdToMove, int spaceIdArriveAt)
-    {
-        boolean result = super.movePiece(spaceIdToMove, spaceIdArriveAt);
-        chessBoard.updateBoardGraphic();
-        return result;
+    public boolean movePieceGraphic(int spaceIdToMove, int spaceIdArriveAt){
+        //boolean result = super.movePiece(spaceIdToMove, spaceIdArriveAt);
+        //chessBoard.updateBoardGraphic();
+        return super.movePiece(spaceIdToMove, spaceIdArriveAt);
     }
-
+    @Override
+    public void undoTurn() throws NullPointerException, OutOfOldTurns
+    {
+        super.undoTurn();
+        chessBoard.updateBoardGraphic();
+    }
 }

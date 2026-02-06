@@ -2,10 +2,12 @@ package ChessGUI;
 
 import ChessLogic.ChessGame;
 import ChessResources.ChessBoard.ChessBoardUI;
-import ChessResources.Pieces.PieceDatas.PieceData;
+import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
+import ChessResources.Pieces.PieceData;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.util.function.BiFunction;
 
 public class ChessGUI {
@@ -59,6 +61,26 @@ public class ChessGUI {
         JPanel outerPanel = new JPanel(new GridBagLayout());
         frame.add(outerPanel, BorderLayout.CENTER);
 
+        //region ADDING_INPUTS
+        outerPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke("ENTER"), "enterPressed");
+
+        outerPanel.getActionMap().put("enterPressed", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("ENTER pressed!");
+                try {
+                    chessGame.undoTurn();
+                    System.out.println(new PropertiesStatsChange(chessGame.gameProperties, chessGame.gameStats));
+
+                }
+                catch (Exception ex){
+                    System.out.println(ex.getMessage());
+                }
+            }
+        });
+        //endregion
+        //region CHESS_GAME_GRAPHICS
         chessGame = new ChessGame(this, choosePiecePromotionUI);
         boardGraphic = chessGame.chessBoard.boardGraphic;
         BOARD_PIXEL_SIZE = ChessBoardUI.BOARD_SIZE * ChessBoardUI.SQUARE_PIXEL_SIZE;
@@ -66,6 +88,7 @@ public class ChessGUI {
         boardGraphic.setPreferredSize(new Dimension(BOARD_PIXEL_SIZE, BOARD_PIXEL_SIZE));
         boardGraphic.setMaximumSize(boardGraphic.getPreferredSize());
         boardGraphic.setMinimumSize(boardGraphic.getPreferredSize());
+        //endregion
 
         // Add boardGraphic to outerPanel using constraints that DO NOT fill
         GridBagConstraints gbc = new GridBagConstraints();

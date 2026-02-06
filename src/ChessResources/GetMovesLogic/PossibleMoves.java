@@ -1,14 +1,12 @@
 package ChessResources.GetMovesLogic;
 
-import ChessLogic.ChessGame;
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoardUI;
-import ChessResources.Pieces.PieceDatas.IrregularPieceData;
-import ChessResources.Pieces.PieceDatas.PieceData;
-import ChessResources.Pieces.PieceDatas.PieceDatas;
-import ChessResources.Pieces.PieceDatas.SlidingPieceData;
+import ChessResources.Pieces.IrregularPieceData;
+import ChessResources.Pieces.PieceData;
+import ChessResources.Pieces.PieceDatas;
+import ChessResources.Pieces.SlidingPieceData;
 
-import java.util.Arrays;
 import java.util.HashMap;
 
 public class PossibleMoves {

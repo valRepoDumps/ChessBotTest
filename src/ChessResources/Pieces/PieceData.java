@@ -1,4 +1,4 @@
-package ChessResources.Pieces.PieceDatas;
+package ChessResources.Pieces;
 
 import javax.swing.*;
 
@@ -40,12 +40,12 @@ public class PieceData {
         this.graphic = graphic;
     }
 
-    public PieceData(boolean color, int value, String name) {
-        this.color = color;
-        this.value = value;
-        this.name = name;
-        this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + name + ".png");
-    }
+//    public PieceData(boolean color, int value, String name) {
+//        this.color = color;
+//        this.value = value;
+//        this.name = name;
+//        this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + name + ".png");
+//    }
 
     public PieceData(PieceData piece)
     {
@@ -102,5 +102,6 @@ public class PieceData {
             return new PieceData(pieceData);
         }
     }
+    
 }
 
