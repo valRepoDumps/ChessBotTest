@@ -89,18 +89,12 @@ public class PieceData {
 
     public static PieceData copyPiece(PieceData pieceData)
     {
-        if (pieceData instanceof SlidingPieceData)
-        {
-            return new SlidingPieceData((SlidingPieceData) pieceData);
-        }
-        else if (pieceData instanceof IrregularPieceData)
-        {
-            return new IrregularPieceData((IrregularPieceData) pieceData);
-        }
-        else
-        {
-            return new PieceData(pieceData);
-        }
+        return switch (pieceData) {
+            case null -> PieceDatas.NO_PIECE;
+            case SlidingPieceData slidingPieceData -> new SlidingPieceData(slidingPieceData);
+            case IrregularPieceData irregularPieceData -> new IrregularPieceData(irregularPieceData);
+            default -> new PieceData(pieceData);
+        };
     }
     
 }

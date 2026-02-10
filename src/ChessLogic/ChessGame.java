@@ -1,6 +1,7 @@
 package ChessLogic;
 
 import ChessGUI.ChessGUI;
+import ChessLogic.Configurations.Configurations;
 import ChessResources.ChessBoard.ChessBoardUI;
 import ChessResources.ChessErrors.OutOfOldTurns;
 import ChessResources.Pieces.PieceData;
@@ -14,15 +15,17 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
     public int selectedSpaceId = INVALID_SPACE_ID;
     //endregion
 
-    public ChessGame(String fen, ChessGUI chessGUI, BiFunction<Integer, Boolean, Short> choosePromotionPiece) {
+    public ChessGame(String fen, ChessGUI chessGUI, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
+                     Configurations configurations) {
         String[] args = fen.trim().split(" ");
         this.chessGUI = chessGUI;
-        super(fen, new ChessBoardUI(args[0]), choosePromotionPiece);
+        super(fen, new ChessBoardUI(args[0]), choosePromotionPiece, configurations);
         chessBoard.setOnSquareClicked(this::playerClick);
     }
 
     public ChessGame(ChessGUI chessGUI, BiFunction<Integer, Boolean, Short> choosePromotionPiece) {
-        this("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", chessGUI, choosePromotionPiece);
+        this("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", chessGUI,
+                choosePromotionPiece, new Configurations(true, true, true));
     }
 
     private void playerClick(int spaceId)

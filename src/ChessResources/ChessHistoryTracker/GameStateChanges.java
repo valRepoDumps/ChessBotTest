@@ -62,11 +62,12 @@ public class GameStateChanges {
 
     public int[] getGameStats()
     {
-        return currentPropertiesStats.getGameStats();
+        return Arrays.copyOf(currentPropertiesStats.getGameStats(), currentPropertiesStats.getGameStats().length);
     }
     public boolean[] getGameProperties()
     {
-        return currentPropertiesStats.getGameProperties();
+        return Arrays.copyOf(currentPropertiesStats.getGameProperties(),
+                currentPropertiesStats.getGameProperties().length);
     }
     public ArrayList<BoardStateChange> getBoardStateChanges(){return  boardStateChanges;}
 ;

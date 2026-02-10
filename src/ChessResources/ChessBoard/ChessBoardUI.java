@@ -1,6 +1,8 @@
 package ChessResources.ChessBoard;
 
+import ChessLogic.Debug.DebugMode;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
+import ChessResources.Pieces.PieceData;
 import ChessResources.Pieces.PieceDatas;
 
 import javax.swing.*;
@@ -52,7 +54,7 @@ public class ChessBoardUI extends ChessBoard {
     {
         if (isValidSpaceId(spaceId)) return boardGraphicSquareList[spaceId];
         else {
-            System.out.println("Invalid spaceId at getGraphic");
+            DebugMode.debugPrint(this, "Invalid spaceId at getGraphic");
             return null;
         }
     }
@@ -147,6 +149,12 @@ public class ChessBoardUI extends ChessBoard {
     public void movePieceCapture(int spaceIdToMove, int spaceIdArriveAt, int spaceIdCaptureAt)
     { //all input should be valid.
         super.movePieceCapture(spaceIdToMove, spaceIdArriveAt, spaceIdCaptureAt);
+        updateBoardGraphic();
+    }
+
+    @Override
+    public void spawnPieceAt(int spaceId, PieceData piece) {
+        super.spawnPieceAt(spaceId, piece);
         updateBoardGraphic();
     }
 

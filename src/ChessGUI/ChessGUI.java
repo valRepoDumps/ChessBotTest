@@ -1,6 +1,7 @@
 package ChessGUI;
 
 import ChessLogic.ChessGame;
+import ChessLogic.Configurations.Configurations;
 import ChessResources.ChessBoard.ChessBoardUI;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
 import ChessResources.Pieces.PieceData;
@@ -68,7 +69,7 @@ public class ChessGUI {
         outerPanel.getActionMap().put("enterPressed", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("ENTER pressed!");
+                //System.out.println("ENTER pressed!");
                 try {
                     chessGame.undoTurn();
                     System.out.println(new PropertiesStatsChange(chessGame.gameProperties, chessGame.gameStats));
@@ -82,6 +83,9 @@ public class ChessGUI {
         //endregion
         //region CHESS_GAME_GRAPHICS
         chessGame = new ChessGame(this, choosePiecePromotionUI);
+        //chessGame = new ChessGame("r1bqkbnr/pp1ppppp/2n5/2p5/4PP2/8/PPPP2PP/RNBQKBNR w KQkq - 1 3   ",
+                //this, choosePiecePromotionUI,
+                //new Configurations(true, true, true));
         boardGraphic = chessGame.chessBoard.boardGraphic;
         BOARD_PIXEL_SIZE = ChessBoardUI.BOARD_SIZE * ChessBoardUI.SQUARE_PIXEL_SIZE;
 

@@ -1,5 +1,6 @@
 package ChessResources.GetMovesLogic;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,4 +31,7 @@ public class ChessSpaces {
     public int totalPossibleMoves() {return chessMoves.size();}
 
     public boolean containSpace(int spaceId) {return chessMoves.contains(spaceId);}
+
+    public List<Integer> getChessMoves(){return chessMoves;}
+
 }
