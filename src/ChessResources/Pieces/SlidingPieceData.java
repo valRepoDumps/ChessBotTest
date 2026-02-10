@@ -1,5 +1,6 @@
-package ChessResources.Pieces.PieceDatas;
+package ChessResources.Pieces;
 
+import ChessLogic.ChessGame;
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.ChessBoard.ChessBoardUI;
@@ -24,15 +25,16 @@ public class SlidingPieceData extends PieceData {
                 {
                     if (chessBoard.isEnemyPieceAt(spaceId +
                             ChessBoardUI.directionOffsets[ChessBoardUI.SOUTH_EAST], piece.color) ||
-                            (ChessBoardUI.isImmediateSouth(spaceId, ((MinimalChessGame<?>) game).enPassantTarget) &&
-                                    ChessBoardUI.isImmediateEast(spaceId, ((MinimalChessGame<?>) game).enPassantTarget))
+                            (ChessBoardUI.isImmediateSouth(spaceId, 
+                                    ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
+                                    ChessBoardUI.isImmediateEast(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]))
                     )
                     {
                         opCode = 2;
                         if (chessBoard.isEnemyPieceAt(spaceId +
                                 ChessBoardUI.directionOffsets[ChessBoardUI.SOUTH_WEST], piece.color) ||
-                                (ChessBoardUI.isImmediateSouth(spaceId, ((MinimalChessGame<?>) game).enPassantTarget) &&
-                                        ChessBoardUI.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).enPassantTarget)))
+                                (ChessBoardUI.isImmediateSouth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
+                                        ChessBoardUI.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
                         {
                             opCode = 3;
                         }
@@ -40,8 +42,8 @@ public class SlidingPieceData extends PieceData {
 
                     else if (chessBoard.isEnemyPieceAt(spaceId +
                             ChessBoardUI.directionOffsets[ChessBoardUI.SOUTH_WEST], piece.color) ||
-                            (ChessBoardUI.isImmediateSouth(spaceId, ((MinimalChessGame<?>) game).enPassantTarget) &&
-                                    ChessBoardUI.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).enPassantTarget)))
+                            (ChessBoardUI.isImmediateSouth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
+                                    ChessBoardUI.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
                     {
                         opCode = 4;
                     }
@@ -88,14 +90,14 @@ public class SlidingPieceData extends PieceData {
                 {
                     if (chessBoard.isEnemyPieceAt(spaceId +
                             ChessBoardUI.directionOffsets[ChessBoardUI.NORTH_EAST], piece.color) ||
-                            (ChessBoardUI.isImmediateNorth(spaceId, ((MinimalChessGame<?>) game).enPassantTarget) &&
-                                    ChessBoardUI.isImmediateEast(spaceId, ((MinimalChessGame<?>) game).enPassantTarget)))
+                            (ChessBoardUI.isImmediateNorth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
+                                    ChessBoardUI.isImmediateEast(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
                     {
                         opCode = 2;
                         if (chessBoard.isEnemyPieceAt(spaceId +
                                 ChessBoardUI.directionOffsets[ChessBoardUI.NORTH_WEST], piece.color)||
-                                (ChessBoardUI.isImmediateNorth(spaceId, ((MinimalChessGame<?>) game).enPassantTarget) &&
-                                        ChessBoardUI.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).enPassantTarget)))
+                                (ChessBoardUI.isImmediateNorth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
+                                        ChessBoardUI.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
                         {
                             opCode = 3;
                         }
@@ -103,8 +105,8 @@ public class SlidingPieceData extends PieceData {
 
                     else if (chessBoard.isEnemyPieceAt(spaceId +
                             ChessBoardUI.directionOffsets[ChessBoardUI.NORTH_WEST], piece.color) ||
-                            (ChessBoardUI.isImmediateNorth(spaceId, ((MinimalChessGame<?>) game).enPassantTarget) &&
-                                    ChessBoardUI.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).enPassantTarget)))
+                            (ChessBoardUI.isImmediateNorth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
+                                    ChessBoardUI.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
                     {
                         opCode = 4;
                     }

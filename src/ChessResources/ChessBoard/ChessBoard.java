@@ -1,11 +1,21 @@
 package ChessResources.ChessBoard;
 
-import ChessResources.Pieces.PieceDatas.PieceData;
-import ChessResources.Pieces.PieceDatas.PieceDatas;
+import ChessLogic.ChessGame;
+import ChessLogic.Debug.DebugMode;
+import ChessLogic.Debug.Debuggable;
+import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
+import ChessResources.ChessListener.StateChangeListener;
+import ChessResources.Pieces.PieceData;
+import ChessResources.Pieces.PieceDatas;
 
-import static ChessResources.Pieces.PieceDatas.PieceData.copyPiece;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-public class ChessBoard {
+import static ChessResources.Pieces.PieceData.INVALID_PIECES;
+import static ChessResources.Pieces.PieceData.copyPiece;
+
+public class ChessBoard implements Debuggable {
+    //region PRE_CODE
     //region BOARD_SIZE
     public static final int BOARD_SIZE = 8;
     public  static final int SQUARE_PIXEL_SIZE = 100;
@@ -28,12 +38,19 @@ public class ChessBoard {
     public static final boolean BLACK = false;
     public static final boolean WHITE = true;
 
-    public PieceData[] boardSquares = new PieceData[BOARD_SIZE*BOARD_SIZE];
+    protected PieceData[] boardSquares = new PieceData[BOARD_SIZE*BOARD_SIZE];
+    protected final ArrayList<StateChangeListener<BoardStateChange>> stateChangeListenerList = new ArrayList<>();
+
+    protected boolean debugMode = false;
+    //endregion
+
+    public ChessBoard(){}
 
     public ChessBoard(String piecePlacement)
     {
         setUpPieces(piecePlacement);
     }
+
     //region SETTING_UP_BOARD
     protected void setUpPieces(String piecesPlacement)
     {
@@ -51,7 +68,7 @@ public class ChessBoard {
             {
                 if (Character.isDigit(c))
                 {
-                    currCol += (int)(c-'0');
+                    currCol += (c-'0');
 
                 }
                 else
@@ -98,6 +115,15 @@ public class ChessBoard {
 
     //endregion
 
+    //region GETTERS
+    public PieceData[] getBoardSquares(){return Arrays.copyOf(boardSquares, boardSquares.length);}
+    //endregion
+
+    //region SETTERS
+    public void setBoardSquares(PieceData[] boardSquares){
+        this.boardSquares = boardSquares.clone();
+    }
+    //endregion
     //region IMMEDIATE_SPACE_FUNCS
     public static boolean isImmediateNorth(int currSpaceId, int targetSpaceId)
     {
@@ -152,6 +178,7 @@ public class ChessBoard {
         return currSpaceId + directionOffsets[SOUTH_WEST]*offset;
     }
     //endregion
+
     //region GET_ROW_COL_FUNCS
     public static int getCol(int spaceId)
     {
@@ -165,33 +192,73 @@ public class ChessBoard {
         return spaceId / BOARD_SIZE;
     }
     //endregion
+
     //region PIECE_FUNCS
-    public void setPieceAt(int spaceId, PieceData piece)
-    {
+    private void setPieceAt(int spaceId, PieceData piece)
+    {//private to avoid uses messing with listener. used during initilization
         if (isValidSpaceId(spaceId)) boardSquares[spaceId] = piece;
+    }
+
+    public void spawnPieceAt(int spaceId, PieceData piece)
+    {
+        setPieceAt(spaceId, piece);
+
+        //spawn piece by moving it in from nowhere.
+        StateChangeListener.<BoardStateChange>notifyListeners(this.stateChangeListenerList,
+                new BoardStateChange(piece, ChessBoard.INVALID_SPACE_ID, spaceId));
+
+    }
+
+    public void deSpawnPieceAt(int spaceId){
+        PieceData disappearedPiece = getPiece(spaceId);
+
+        if (disappearedPiece != PieceDatas.NO_PIECE) //ensure proper reconstruction later.
+        {
+            StateChangeListener.notifyListeners(this.stateChangeListenerList,
+                    new BoardStateChange(disappearedPiece, spaceId, ChessBoard.INVALID_SPACE_ID));
+        }
+        setPieceAt(spaceId, PieceDatas.NO_PIECE); //disappear piece.
+    }
+
+    private PieceData movePiecePrimitive(int spaceIdToMove, int spaceIdArriveAt)
+    {
+        assert (isValidSpaceId(spaceIdToMove) && isValidSpaceId(spaceIdArriveAt));
+        PieceData piece = getPiece(spaceIdToMove);
+        assert(piece != PieceDatas.NO_PIECE);
+
+        setPieceAt(spaceIdToMove, PieceDatas.NO_PIECE);
+        setPieceAt(spaceIdArriveAt, piece);
+        return piece;
+    }
+
+    private void movePiece(int spaceIdToMove, int spaceIdArriveAt)
+    {
+        //move piece and just overwrite piece in that location. Only movePieceCapture should be public.
+
+        //follow the philosophy of all piece should land on empty space,
+        //assume enemy piece disappear before allied piece lands. this function dont handle capture.
+        //notifyMoveListener(new BoardStateChange(capturedPiece, spaceIdArriveAt, ChessBoard.INVALID_SPACE_ID));
+
+        PieceData piece = movePiecePrimitive(spaceIdToMove, spaceIdArriveAt);
+        StateChangeListener.notifyListeners(this.stateChangeListenerList,
+                new BoardStateChange(piece, spaceIdToMove, spaceIdArriveAt));
+    }
+
+    public void movePieceCapture(int spaceIdToMove, int spaceIdArriveAt, int spaceIdCaptureAt)
+    { //all input should be valid. //Order of operation: Enemy piece disappear, our piece land.
+        deSpawnPieceAt(spaceIdCaptureAt);
+        movePiece(spaceIdToMove, spaceIdArriveAt); //piece land.
     }
 
     public PieceData getPiece(int spaceId)
     {
         if (isValidSpaceId(spaceId)) return boardSquares[spaceId];
         else {
-            System.out.println("Invalid spaceId at getPiece");
+            DebugMode.debugPrint(this, "Invalid spaceId at getPiece");
             return null;
         }
     }
 
-    public void movePiece(int spaceIdToMove, int spaceIdArriveAt)
-    {//move piece and just overwrite piece in that location.
-        if (isValidSpaceId(spaceIdToMove) && isValidSpaceId(spaceIdArriveAt))
-        {
-            PieceData piece = getPiece(spaceIdToMove);
-            setPieceAt(spaceIdToMove, PieceDatas.NO_PIECE);
-            setPieceAt(spaceIdArriveAt, piece);
-        }
-        else {
-            System.out.println("Invalid spaceId at movePiece");
-        }
-    }
 
     public boolean isPieceAt(int spaceId)
     {
@@ -212,12 +279,6 @@ public class ChessBoard {
         if (getPiece(spaceId) == PieceDatas.NO_PIECE) return false; //no alied piece.
         return getPiece(spaceId).color == pieceColor;
     }
-    public void movePieceCapture(int spaceIdToMove, int spaceIdArriveAt, int spaceIdCaptureAt)
-    { //all input should be valid.
-        movePiece(spaceIdToMove, spaceIdArriveAt);
-
-        if (spaceIdArriveAt != spaceIdCaptureAt) setPieceAt(spaceIdCaptureAt, PieceDatas.NO_PIECE);
-    }
 
     public short getPieceIdAt(int spaceId)
     {
@@ -225,16 +286,14 @@ public class ChessBoard {
         else return getPiece(spaceId).pieceId;
     }
     //endregion
+
     //region HELPER_FUNCS
+
     public static boolean isValidSpaceId(int spaceId)
     {
         return spaceId >= 0 && spaceId < BOARD_SIZE*BOARD_SIZE;
     }
 
-    public boolean isEmptySpaceAt(int spaceId)
-    {
-        return getPiece(spaceId) == PieceDatas.NO_PIECE;
-    }
     public static int convertSquareNotationToSpaceId(char colId, char rowId)
     {
         if (colId < 'a' || colId > 'h' || rowId < '1' || rowId > '8')
@@ -257,6 +316,105 @@ public class ChessBoard {
         return true;
     }
 
+    public boolean isEmptySpaceAt(int spaceId)
+    {
+        return getPiece(spaceId) == PieceDatas.NO_PIECE;
+    }
+
+    public int findPiece(int pieceId){
+        for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; ++i){
+            if (boardSquares[i] != null && boardSquares[i].pieceId == pieceId) return i;
+        }
+        return INVALID_SPACE_ID;
+    }
     //endregion
 
+    //region LISTENERS
+    //ways to addMoveListener to Board
+    public void addMoveListener(StateChangeListener<BoardStateChange> stateChangeListener)
+    {
+        stateChangeListenerList.add(stateChangeListener);
+    }
+    //endregion
+
+    //endregion
+
+    //region UNDO_MOVE
+    public void undoBoardState(ArrayList<BoardStateChange> boardStateChanges)
+    {
+        if (boardStateChanges == null)
+        {
+            throw new NullPointerException("boardStateChange is null!");
+        }
+
+        for (int i = boardStateChanges.size()-1; i>=0; --i) {
+            BoardStateChange boardStateChange = boardStateChanges.get(i);
+
+           // BoardStateChange boardStateChange = boardStateChanges.get(i);
+
+            assert (boardStateChange.getSpaceIdArriveAt() != INVALID_SPACE_ID ||
+                    boardStateChange.getSpaceId() != INVALID_SPACE_ID);
+
+            if (boardStateChange.getSpaceIdArriveAt() == INVALID_SPACE_ID) {//piece is taken out of board, thus must be spawned back in.
+                DebugMode.debugPrint(this, "Spawned in, piece is: " + boardStateChange.getPiece().name );
+                setPieceAt(boardStateChange.getSpaceId(), boardStateChange.getPiece());
+            } else if (boardStateChange.getSpaceId() == INVALID_SPACE_ID) {//piece is spawned, must be taken out of board.
+                DebugMode.debugPrint(this, "Delete Piece");
+                setPieceAt(boardStateChange.getSpaceIdArriveAt(), PieceDatas.NO_PIECE);
+            } else {
+                DebugMode.debugPrint(this, "Moving piece back");
+                setPieceAt(boardStateChange.getSpaceId(), boardStateChange.getPiece());
+                setPieceAt(boardStateChange.getSpaceIdArriveAt(), PieceDatas.NO_PIECE);
+            }
+        }
+    }
+
+    public void advanceBoardState(ArrayList<BoardStateChange> boardStateChanges)
+    {
+        if (boardStateChanges == null)
+        {
+            throw new NullPointerException("boardStateChange is null!");
+        }
+
+        for (BoardStateChange boardStateChange : boardStateChanges) {
+
+            // BoardStateChange boardStateChange = boardStateChanges.get(i);
+
+            assert (boardStateChange.getSpaceIdArriveAt() != INVALID_SPACE_ID ||
+                    boardStateChange.getSpaceId() != INVALID_SPACE_ID);
+
+            if (boardStateChange.getSpaceIdArriveAt() == INVALID_SPACE_ID) {
+                //Piece is capture, redo capture move.
+                deSpawnPieceAt(boardStateChange.getSpaceId());
+            } else if (boardStateChange.getSpaceId() == INVALID_SPACE_ID) {
+                spawnPieceAt(boardStateChange.getSpaceIdArriveAt(), boardStateChange.getPiece());
+                //piece is spawned
+            } else {
+                movePiece(boardStateChange.getSpaceId(), boardStateChange.getSpaceIdArriveAt()); //piece land.
+            }
+        }
+    }
+    //endregion
+
+    public static ChessBoard cloneBoard(ChessBoard original){
+        ChessBoard clone = new ChessBoard();
+        for (int i = 0; i < ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE; ++i){
+            clone.setPieceAt(i, PieceData.copyPiece(original.getPiece(i)));
+        }
+
+        return clone;
+    }
+
+    //region DEBUGGING
+    public void enableDebugMode(){
+        debugMode = true;
+    }
+    public void disableDebugMode(){
+        debugMode = false;
+    }
+
+    public boolean isDebuggable(){
+        return debugMode;
+    }
+    //endregion
 }

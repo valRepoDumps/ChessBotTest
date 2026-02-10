@@ -1,15 +1,20 @@
 package ChessResources.ChessBoard;
 
-import ChessResources.Pieces.PieceDatas.PieceDatas;
+import ChessLogic.Debug.DebugMode;
+import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
+import ChessResources.Pieces.PieceData;
+import ChessResources.Pieces.PieceDatas;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.function.IntConsumer;
 
 public class ChessBoardUI extends ChessBoard {
     //region DATA
     //region BOARD_DATAS
     protected static boolean[] boardSquaresColor = new boolean[BOARD_SIZE*BOARD_SIZE];
+    protected boolean displayGraphic = true;
     //endregion
     //region COLOR
     public static final Color BLACK_COLOR = Color.DARK_GRAY;
@@ -49,7 +54,7 @@ public class ChessBoardUI extends ChessBoard {
     {
         if (isValidSpaceId(spaceId)) return boardGraphicSquareList[spaceId];
         else {
-            System.out.println("Invalid spaceId at getGraphic");
+            DebugMode.debugPrint(this, "Invalid spaceId at getGraphic");
             return null;
         }
     }
@@ -88,6 +93,8 @@ public class ChessBoardUI extends ChessBoard {
 
     public void updateBoardGraphic(int spaceId)
     {
+        if (!displayGraphic) return;
+
         //this is private, so dont need much check.
         if (getPiece(spaceId) != PieceDatas.NO_PIECE) {
             getGraphicAt(spaceId).setIcon(getPiece(spaceId).graphic);
@@ -102,6 +109,7 @@ public class ChessBoardUI extends ChessBoard {
 
     public void updateBoardGraphic()
     {
+        if (!displayGraphic) return; //dont update if display graphic disabled.
         for (int spaceId = 0; spaceId < BOARD_SIZE*BOARD_SIZE; ++spaceId)
         {
             updateBoardGraphic(spaceId);
@@ -127,12 +135,32 @@ public class ChessBoardUI extends ChessBoard {
     }
     //endregion
 
+    //region TUNING_GRAPHIC
+    public void enableGraphic(){
+        this.displayGraphic = true;
+    }
+    public void disableGraphic(){
+        this.displayGraphic = false;
+    }
+
+    //endregion
+
     @Override
     public void movePieceCapture(int spaceIdToMove, int spaceIdArriveAt, int spaceIdCaptureAt)
     { //all input should be valid.
-        movePiece(spaceIdToMove, spaceIdArriveAt);
+        super.movePieceCapture(spaceIdToMove, spaceIdArriveAt, spaceIdCaptureAt);
+        updateBoardGraphic();
+    }
 
-        if (spaceIdArriveAt != spaceIdCaptureAt) setPieceAt(spaceIdCaptureAt, PieceDatas.NO_PIECE);
+    @Override
+    public void spawnPieceAt(int spaceId, PieceData piece) {
+        super.spawnPieceAt(spaceId, piece);
+        updateBoardGraphic();
+    }
+
+    @Override
+    public void undoBoardState(ArrayList<BoardStateChange> boardStateChanges){
+        super.undoBoardState(boardStateChanges);
         updateBoardGraphic();
     }
 }

@@ -1,21 +1,28 @@
 package ChessResources.GetMovesLogic;
 
-import ChessLogic.ChessGame;
 import ChessLogic.MinimalChessGame;
+import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.ChessBoard.ChessBoardUI;
-import ChessResources.Pieces.PieceDatas.IrregularPieceData;
-import ChessResources.Pieces.PieceDatas.PieceData;
-import ChessResources.Pieces.PieceDatas.PieceDatas;
-import ChessResources.Pieces.PieceDatas.SlidingPieceData;
+import ChessResources.Pieces.IrregularPieceData;
+import ChessResources.Pieces.PieceData;
+import ChessResources.Pieces.PieceDatas;
+import ChessResources.Pieces.SlidingPieceData;
 
-import java.util.Arrays;
 import java.util.HashMap;
 
 public class PossibleMoves {
+
+    //region DATAS
     public HashMap<Integer, ChessSpaces> possibleMoves = new HashMap<>();
     protected MinimalChessGame<?> chessGame;
     protected boolean color;
-    public int[][] numSquaresToEdge = new int[ChessBoardUI.BOARD_SIZE* ChessBoardUI.BOARD_SIZE][8];
+    public int[][] numSquaresToEdge = new int[ChessBoard.BOARD_SIZE* ChessBoard.BOARD_SIZE][8];
+    //endregion
+
+    //region setting
+    public boolean strictMovesChecker = false;//ensure all moves that threaten king unusable
+
+    //endregion
 
     public PossibleMoves(MinimalChessGame<?> chessGame, boolean color)
     {
@@ -55,17 +62,16 @@ public class PossibleMoves {
             for (int n = 0; n < maxRange && n < numSquaresToEdge[startSquare][direction]; ++n)
             {
                 int targetSquare = startSquare + ChessBoardUI.directionOffsets[direction]*(n+1);
+
                 if (targetSquare >= 64) break;
+                //dont allow move if king threatened
+
                 PieceData pieceOnTarget = chessGame.chessBoard.getPiece(targetSquare);
 
                 if (pieceOnTarget != PieceDatas.NO_PIECE && pieceOnTarget.color == piece.color) break;
                 //encounter piece of our color, dont move in this dir any more
 
-                if (possibleMoves.containsKey(startSquare))
-                {
-                    possibleMoves.get(startSquare).addMoves(targetSquare);
-                }
-                else possibleMoves.put(startSquare, new ChessSpaces(targetSquare));
+                addMoveToPossibleMoves(startSquare, targetSquare, piece);
 
                 if (pieceOnTarget != PieceDatas.NO_PIECE && pieceOnTarget.color != piece.color) break; //encounter opponents color, also break.
             }
@@ -101,18 +107,22 @@ public class PossibleMoves {
         int[] moves = piece.getPossibleMoves(chessGame, startSquare);
         for (int move : moves)
         {
-            if (ChessBoardUI.isValidSpaceId(move) && !chessGame.chessBoard.isAlliedPieceAt(move, piece.color))
+            if (ChessBoard.isValidSpaceId(move) && !chessGame.chessBoard.isAlliedPieceAt(move, piece.color))
             {
-                if (possibleMoves.containsKey(startSquare)) {
-                    possibleMoves.get(startSquare).addMoves(move);
-                }
-                else {
-                    possibleMoves.put(startSquare, new ChessSpaces(move));
-                }
+                addMoveToPossibleMoves(startSquare, move, piece);
             }
         }
     }
 
+    private void addMoveToPossibleMoves(int startSquare, int move, PieceData piece){
+        if (strictMovesChecker && chessGame.selfMoveWontThreatenSelfKing(startSquare, move, piece.color)) return;
+
+        if (possibleMoves.containsKey(startSquare)) {
+            possibleMoves.get(startSquare).addMoves(move);
+        } else {
+            possibleMoves.put(startSquare, new ChessSpaces(move));
+        }
+    }
     public void clearPossibleMoves()
     {
         possibleMoves = new HashMap<>();
@@ -138,4 +148,12 @@ public class PossibleMoves {
         }
     }
 
+    public boolean isEmpty(){
+        return possibleMoves.isEmpty();
+    }
+    public void enableStrictMovesChecker(){strictMovesChecker = true;}
+
+    public  void disableStrictMovesChecker(){strictMovesChecker = false;}
+
+    public HashMap<Integer, ChessSpaces> getMoves(){return possibleMoves;}
 }

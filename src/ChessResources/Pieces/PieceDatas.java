@@ -1,4 +1,4 @@
-package ChessResources.Pieces.PieceDatas;
+package ChessResources.Pieces;
 
 public class PieceDatas
 {

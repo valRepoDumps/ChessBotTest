@@ -1,4 +1,4 @@
-package ChessResources.Pieces.PieceDatas;
+package ChessResources.Pieces;
 
 import javax.swing.*;
 
@@ -40,12 +40,12 @@ public class PieceData {
         this.graphic = graphic;
     }
 
-    public PieceData(boolean color, int value, String name) {
-        this.color = color;
-        this.value = value;
-        this.name = name;
-        this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + name + ".png");
-    }
+//    public PieceData(boolean color, int value, String name) {
+//        this.color = color;
+//        this.value = value;
+//        this.name = name;
+//        this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + name + ".png");
+//    }
 
     public PieceData(PieceData piece)
     {
@@ -89,18 +89,13 @@ public class PieceData {
 
     public static PieceData copyPiece(PieceData pieceData)
     {
-        if (pieceData instanceof SlidingPieceData)
-        {
-            return new SlidingPieceData((SlidingPieceData) pieceData);
-        }
-        else if (pieceData instanceof IrregularPieceData)
-        {
-            return new IrregularPieceData((IrregularPieceData) pieceData);
-        }
-        else
-        {
-            return new PieceData(pieceData);
-        }
+        return switch (pieceData) {
+            case null -> PieceDatas.NO_PIECE;
+            case SlidingPieceData slidingPieceData -> new SlidingPieceData(slidingPieceData);
+            case IrregularPieceData irregularPieceData -> new IrregularPieceData(irregularPieceData);
+            default -> new PieceData(pieceData);
+        };
     }
+    
 }
 
