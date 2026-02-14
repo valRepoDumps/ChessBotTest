@@ -19,40 +19,50 @@ public class PieceDatas
     public static final PieceData WKNIGHT_DATA = new IrregularPieceData(PieceData.WKNIGHT);
 
     public static final PieceData NO_PIECE = null;
-    public final static int PIECES_DIFF = 16;
     //endregion
 
-    public PieceDatas()
-    {
-    }
+    public static final int TOTAL_PIECES = 12;
 
-    public static PieceData makePiece(short pieceId)
+    public static PieceData makePiece(int pieceId)
     {
         return switch (pieceId) {
-            case PieceData.BPAWN, PieceData.WPAWN, PieceData.BROOK, PieceData.WROOK,
-                 PieceData.BBISHOP, PieceData.WBISHOP, PieceData.BQUEEN, PieceData.WQUEEN,
-                 PieceData.BKING, PieceData.WKING -> new SlidingPieceData(pieceId);
-            case PieceData.BKNIGHT, PieceData.WKNIGHT -> new IrregularPieceData(pieceId);
-            default -> null;
-        };
-    }
-
-    public static PieceData getCopyOfPiece(int pieceId)
-    {
-        return switch (pieceId) {
-            case PieceData.BPAWN -> PieceData.copyPiece(BPAWN_DATA);
-            case PieceData.WPAWN -> PieceData.copyPiece(WPAWN_DATA);
-            case PieceData.BROOK -> PieceData.copyPiece(BROOK_DATA);
-            case PieceData.WROOK -> PieceData.copyPiece(WROOK_DATA);
-            case PieceData.BKNIGHT -> PieceData.copyPiece(BKNIGHT_DATA);
-            case PieceData.WKNIGHT -> PieceData.copyPiece(WKNIGHT_DATA);
-            case PieceData.BBISHOP -> PieceData.copyPiece(BBISHOP_DATA);
-            case PieceData.WBISHOP -> PieceData.copyPiece(WBISHOP_DATA);
-            case PieceData.BQUEEN -> PieceData.copyPiece(BQUEEN_DATA);
-            case PieceData.WQUEEN -> PieceData.copyPiece(WQUEEN_DATA);
-            case PieceData.BKING -> PieceData.copyPiece(BKING_DATA);
-            case PieceData.WKING -> PieceData.copyPiece(WKING_DATA);
+            case PieceData.BPAWN -> PieceDatas.copyPiece(BPAWN_DATA);
+            case PieceData.WPAWN -> PieceDatas.copyPiece(WPAWN_DATA);
+            case PieceData.BROOK -> PieceDatas.copyPiece(BROOK_DATA);
+            case PieceData.WROOK -> PieceDatas.copyPiece(WROOK_DATA);
+            case PieceData.BKNIGHT -> PieceDatas.copyPiece(BKNIGHT_DATA);
+            case PieceData.WKNIGHT -> PieceDatas.copyPiece(WKNIGHT_DATA);
+            case PieceData.BBISHOP -> PieceDatas.copyPiece(BBISHOP_DATA);
+            case PieceData.WBISHOP -> PieceDatas.copyPiece(WBISHOP_DATA);
+            case PieceData.BQUEEN -> PieceDatas.copyPiece(BQUEEN_DATA);
+            case PieceData.WQUEEN -> PieceDatas.copyPiece(WQUEEN_DATA);
+            case PieceData.BKING -> PieceDatas.copyPiece(BKING_DATA);
+            case PieceData.WKING -> PieceDatas.copyPiece(WKING_DATA);
             default -> NO_PIECE;
         };
     }
+
+    public static int convertPieceIdToArrayIdx(int pieceId){
+        if ((pieceId & 0b1000) == 0){
+            return ((pieceId & 0b111)-1);
+        }
+        else{
+            return ((TOTAL_PIECES/2 + pieceId&0b111)-1);
+        }
+    }
+    public static boolean getColor(PieceData piece)
+    {
+        return (piece.pieceId & 16) == 0 ? PieceData.BLACK : PieceData.WHITE;
+    }
+
+    public static PieceData copyPiece(PieceData pieceData)
+    {
+        return switch (pieceData) {
+            case null -> PieceDatas.NO_PIECE;
+            case SlidingPieceData slidingPieceData -> new SlidingPieceData(slidingPieceData);
+            case IrregularPieceData irregularPieceData -> new IrregularPieceData(irregularPieceData);
+            default -> new PieceData(pieceData);
+        };
+    }
+
 }

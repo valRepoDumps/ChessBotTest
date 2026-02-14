@@ -1,6 +1,5 @@
 package ChessResources.ChessBoard;
 
-import ChessLogic.ChessGame;
 import ChessLogic.Debug.DebugMode;
 import ChessLogic.Debug.Debuggable;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
@@ -11,8 +10,7 @@ import ChessResources.Pieces.PieceDatas;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static ChessResources.Pieces.PieceData.INVALID_PIECES;
-import static ChessResources.Pieces.PieceData.copyPiece;
+import static ChessResources.Pieces.PieceDatas.copyPiece;
 
 public class ChessBoard implements Debuggable {
     //region PRE_CODE
@@ -35,6 +33,7 @@ public class ChessBoard implements Debuggable {
     public static final short SOUTH_EAST = 6;
     public static final short NORTH_WEST = 7;
     //endregion
+
     public static final boolean BLACK = false;
     public static final boolean WHITE = true;
 
@@ -44,15 +43,17 @@ public class ChessBoard implements Debuggable {
     protected boolean debugMode = false;
     //endregion
 
+    //region CONSTRUCTOR
     public ChessBoard(){}
-
+    
     public ChessBoard(String piecePlacement)
     {
         setUpPieces(piecePlacement);
     }
+    //endregion
 
     //region SETTING_UP_BOARD
-    protected void setUpPieces(String piecesPlacement)
+    public void setUpPieces(String piecesPlacement)
     {
         clearBoard();
 
@@ -108,11 +109,6 @@ public class ChessBoard implements Debuggable {
         }
     }
 
-    public void setPieceAt(char colId, char rowId, PieceData piece) {
-        int spaceId = convertSquareNotationToSpaceId(colId, rowId);
-        setPieceAt(spaceId, piece);
-    }
-
     //endregion
 
     //region GETTERS
@@ -120,10 +116,12 @@ public class ChessBoard implements Debuggable {
     //endregion
 
     //region SETTERS
-    public void setBoardSquares(PieceData[] boardSquares){
-        this.boardSquares = boardSquares.clone();
-    }
+    //this method wrongs, should clone all PieceData within too.
+//    public void setBoardSquares(PieceData[] boardSquares){
+//        this.boardSquares = boardSquares.clone();
+//    }
     //endregion
+
     //region IMMEDIATE_SPACE_FUNCS
     public static boolean isImmediateNorth(int currSpaceId, int targetSpaceId)
     {
@@ -194,8 +192,8 @@ public class ChessBoard implements Debuggable {
     //endregion
 
     //region PIECE_FUNCS
-    private void setPieceAt(int spaceId, PieceData piece)
-    {//private to avoid uses messing with listener. used during initilization
+    protected void setPieceAt(int spaceId, PieceData piece)
+    {//protected to avoid uses messing with listener. used during initilization
         if (isValidSpaceId(spaceId)) boardSquares[spaceId] = piece;
     }
 
@@ -204,7 +202,7 @@ public class ChessBoard implements Debuggable {
         setPieceAt(spaceId, piece);
 
         //spawn piece by moving it in from nowhere.
-        StateChangeListener.<BoardStateChange>notifyListeners(this.stateChangeListenerList,
+        StateChangeListener.notifyListeners(this.stateChangeListenerList,
                 new BoardStateChange(piece, ChessBoard.INVALID_SPACE_ID, spaceId));
 
     }
@@ -220,7 +218,7 @@ public class ChessBoard implements Debuggable {
         setPieceAt(spaceId, PieceDatas.NO_PIECE); //disappear piece.
     }
 
-    private PieceData movePiecePrimitive(int spaceIdToMove, int spaceIdArriveAt)
+    protected PieceData movePiecePrimitive(int spaceIdToMove, int spaceIdArriveAt)
     {
         assert (isValidSpaceId(spaceIdToMove) && isValidSpaceId(spaceIdArriveAt));
         PieceData piece = getPiece(spaceIdToMove);
@@ -231,7 +229,7 @@ public class ChessBoard implements Debuggable {
         return piece;
     }
 
-    private void movePiece(int spaceIdToMove, int spaceIdArriveAt)
+    protected void movePiece(int spaceIdToMove, int spaceIdArriveAt)
     {
         //move piece and just overwrite piece in that location. Only movePieceCapture should be public.
 
@@ -277,7 +275,7 @@ public class ChessBoard implements Debuggable {
     public boolean isAlliedPieceAt(int spaceId, boolean pieceColor)
     {
         if (getPiece(spaceId) == PieceDatas.NO_PIECE) return false; //no alied piece.
-        return getPiece(spaceId).color == pieceColor;
+        return getPiece(spaceId).getColor() == pieceColor;
     }
 
     public short getPieceIdAt(int spaceId)
@@ -285,9 +283,16 @@ public class ChessBoard implements Debuggable {
         if (getPiece(spaceId) == PieceDatas.NO_PIECE) return PieceData.INVALID_PIECES;
         else return getPiece(spaceId).pieceId;
     }
+
+    public int findPiece(int pieceId){
+        for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; ++i){
+            if (boardSquares[i] != null && boardSquares[i].pieceId == pieceId) return i;
+        }
+        return INVALID_SPACE_ID;
+    }
     //endregion
 
-    //region HELPER_FUNCS
+    //region MISC_FUNCS
 
     public static boolean isValidSpaceId(int spaceId)
     {
@@ -303,30 +308,21 @@ public class ChessBoard implements Debuggable {
         return (colId - 'a')* BOARD_SIZE + 8 - ('8'-rowId);
     }
 
-    private static boolean isValidBoardIdx(int row, int col, Exception e) throws Exception
-    {
-        if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE)
-        {
-            if (e != null)
-            {
-                throw e;
-            }
-            return false;
-        }
-        return true;
-    }
-
     public boolean isEmptySpaceAt(int spaceId)
     {
         return getPiece(spaceId) == PieceDatas.NO_PIECE;
     }
 
-    public int findPiece(int pieceId){
-        for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; ++i){
-            if (boardSquares[i] != null && boardSquares[i].pieceId == pieceId) return i;
+    @Override
+    public ChessBoard clone(){
+        ChessBoard clone = new ChessBoard();
+        for (int i = 0; i < ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE; ++i){
+            clone.setPieceAt(i, PieceDatas.copyPiece(this.getPiece(i)));
         }
-        return INVALID_SPACE_ID;
+
+        return clone;
     }
+
     //endregion
 
     //region LISTENERS
@@ -337,7 +333,6 @@ public class ChessBoard implements Debuggable {
     }
     //endregion
 
-    //endregion
 
     //region UNDO_MOVE
     public void undoBoardState(ArrayList<BoardStateChange> boardStateChanges)
@@ -395,15 +390,6 @@ public class ChessBoard implements Debuggable {
         }
     }
     //endregion
-
-    public static ChessBoard cloneBoard(ChessBoard original){
-        ChessBoard clone = new ChessBoard();
-        for (int i = 0; i < ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE; ++i){
-            clone.setPieceAt(i, PieceData.copyPiece(original.getPiece(i)));
-        }
-
-        return clone;
-    }
 
     //region DEBUGGING
     public void enableDebugMode(){

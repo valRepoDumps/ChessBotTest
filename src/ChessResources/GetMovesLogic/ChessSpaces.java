@@ -1,6 +1,5 @@
 package ChessResources.GetMovesLogic;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +13,7 @@ public class ChessSpaces {
 
     public ChessSpaces(int spaceId)
     {
-        chessMoves = new ArrayList<>();
+        this();
         chessMoves.add(spaceId);
     }
 
@@ -22,16 +21,10 @@ public class ChessSpaces {
     {
         chessMoves.add(spaceId);
     }
-
-    public boolean moveInList(int spaceId)
-    {
-        return chessMoves.contains(spaceId);
-    }
-
+    @SuppressWarnings("unused")
     public int totalPossibleMoves() {return chessMoves.size();}
 
     public boolean containSpace(int spaceId) {return chessMoves.contains(spaceId);}
 
-    public List<Integer> getChessMoves(){return chessMoves;}
-
+    //public List<Integer> getChessMoves(){return chessMoves;}
 }

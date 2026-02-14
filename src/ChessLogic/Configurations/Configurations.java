@@ -1,21 +1,26 @@
 package ChessLogic.Configurations;
 
 public class Configurations {
-    private boolean enableBoardGraphic = true;
-    private boolean strictMoveChecker = true;
-    private boolean debugMode = true;
+    private boolean enableBoardGraphic;
+    private boolean strictMoveChecker;
+    private boolean debugMode;
+    private boolean allowGameEnd;
+
     public Configurations(){
-        this(true,true , true);
+        this(true,true,true, true);
     }
 
-    public Configurations(boolean enableBoardGraphic, boolean strictMoveChecker, boolean debugMode){
+    public Configurations(boolean enableBoardGraphic, boolean strictMoveChecker,
+                          boolean debugMode, boolean allowGameEnd){
         this.enableBoardGraphic = enableBoardGraphic;
         this.strictMoveChecker = strictMoveChecker;
         this.debugMode = debugMode;
+        this.allowGameEnd = allowGameEnd;
     }
 
+    //region SETTERS/GETTERS
     //region TUNING_GRAPHIC
-
+    @SuppressWarnings("unused")
     public void setEnableBoardGraphic(boolean enableBoardGraphic) {
         this.enableBoardGraphic = enableBoardGraphic;
     }
@@ -24,7 +29,8 @@ public class Configurations {
         return enableBoardGraphic;
     }
     //endregion
-
+    //region MOVE_CHECKER
+    @SuppressWarnings("unused")
     public void setStrictMoveChecker(boolean strictMoveChecker){
         this.strictMoveChecker = strictMoveChecker;
     }
@@ -32,14 +38,37 @@ public class Configurations {
     public boolean isStrictMoveChecker() {
         return strictMoveChecker;
     }
-
+    @SuppressWarnings("unused")
     public void enableDebugMode(){
         debugMode = true;
     }
-
+    //endregion
+    //region DEBUG
+    @SuppressWarnings("unused")
     public void disableDebugMode(){
         debugMode = false;
     }
 
     public boolean isDebugMode(){return debugMode;}
+    //endregion
+    //region GAME_END
+    public boolean isAllowGameEnd() {
+        return allowGameEnd;
+    }
+    @SuppressWarnings("unused")
+    public void allowGameEnd(){
+        this.allowGameEnd = true;
+    }
+    @SuppressWarnings("unused")
+    public void disAllowGameEnd(){
+        this.allowGameEnd = false;
+    }
+    //endregion
+    //endregion
+
+    //region HELPER
+    public static Configurations createCloneGameConfig(){
+        return new Configurations(false, false, false, false);
+    }
+    //endregion
 }

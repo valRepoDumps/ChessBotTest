@@ -5,7 +5,9 @@ import ChessLogic.Configurations.Configurations;
 import ChessResources.ChessBoard.ChessBoardUI;
 import ChessResources.ChessErrors.OutOfOldTurns;
 import ChessResources.Pieces.PieceData;
+import ChessResources.Pieces.PieceDatas;
 
+import java.util.Arrays;
 import java.util.function.BiFunction;
 
 public class ChessGame extends MinimalChessGame<ChessBoardUI>{
@@ -17,15 +19,15 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
 
     public ChessGame(String fen, ChessGUI chessGUI, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
                      Configurations configurations) {
-        String[] args = fen.trim().split(" ");
+        //String[] args = fen.trim().split(" ");
         this.chessGUI = chessGUI;
-        super(fen, new ChessBoardUI(args[0]), choosePromotionPiece, configurations);
+        super(fen, new ChessBoardUI(), choosePromotionPiece, configurations);
         chessBoard.setOnSquareClicked(this::playerClick);
     }
 
     public ChessGame(ChessGUI chessGUI, BiFunction<Integer, Boolean, Short> choosePromotionPiece) {
         this("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", chessGUI,
-                choosePromotionPiece, new Configurations(true, true, true));
+                choosePromotionPiece, new Configurations());
     }
 
     private void playerClick(int spaceId)
@@ -33,11 +35,13 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
         System.out.println("Click: " + spaceId);
         PieceData piece = chessBoard.getPiece(spaceId);
 
-        //ensure valid choice before proceeding. Wont handle cases where sleected row exceed max and min
+        //ensure valid choice before proceeding. Won't handle cases where sleected row exceed max and min
         // posisble, as it shouldt happen
         if (selectedSpaceId == INVALID_SPACE_ID)
         {
-            if (piece != null && PieceData.getColor(piece) == gameProperties[SIDE_TO_MOVE]) {
+            System.out.println(Arrays.toString(gameProperties) + " " + piece);
+            if (piece != null && PieceDatas.getColor(piece) == gameProperties[SIDE_TO_MOVE]) {
+//                System.out.println(Arrays.toString(gameProperties) + " " + piece + " in" + PieceDatas.getColor(piece));
                 selectedSpaceId = spaceId;
                 chessBoard.highlightSpace(spaceId);
                 possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM : BLACK_PM]
@@ -71,8 +75,6 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
     }
 
     public boolean movePieceGraphic(int spaceIdToMove, int spaceIdArriveAt){
-        //boolean result = super.movePiece(spaceIdToMove, spaceIdArriveAt);
-        //chessBoard.updateBoardGraphic();
         return super.movePiece(spaceIdToMove, spaceIdArriveAt);
     }
     @Override

@@ -13,17 +13,20 @@ import ChessResources.ChessHistoryTracker.GameStateChanges;
 import ChessResources.ChessListener.StateChangeListener;
 import ChessResources.GetMovesLogic.ChessPredictionEngine;
 import ChessResources.GetMovesLogic.ChessSpaces;
+import ChessResources.Hasher.HashGenerator;
 import ChessResources.Pieces.PieceData;
 import ChessResources.Pieces.PieceDatas;
 import ChessResources.GetMovesLogic.PossibleMoves;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.function.BiFunction;
 
 public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
+    //region BEFORE_CONSTRUCTORS
     //region GAME_DATAS
     public final Board chessBoard;
+    public final HashGenerator<Board> hashGenerator = new HashGenerator<>( this);
+
     BiFunction<Integer, Boolean, Short> choosePromotionPiece;
 
     protected PossibleMoves[] possibleMoves;
@@ -84,7 +87,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
 
     //region LAMBDAS
     public static final BiFunction<Integer, Boolean, Short> DEFAULT_PROMOTION_FUNC =
-            (Integer spaceId, Boolean color) -> {
+            (Integer _, Boolean color) -> {
                 if (color == PieceData.BLACK) return PieceData.BQUEEN;
                 else return PieceData.WQUEEN;
             };
@@ -100,25 +103,36 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         this.chessHistoryTracker.setGamePropertiesStats(propertiesStatsChange);
         DebugMode.debugPrint(this, "Prop/Stats Change: " + propertiesStatsChange);
     };
+
+    //endregion
+
     //endregion
 
     //region Constructor
+
     public MinimalChessGame(Board chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
-                            boolean[] gameProperties, int[] gameStats, Configurations configurations)
+                            Configurations configurations)
     {
         this.configurations = configurations;
 
         this.chessBoard = chessBoard;
         this.choosePromotionPiece = choosePromotionPiece;
 
-        this.chessBoard.addMoveListener(BOARD_STATE_LOGGER);
+        this.addMoveListener(BOARD_STATE_LOGGER);
         this.addPropertiesStatsChangeListener(PROPERTIES_STATS_LOGGER);
-
-        this.gameProperties = gameProperties.clone();
-        this.gameStats = gameStats.clone();
 
         possibleMoves = new PossibleMoves[]{new PossibleMoves(this, PieceData.BLACK),
                 new PossibleMoves(this, PieceData.WHITE)};
+
+    }
+
+    public MinimalChessGame(Board chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
+                            boolean[] gameProperties, int[] gameStats, Configurations configurations)
+    {
+        this(chessBoard, choosePromotionPiece, configurations);
+
+        this.gameProperties = gameProperties.clone();
+        this.gameStats = gameStats.clone();
 
         updateConfigurations();
 
@@ -128,20 +142,11 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? BLACK_PM:WHITE_PM].generateMoves();
         possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM:BLACK_PM].generateMoves();
     }
-
+    @SuppressWarnings("unused")
     public MinimalChessGame(String fen, Board chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
                             Configurations configurations)
     {
-        this.configurations = configurations;
-
-        this.chessBoard = chessBoard;
-        this.choosePromotionPiece = choosePromotionPiece;
-
-        this.chessBoard.addMoveListener(BOARD_STATE_LOGGER);
-        this.addPropertiesStatsChangeListener(PROPERTIES_STATS_LOGGER);
-
-        possibleMoves = new PossibleMoves[]{new PossibleMoves(this, PieceData.BLACK),
-                new PossibleMoves(this, PieceData.WHITE)};
+        this(chessBoard, choosePromotionPiece, configurations);
 
         updateConfigurations();
 
@@ -155,9 +160,33 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     }
     //endregion
 
+    //region GETTERS
+    public ChessBoard getBoard(){
+        return chessBoard;
+    }
+
+    public int[] getGameStats() {
+        return gameStats;
+    }
+
+    public boolean[] getGameProperties() {
+        return gameProperties;
+    }
+
+    public PossibleMoves getPossibleMoves(boolean color){
+        return possibleMoves[color == ChessBoard.WHITE ? WHITE_PM : BLACK_PM];
+    }
+
+    //endregion
+
     //region HELPERS
+
+    //region MISC_FUNCS
     public void fenTranslator(String fen){
         String[] args = fen.trim().split(" ");
+
+        chessBoard.setUpPieces(args[0]);
+
         if (args.length != 6) {
             throw new IllegalArgumentException("Invalid FEN: Must include 6 arguments.");
         }
@@ -196,15 +225,68 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         //endregion
     }
 
+    public boolean spaceNotUnderThreat(int spaceId, boolean color)
+    {
+        //ensure spaceId valid.
+        for (ChessSpaces moves : possibleMoves[color == PieceData.WHITE? BLACK_PM : WHITE_PM].possibleMoves.values())
+        {
+            if (moves.containSpace(spaceId))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean spaceNotUnderThreatAndEmpty(int spaceId, boolean color)
+    {
+        return spaceNotUnderThreat(spaceId, color) && chessBoard.isEmptySpaceAt(spaceId);
+    }
+
+    public boolean isAlliedPieceAt(int spaceId, boolean color){
+        return chessBoard.isAlliedPieceAt(spaceId, color);
+    }
+
+    public boolean isEnemyPieceAt(int spaceId, boolean color){
+        return chessBoard.isEnemyPieceAt(spaceId, color);
+    }
+    public boolean selfMoveWontThreatenSelfKing(int spaceIdToMove, int spaceIdArriveAt, boolean color){
+        if (!configurations.isStrictMoveChecker()) return true;
+
+        if (gameProperties[SIDE_TO_MOVE] != color) return false;
+        //only check if move of this color threaten this color king.
+
+        return predictionEngine.singleSimCheck(spaceIdToMove, spaceIdArriveAt, color);
+    }
+
+    public int getKingSpaceId(boolean color){
+        DebugMode.debugPrint(this, (color == PieceData.WHITE ?
+                gameStats[WHITE_KING_SPACEID] : gameStats[BLACK_KING_SPACEID]));
+
+        return color == PieceData.WHITE ?
+                gameStats[WHITE_KING_SPACEID] : gameStats[BLACK_KING_SPACEID];
+    }
+
+    private void promotionHandler(int spaceId, PieceData piece)
+    {
+        chessBoard.spawnPieceAt(spaceId, piece);
+    }
+
+    private void resetHalfMoves(){
+        DebugMode.debugPrint(this, "reset half moves");
+        gameStats[HALF_MOVES_SICE_CAPTURE_OR_PAWN_MOVES] = 0;
+    }
+    //endregion
+
+    //region TURN_HANDLING
     public boolean movePiece(int spaceIdToMove, int spaceIdArriveAt)
     {
-        StateChangeListener.<PropertiesStatsChange>notifyListeners(propertiesStatsChangeListenerList,
+        StateChangeListener.notifyListeners(propertiesStatsChangeListenerList,
                 new PropertiesStatsChange(gameProperties, gameStats)); //announce new rules added.
 
         //int promotionSpaceId = -1; //should doubled as check to see if promotion is possible.
         int opCode = NORMAL_MOVE;
         PieceData piece = chessBoard.getPiece(spaceIdToMove);
-        PieceData secondPiece = null;
 
         if (possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM : BLACK_PM]
                 .possibleMoves.containsKey(spaceIdToMove) &&
@@ -224,8 +306,6 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
 
                     short northId = chessBoard.getPieceIdAt(spaceIdArriveAt +
                             ChessBoard.directionOffsets[ChessBoard.NORTH]);
-//                    short southId = chessBoard.getPieceIdAt(spaceIdArriveAt +
-//                            ChessBoard.directionOffsets[ChessBoard.SOUTH]);
 
                     if (northId == PieceData.BPAWN || northId == PieceData.WPAWN)
                     {
@@ -256,7 +336,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
 
                 //region PROMOTION_LOGIC
                 if (piece.pieceId == PieceData.BPAWN && ChessBoard.getRow(spaceIdArriveAt) == ChessBoard.BOARD_SIZE-1)
-                    //check pawn color, do not assume pawn dont go backward or start at like row 0 or 8.
+                //check pawn color, do not assume pawn dont go backward or start at like row 0 or 8.
                 {
                     //promotionSpaceId = spaceIdArriveAt;
                     opCode = PROMOTION;
@@ -352,8 +432,12 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
 
             if (opCode == PROMOTION) //make no further checks, shouldnt be invalid.
             {
-                promotionHandler(spaceIdArriveAt, piece.color,
-                        PieceDatas.getCopyOfPiece(choosePromotionPiece.apply(spaceIdArriveAt, piece.color)));
+                try{
+                promotionHandler(spaceIdArriveAt,
+                        PieceDatas.makePiece(choosePromotionPiece.apply(spaceIdArriveAt, piece.color)));}
+                catch(NullPointerException e){
+                    promotionHandler(spaceIdArriveAt,
+                            PieceDatas.makePiece(DEFAULT_PROMOTION_FUNC.apply(spaceIdArriveAt, piece.color)));}
             }
             //endregion
 
@@ -362,6 +446,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
             //endregion
             return true;
         }
+
         return false;
     }
 
@@ -378,64 +463,21 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         if (gameStats[HALF_MOVES_SICE_CAPTURE_OR_PAWN_MOVES] == 50){
             return DRAW;
         }
+
+        DebugMode.debugPrint(this, chessHistoryTracker.getTableOfPositions().getOrDefault(
+                chessHistoryTracker.peekTurn().getHashOfPosition(), 0));
+
+        if (chessHistoryTracker.isThreeFoldRepitionFlag()) return DRAW;
         return INDETERMINATE;
         //endregion
     }
 
-    public boolean spaceNotUnderThreat(int spaceId, boolean color)
-    {
-        //ensure spaceId valid.
-        for (ChessSpaces moves : possibleMoves[color == PieceData.WHITE? BLACK_PM : WHITE_PM].possibleMoves.values())
-        {
-            if (moves.containSpace(spaceId))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public boolean spaceNotUnderThreatAndEmpty(int spaceId, boolean color)
-    {
-        return spaceNotUnderThreat(spaceId, color) && chessBoard.isEmptySpaceAt(spaceId);
-    }
-
-    public boolean selfMoveWontThreatenSelfKing(int spaceIdToMove, int spaceIdArriveAt, boolean color){
-        if (!configurations.isStrictMoveChecker()) return true;
-
-        if (gameProperties[SIDE_TO_MOVE] != color) return false;
-        //only check if move of this color threaten this color king.
-
-        return predictionEngine.singleSimCheck(spaceIdToMove, spaceIdArriveAt, color);
-    }
-
-    public boolean spaceNotUnderThreatAndNoAllies(int spaceId, boolean color)
-    {
-        return spaceNotUnderThreat(spaceId, color) && !chessBoard.isAlliedPieceAt(spaceId, color);
-    }
-
-    public int getKingSpaceId(boolean color){
-        DebugMode.debugPrint(this, (color == PieceData.WHITE ?
-                gameStats[WHITE_KING_SPACEID] : gameStats[BLACK_KING_SPACEID]));
-
-        return color == PieceData.WHITE ?
-                gameStats[WHITE_KING_SPACEID] : gameStats[BLACK_KING_SPACEID];
-    }
-
-    private void promotionHandler(int spaceId, boolean color, PieceData piece)
-    {
-        chessBoard.spawnPieceAt(spaceId, piece);
-    }
-
-    private void resetHalfMoves(){
-        DebugMode.debugPrint(this, "reset half moves");
-        gameStats[HALF_MOVES_SICE_CAPTURE_OR_PAWN_MOVES] = 0;
-    }
-
     private void finishTurn()
     {
+        chessHistoryTracker.setHash(hashGenerator.getCurrentHash());
         chessHistoryTracker.pushTurn();
-        StateChangeListener.<GameStateChanges>notifyListeners(turnEndListenerList, chessHistoryTracker.peekTurn());
+
+        StateChangeListener.notifyListeners(turnEndListenerList, chessHistoryTracker.peekTurn());
         //peek the turn just pushed.
 
         //region UPDATING_GAME_PROPERTIES_AND STATS
@@ -454,8 +496,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM:BLACK_PM].clearPossibleMoves();
         possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM:BLACK_PM].generateMoves();
         //endregion
-//        StateChangeListener.<PropertiesStatsChange>notifyListeners(propertiesStatsChangeListenerList,
-//                new PropertiesStatsChange(gameProperties, gameStats));
+//        StateChangeListener.<PropertiesStatsChange>notifyListeners(propertiesStatsChangeListenerList,         new PropertiesStatsChange(gameProperties, gameStats));
 
         int ans = aSideWon();
         if (ans != INDETERMINATE){
@@ -463,25 +504,21 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         }
     }
 
-    private void endGame(int sideWonCode)
-    {
-        if (sideWonCode == WHITE_WON){
+    private void endGame(int sideWonCode) {
+        if (!configurations.isAllowGameEnd()) return; //game cant end. assume is a simulation.
+
+        if (sideWonCode == WHITE_WON) {
             System.out.println("WHITE WON");
-        }
-        else if (sideWonCode == BLACK_WON){
+        } else if (sideWonCode == BLACK_WON) {
             System.out.println("BLACK WON");
-        }
-        else if (sideWonCode == DRAW){
+        } else if (sideWonCode == DRAW) {
             System.out.println("DRAW");
-        }
-        else{
+        } else {
             System.out.println("NO REASON. ");
         }
         DebugMode.debugPrint(this, chessHistoryTracker);
         System.exit(0);
-
     }
-    //endregion
 
     public void undoTurn() throws OutOfOldTurns, NullPointerException
     {
@@ -507,20 +544,23 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM:BLACK_PM].generateMoves();
         //endregion
 
-        StateChangeListener.<GameStateChanges>notifyListeners(undoTurnListenerList, gameStateChanges);
+        StateChangeListener.notifyListeners(undoTurnListenerList, gameStateChanges);
     }
 
     public void advanceBoardState(GameStateChanges gameStateChanges){
         this.gameStats = gameStateChanges.getGameStats();
         this.gameProperties = gameStateChanges.getGameProperties();
 
-        StateChangeListener.<PropertiesStatsChange>notifyListeners(propertiesStatsChangeListenerList,
+        StateChangeListener.notifyListeners(propertiesStatsChangeListenerList,
                 new PropertiesStatsChange(gameProperties, gameStats)); //announce new rules added.
 
         chessBoard.advanceBoardState(gameStateChanges.getBoardStateChanges()); //throws nullpointerexcep
 
         finishTurn();
     }
+    //endregion
+
+    //endregion
 
     //region LISTENERS
     public void addMoveListener(StateChangeListener<BoardStateChange> stateChangeListener)
@@ -541,6 +581,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     }
     //endregion
 
+    //region CONFIGS+DEBUG
     public void updateConfigurations(){
         if (chessBoard instanceof  ChessBoardUI){
             if (configurations.isEnableBoardGraphic())
@@ -564,20 +605,15 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
             chessBoard.disableDebugMode();
         }
     }
-
+    @SuppressWarnings("unused")
     public void changeConfigurations(Configurations configurations){
         this.configurations = configurations;
         updateConfigurations();
     }
-
-    public PossibleMoves getPossibleMoves(boolean color){
-        return possibleMoves[color == ChessBoard.WHITE ? WHITE_PM : BLACK_PM];
-    }
-
-    //region DEBUGGING
 
     public boolean isDebuggable(){
         return configurations.isDebugMode();
     }
     //endregion
 }
+
