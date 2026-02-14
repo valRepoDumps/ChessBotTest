@@ -11,7 +11,7 @@ import ChessResources.Pieces.SlidingPieceData;
 import java.util.HashMap;
 
 public class PossibleMoves {
-
+    //region PRE_CONSTRUCTOR
     //region DATAS
     public HashMap<Integer, ChessSpaces> possibleMoves = new HashMap<>();
     protected MinimalChessGame<?> chessGame;
@@ -23,6 +23,8 @@ public class PossibleMoves {
     public boolean strictMovesChecker = false;//ensure all moves that threaten king unusable
 
     //endregion
+    //endregion
+
 
     public PossibleMoves(MinimalChessGame<?> chessGame, boolean color)
     {
@@ -31,6 +33,7 @@ public class PossibleMoves {
         precomputeSquaresToEdgeData();
     }
 
+    //region MOVE_GEN
     public void generateMoves()
     {
         for (int startSquare = 0; startSquare < ChessBoardUI.BOARD_SIZE* ChessBoardUI.BOARD_SIZE; ++startSquare)
@@ -56,7 +59,7 @@ public class PossibleMoves {
     {
         int maxRange = piece.getMaxRange(chessGame, startSquare);
         short[] possibleDirections = piece.getPossibleDirections(chessGame, startSquare);
-        //System.out.println(piece.pieceId + ": " + piece.name);
+
         for (short direction : possibleDirections)
         {
             for (int n = 0; n < maxRange && n < numSquaresToEdge[startSquare][direction]; ++n)
@@ -64,16 +67,13 @@ public class PossibleMoves {
                 int targetSquare = startSquare + ChessBoardUI.directionOffsets[direction]*(n+1);
 
                 if (targetSquare >= 64) break;
-                //dont allow move if king threatened
 
-                PieceData pieceOnTarget = chessGame.chessBoard.getPiece(targetSquare);
-
-                if (pieceOnTarget != PieceDatas.NO_PIECE && pieceOnTarget.color == piece.color) break;
+                if (chessGame.isAlliedPieceAt(targetSquare, color)) break;
                 //encounter piece of our color, dont move in this dir any more
 
                 addMoveToPossibleMoves(startSquare, targetSquare, piece);
 
-                if (pieceOnTarget != PieceDatas.NO_PIECE && pieceOnTarget.color != piece.color) break; //encounter opponents color, also break.
+                if (chessGame.isEnemyPieceAt(targetSquare, color)) break; //encounter opponents color, also break.
             }
         }
     }
@@ -107,7 +107,7 @@ public class PossibleMoves {
         int[] moves = piece.getPossibleMoves(chessGame, startSquare);
         for (int move : moves)
         {
-            if (ChessBoard.isValidSpaceId(move) && !chessGame.chessBoard.isAlliedPieceAt(move, piece.color))
+            if (ChessBoard.isValidSpaceId(move) && !chessGame.isAlliedPieceAt(move, piece.color))
             {
                 addMoveToPossibleMoves(startSquare, move, piece);
             }
@@ -123,6 +123,8 @@ public class PossibleMoves {
             possibleMoves.put(startSquare, new ChessSpaces(move));
         }
     }
+    //endregion
+    //region HELPERS
     public void clearPossibleMoves()
     {
         possibleMoves = new HashMap<>();
@@ -155,5 +157,7 @@ public class PossibleMoves {
 
     public  void disableStrictMovesChecker(){strictMovesChecker = false;}
 
+    @SuppressWarnings("unused")
     public HashMap<Integer, ChessSpaces> getMoves(){return possibleMoves;}
+    //endregion
 }

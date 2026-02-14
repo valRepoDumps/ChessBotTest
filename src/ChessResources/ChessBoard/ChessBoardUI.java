@@ -27,9 +27,21 @@ public class ChessBoardUI extends ChessBoard {
     private IntConsumer onSquareClicked = null;
     //endregion
 
+    public ChessBoardUI(){}
+    @SuppressWarnings("unused")
     public ChessBoardUI(String piecePlacement)
     {
-        super(piecePlacement);
+        this.setUpPieces(piecePlacement);
+    }
+
+
+    public void setOnSquareClicked(IntConsumer handler) {
+        this.onSquareClicked = handler;
+    }
+
+    @Override
+    public void setUpPieces(String piecePlacement){
+        super.setUpPieces(piecePlacement);
         for (int row = 0; row < BOARD_SIZE; ++row)
         {
             for (int col = 0; col < BOARD_SIZE; ++col) {
@@ -37,10 +49,6 @@ public class ChessBoardUI extends ChessBoard {
             }
         }
         makeBoardGraphic(); //create graphic for board.
-    }
-
-    public void setOnSquareClicked(IntConsumer handler) {
-        this.onSquareClicked = handler;
     }
 
     private void setUpSpaces(int row, int col) //setting up black and white spaces.
@@ -77,7 +85,7 @@ public class ChessBoardUI extends ChessBoard {
                 JButton square = new JButton();
 
                 final int r = row, c = col; //allow to be added to lambda in action event.
-                square.addActionListener(e->onSquareClicked.accept(r*BOARD_SIZE+c));
+                square.addActionListener(_ ->onSquareClicked.accept(r*BOARD_SIZE+c));
 
                 square.setPreferredSize(new Dimension(SQUARE_PIXEL_SIZE,SQUARE_PIXEL_SIZE));
                 if (getPiece(row*BOARD_SIZE + col) != PieceDatas.NO_PIECE) {

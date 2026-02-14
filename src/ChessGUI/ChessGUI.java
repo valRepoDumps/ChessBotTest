@@ -1,7 +1,6 @@
 package ChessGUI;
 
 import ChessLogic.ChessGame;
-import ChessLogic.Configurations.Configurations;
 import ChessResources.ChessBoard.ChessBoardUI;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
 import ChessResources.Pieces.PieceData;
@@ -17,7 +16,7 @@ public class ChessGUI {
     JPanel boardGraphic;
 
     BiFunction<Integer, Boolean, Short> choosePiecePromotionUI =
-            (Integer spaceId, Boolean color) ->    {
+            (Integer _, Boolean color) ->    {
                 String[] options = {"Queen", "Rook", "Bishop", "Knight"};
 
                 int choice = JOptionPane.showOptionDialog(

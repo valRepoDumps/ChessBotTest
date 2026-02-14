@@ -19,22 +19,11 @@ public class PieceDatas
     public static final PieceData WKNIGHT_DATA = new IrregularPieceData(PieceData.WKNIGHT);
 
     public static final PieceData NO_PIECE = null;
-    public final static int PIECES_DIFF = 16;
     //endregion
 
     public static final int TOTAL_PIECES = 12;
-    public static PieceData makePiece(short pieceId)
-    {
-        return switch (pieceId) {
-            case PieceData.BPAWN, PieceData.WPAWN, PieceData.BROOK, PieceData.WROOK,
-                 PieceData.BBISHOP, PieceData.WBISHOP, PieceData.BQUEEN, PieceData.WQUEEN,
-                 PieceData.BKING, PieceData.WKING -> new SlidingPieceData(pieceId);
-            case PieceData.BKNIGHT, PieceData.WKNIGHT -> new IrregularPieceData(pieceId);
-            default -> null;
-        };
-    }
 
-    public static PieceData getCopyOfPiece(int pieceId)
+    public static PieceData makePiece(int pieceId)
     {
         return switch (pieceId) {
             case PieceData.BPAWN -> PieceDatas.copyPiece(BPAWN_DATA);

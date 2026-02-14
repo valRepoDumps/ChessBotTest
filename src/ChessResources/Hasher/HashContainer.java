@@ -21,10 +21,6 @@ public class HashContainer {
     }
     //endregion
 
-    public static boolean isEqual(HashContainer h1, HashContainer h2){
-        return h1.equals(h2);
-    }
-
     @Override
     public boolean equals(Object hs){
         if (!(hs instanceof HashContainer)) return false;

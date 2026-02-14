@@ -19,9 +19,9 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
 
     public ChessGame(String fen, ChessGUI chessGUI, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
                      Configurations configurations) {
-        String[] args = fen.trim().split(" ");
+        //String[] args = fen.trim().split(" ");
         this.chessGUI = chessGUI;
-        super(fen, new ChessBoardUI(args[0]), choosePromotionPiece, configurations);
+        super(fen, new ChessBoardUI(), choosePromotionPiece, configurations);
         chessBoard.setOnSquareClicked(this::playerClick);
     }
 
@@ -35,7 +35,7 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
         System.out.println("Click: " + spaceId);
         PieceData piece = chessBoard.getPiece(spaceId);
 
-        //ensure valid choice before proceeding. Wont handle cases where sleected row exceed max and min
+        //ensure valid choice before proceeding. Won't handle cases where sleected row exceed max and min
         // posisble, as it shouldt happen
         if (selectedSpaceId == INVALID_SPACE_ID)
         {
@@ -75,8 +75,6 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
     }
 
     public boolean movePieceGraphic(int spaceIdToMove, int spaceIdArriveAt){
-        //boolean result = super.movePiece(spaceIdToMove, spaceIdArriveAt);
-        //chessBoard.updateBoardGraphic();
         return super.movePiece(spaceIdToMove, spaceIdArriveAt);
     }
     @Override

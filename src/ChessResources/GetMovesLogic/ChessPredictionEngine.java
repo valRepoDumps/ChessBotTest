@@ -3,25 +3,27 @@ package ChessResources.GetMovesLogic;
 import ChessLogic.Configurations.Configurations;
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
-import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
-import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
 import ChessResources.ChessHistoryTracker.GameStateChanges;
 import ChessResources.ChessListener.StateChangeListener;
 import ChessResources.Pieces.PieceData;
 
 import javax.swing.*;
-import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.BooleanSupplier;
 
 public class ChessPredictionEngine<T extends ChessBoard, U extends MinimalChessGame<T>> {
+    //region PRE_CONSTRUCTOR
     MinimalChessGame<ChessBoard> simGame;
     U currentGame;
+    //region CHOICES
+    @SuppressWarnings("unused")
     public static final int ROOK_CHOICE = 1;
+    @SuppressWarnings("unused")
     public static final int BISHOP_CHOICE = 2;
+    @SuppressWarnings("unused")
     public static final int KNIGHT_CHOICE = 3;
+    @SuppressWarnings("unused")
     public static final int QUEEN_CHOICE = 4;
+    //endregion
 
     private int currentChoice = ROOK_CHOICE;
 
@@ -29,13 +31,10 @@ public class ChessPredictionEngine<T extends ChessBoard, U extends MinimalChessG
             this::advanceSimulation;
 
     public final StateChangeListener<GameStateChanges> UNDO_TURN_LOGGER =
-            (gameStateChanges)->{
-               this.undoSimulateMove();
-            };
+            (_)-> this.undoSimulateMove();
 
     BiFunction<Integer, Boolean, Short> choosePiecePromotion =
-            (Integer spaceId, Boolean color) ->    {
-                String[] options = {"Queen", "Rook", "Bishop", "Knight"};
+            (Integer _, Boolean color) ->    {
 
                 int choice = currentChoice;
 
@@ -59,6 +58,7 @@ public class ChessPredictionEngine<T extends ChessBoard, U extends MinimalChessG
                     };
                 }
             };
+    //endregion
 
     public ChessPredictionEngine(U currentGame){
         this.currentGame = currentGame;
@@ -68,13 +68,14 @@ public class ChessPredictionEngine<T extends ChessBoard, U extends MinimalChessG
     }
 
     public MinimalChessGame<ChessBoard> cloneGame(U game){
-        ChessBoard boardClone = ChessBoard.cloneBoard(game.chessBoard);
+        ChessBoard boardClone = (game.chessBoard.clone());
 
-        return new MinimalChessGame<ChessBoard>(boardClone, choosePiecePromotion,
+        return new MinimalChessGame<>(boardClone, choosePiecePromotion,
                 game.gameProperties, game.gameStats,
                 Configurations.createCloneGameConfig());
     }
 
+    //region HELPERS
     public void advanceSimulation(GameStateChanges gameStateChanges){
         simGame.advanceBoardState(gameStateChanges);
     }
@@ -92,10 +93,15 @@ public class ChessPredictionEngine<T extends ChessBoard, U extends MinimalChessG
 
     public boolean singleSimCheck(int spaceId, int spaceIdArriveAt, boolean color){
         if(!simulateMove(spaceId, spaceIdArriveAt)) {return false;}
-        //simulateMove(spaceId, spaceIdArriveAt);
-        //simGame.chessHistoryTracker.pushTurn();
+
         boolean ans = simGame.spaceNotUnderThreat(simGame.getKingSpaceId(color), color);
         undoSimulateMove();
         return !ans;
     }
+
+    @SuppressWarnings("unused")
+    public void setCurrentChoice(int choice){
+        this.currentChoice = choice;
+    }
+    //endregion
 }

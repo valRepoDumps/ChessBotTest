@@ -9,6 +9,7 @@ import javax.swing.*;
 import java.util.function.BiFunction;
 
 public class SlidingPieceData extends PieceData {
+    //region PRE_CONSTRUCTOR
     public static final int NO_RANGE_LIMIT = ChessBoardUI.BOARD_SIZE;
 
     //region PIECE FUNCS
@@ -144,27 +145,31 @@ public class SlidingPieceData extends PieceData {
             };
     //endregion
 
+    //region R_B_Q_K FUNCS
     public static BiFunction<Object, Integer, short[]> ROOK_DIR_FUNC =
-            (Object game, Integer spaceId) -> new short[]{ChessBoardUI.NORTH, ChessBoardUI.SOUTH, ChessBoardUI.WEST, ChessBoardUI.EAST};
+            (Object _, Integer _) -> new short[]{ChessBoardUI.NORTH, ChessBoardUI.SOUTH, ChessBoardUI.WEST, ChessBoardUI.EAST};
     public static BiFunction<Object, Integer, Integer> ROOK_RANGE_FUNC =
-            (game, spaceId) -> NO_RANGE_LIMIT;
+            (_, _) -> NO_RANGE_LIMIT;
 
     public static BiFunction<Object, Integer, short[]> BISHOP_DIR_FUNC =
-            (Object game, Integer spaceId) -> new short[]{ChessBoardUI.NORTH_WEST, ChessBoardUI.NORTH_EAST, ChessBoardUI.SOUTH_WEST, ChessBoardUI.SOUTH_EAST};
+            (Object _, Integer _) -> new short[]{ChessBoardUI.NORTH_WEST, ChessBoardUI.NORTH_EAST, ChessBoardUI.SOUTH_WEST, ChessBoardUI.SOUTH_EAST};
     public static BiFunction<Object, Integer, Integer> BISHOP_RANGE_FUNC =
-            (game, spaceId) -> NO_RANGE_LIMIT;
+            (_, _) -> NO_RANGE_LIMIT;
 
     public static BiFunction<Object, Integer, short[]> QUEEN_DIR_FUNC =
-            (Object game, Integer spaceId) -> new short[]{ChessBoardUI.NORTH, ChessBoardUI.SOUTH, ChessBoardUI.WEST, ChessBoardUI.EAST,
+            (Object _, Integer _) -> new short[]{ChessBoardUI.NORTH, ChessBoardUI.SOUTH, ChessBoardUI.WEST, ChessBoardUI.EAST,
                     ChessBoardUI.NORTH_WEST, ChessBoardUI.NORTH_EAST, ChessBoardUI.SOUTH_WEST, ChessBoardUI.SOUTH_EAST};
     public static BiFunction<Object, Integer, Integer> QUEEN_RANGE_FUNC =
-            (game, spaceId) -> NO_RANGE_LIMIT;
+            (_, _) -> NO_RANGE_LIMIT;
+    //endregion
 
     //endregion
 
     public BiFunction<Object, Integer, Integer> maxRangeFunc;
     public BiFunction<Object, Integer, short[]> directionFunc;
+    //endregion
 
+    //region CONSTRUCTOR
     SlidingPieceData(short pieceId)
     {
         super(pieceId);
@@ -193,6 +198,7 @@ public class SlidingPieceData extends PieceData {
         }
     }
 
+    @SuppressWarnings("unused")
     SlidingPieceData(short pieceId, boolean color, int value, String name, ImageIcon graphic,
                      BiFunction<Object, Integer, Integer> maxRangeFunc,
                      BiFunction<Object, Integer, short[]> directionFunc)
@@ -208,6 +214,8 @@ public class SlidingPieceData extends PieceData {
         this.maxRangeFunc = piece.maxRangeFunc;
         this.directionFunc = piece.directionFunc;
     }
+
+    //endregion
 
     public short[] getPossibleDirections(MinimalChessGame<?> chessGame, int spaceId) {
         return directionFunc.apply(chessGame, spaceId);

@@ -7,7 +7,7 @@ import ChessResources.Pieces.PieceDatas;
 import java.util.Random;
 
 public final class ZobristHasher<Board extends ChessBoard> {
-    long[] hashList = new long[Board.BOARD_SIZE*Board.BOARD_SIZE*PieceDatas.TOTAL_PIECES];;
+    long[] hashList = new long[Board.BOARD_SIZE*Board.BOARD_SIZE*PieceDatas.TOTAL_PIECES];
 
     long[] castlingRights = new long[16];
     long sideToMoveIsBlack;
@@ -37,10 +37,6 @@ public final class ZobristHasher<Board extends ChessBoard> {
         for (int i = 0; i < list.length; ++i){
             list[i] = rand.nextLong();
         }
-    }
-
-    private long getRandomNumAt(int spaceId, int pieceId){
-        return hashList[spaceId*hashList.length + pieceId];
     }
 
     private int translateGameCastlingRights(boolean[] gp){

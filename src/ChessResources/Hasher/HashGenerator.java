@@ -1,11 +1,7 @@
 package ChessResources.Hasher;
 
-import ChessLogic.Debug.DebugMode;
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
-import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
-import ChessResources.ChessHistoryTracker.GameStateChanges;
-import ChessResources.ChessListener.StateChangeListener;
 
 public class HashGenerator<Board extends ChessBoard> {
     ZobristHasher<Board> hasher1;
@@ -18,6 +14,7 @@ public class HashGenerator<Board extends ChessBoard> {
         hasher2 = new ZobristHasher<>();
     }
 
+    @SuppressWarnings("unused")
     public HashGenerator(MinimalChessGame<Board> game, long seed1, long seed2){
         this.game = game;
         hasher1 = new ZobristHasher<>(seed1);

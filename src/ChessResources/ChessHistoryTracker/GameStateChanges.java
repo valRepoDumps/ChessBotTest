@@ -4,7 +4,6 @@ import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
 import ChessResources.Hasher.HashContainer;
 
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -21,7 +20,7 @@ public class GameStateChanges {
         this.boardStateChanges.add(boardStateChange);
         currentPropertiesStats = new PropertiesStatsChange(gameProperties, gameStats);
     }
-
+    @SuppressWarnings("unused")
     public GameStateChanges(ArrayList<BoardStateChange> boardStateChanges, boolean[] gameProperties,
                             int[] gameStats)
     {
@@ -56,6 +55,7 @@ public class GameStateChanges {
     {
         currentPropertiesStats = propertiesStatsChange;
     }
+    @SuppressWarnings("unused")
     public BoardStateChange popBoardStateChanges()
     {
         return boardStateChanges.getLast();
@@ -97,7 +97,7 @@ public class GameStateChanges {
         {
             str.append("NULL ");
         }
-        return str.toString() + " [" + Arrays.toString(currentPropertiesStats.getGameProperties())
+        return str + " [" + Arrays.toString(currentPropertiesStats.getGameProperties())
                 + ", " + Arrays.toString(currentPropertiesStats.getGameStats())+"]";
     }
 }

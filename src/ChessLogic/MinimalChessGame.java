@@ -13,7 +13,6 @@ import ChessResources.ChessHistoryTracker.GameStateChanges;
 import ChessResources.ChessListener.StateChangeListener;
 import ChessResources.GetMovesLogic.ChessPredictionEngine;
 import ChessResources.GetMovesLogic.ChessSpaces;
-import ChessResources.Hasher.HashContainer;
 import ChessResources.Hasher.HashGenerator;
 import ChessResources.Pieces.PieceData;
 import ChessResources.Pieces.PieceDatas;
@@ -26,7 +25,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     //region BEFORE_CONSTRUCTORS
     //region GAME_DATAS
     public final Board chessBoard;
-    public final HashGenerator<Board> hashGenerator = new HashGenerator<Board>( this);;
+    public final HashGenerator<Board> hashGenerator = new HashGenerator<>( this);
 
     BiFunction<Integer, Boolean, Short> choosePromotionPiece;
 
@@ -88,7 +87,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
 
     //region LAMBDAS
     public static final BiFunction<Integer, Boolean, Short> DEFAULT_PROMOTION_FUNC =
-            (Integer spaceId, Boolean color) -> {
+            (Integer _, Boolean color) -> {
                 if (color == PieceData.BLACK) return PieceData.BQUEEN;
                 else return PieceData.WQUEEN;
             };
@@ -119,7 +118,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         this.chessBoard = chessBoard;
         this.choosePromotionPiece = choosePromotionPiece;
 
-        this.chessBoard.addMoveListener(BOARD_STATE_LOGGER);
+        this.addMoveListener(BOARD_STATE_LOGGER);
         this.addPropertiesStatsChangeListener(PROPERTIES_STATS_LOGGER);
 
         possibleMoves = new PossibleMoves[]{new PossibleMoves(this, PieceData.BLACK),
@@ -143,7 +142,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? BLACK_PM:WHITE_PM].generateMoves();
         possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM:BLACK_PM].generateMoves();
     }
-
+    @SuppressWarnings("unused")
     public MinimalChessGame(String fen, Board chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
                             Configurations configurations)
     {
@@ -185,6 +184,9 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     //region MISC_FUNCS
     public void fenTranslator(String fen){
         String[] args = fen.trim().split(" ");
+
+        chessBoard.setUpPieces(args[0]);
+
         if (args.length != 6) {
             throw new IllegalArgumentException("Invalid FEN: Must include 6 arguments.");
         }
@@ -241,6 +243,13 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         return spaceNotUnderThreat(spaceId, color) && chessBoard.isEmptySpaceAt(spaceId);
     }
 
+    public boolean isAlliedPieceAt(int spaceId, boolean color){
+        return chessBoard.isAlliedPieceAt(spaceId, color);
+    }
+
+    public boolean isEnemyPieceAt(int spaceId, boolean color){
+        return chessBoard.isEnemyPieceAt(spaceId, color);
+    }
     public boolean selfMoveWontThreatenSelfKing(int spaceIdToMove, int spaceIdArriveAt, boolean color){
         if (!configurations.isStrictMoveChecker()) return true;
 
@@ -248,11 +257,6 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         //only check if move of this color threaten this color king.
 
         return predictionEngine.singleSimCheck(spaceIdToMove, spaceIdArriveAt, color);
-    }
-
-    public boolean spaceNotUnderThreatAndNoAllies(int spaceId, boolean color)
-    {
-        return spaceNotUnderThreat(spaceId, color) && !chessBoard.isAlliedPieceAt(spaceId, color);
     }
 
     public int getKingSpaceId(boolean color){
@@ -263,7 +267,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                 gameStats[WHITE_KING_SPACEID] : gameStats[BLACK_KING_SPACEID];
     }
 
-    private void promotionHandler(int spaceId, boolean color, PieceData piece)
+    private void promotionHandler(int spaceId, PieceData piece)
     {
         chessBoard.spawnPieceAt(spaceId, piece);
     }
@@ -277,13 +281,12 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     //region TURN_HANDLING
     public boolean movePiece(int spaceIdToMove, int spaceIdArriveAt)
     {
-        StateChangeListener.<PropertiesStatsChange>notifyListeners(propertiesStatsChangeListenerList,
+        StateChangeListener.notifyListeners(propertiesStatsChangeListenerList,
                 new PropertiesStatsChange(gameProperties, gameStats)); //announce new rules added.
 
         //int promotionSpaceId = -1; //should doubled as check to see if promotion is possible.
         int opCode = NORMAL_MOVE;
         PieceData piece = chessBoard.getPiece(spaceIdToMove);
-        PieceData secondPiece = null;
 
         if (possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM : BLACK_PM]
                 .possibleMoves.containsKey(spaceIdToMove) &&
@@ -303,8 +306,6 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
 
                     short northId = chessBoard.getPieceIdAt(spaceIdArriveAt +
                             ChessBoard.directionOffsets[ChessBoard.NORTH]);
-//                    short southId = chessBoard.getPieceIdAt(spaceIdArriveAt +
-//                            ChessBoard.directionOffsets[ChessBoard.SOUTH]);
 
                     if (northId == PieceData.BPAWN || northId == PieceData.WPAWN)
                     {
@@ -431,8 +432,12 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
 
             if (opCode == PROMOTION) //make no further checks, shouldnt be invalid.
             {
-                promotionHandler(spaceIdArriveAt, piece.color,
-                        PieceDatas.getCopyOfPiece(choosePromotionPiece.apply(spaceIdArriveAt, piece.color)));
+                try{
+                promotionHandler(spaceIdArriveAt,
+                        PieceDatas.makePiece(choosePromotionPiece.apply(spaceIdArriveAt, piece.color)));}
+                catch(NullPointerException e){
+                    promotionHandler(spaceIdArriveAt,
+                            PieceDatas.makePiece(DEFAULT_PROMOTION_FUNC.apply(spaceIdArriveAt, piece.color)));}
             }
             //endregion
 
@@ -472,7 +477,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         chessHistoryTracker.setHash(hashGenerator.getCurrentHash());
         chessHistoryTracker.pushTurn();
 
-        StateChangeListener.<GameStateChanges>notifyListeners(turnEndListenerList, chessHistoryTracker.peekTurn());
+        StateChangeListener.notifyListeners(turnEndListenerList, chessHistoryTracker.peekTurn());
         //peek the turn just pushed.
 
         //region UPDATING_GAME_PROPERTIES_AND STATS
@@ -539,14 +544,14 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM:BLACK_PM].generateMoves();
         //endregion
 
-        StateChangeListener.<GameStateChanges>notifyListeners(undoTurnListenerList, gameStateChanges);
+        StateChangeListener.notifyListeners(undoTurnListenerList, gameStateChanges);
     }
 
     public void advanceBoardState(GameStateChanges gameStateChanges){
         this.gameStats = gameStateChanges.getGameStats();
         this.gameProperties = gameStateChanges.getGameProperties();
 
-        StateChangeListener.<PropertiesStatsChange>notifyListeners(propertiesStatsChangeListenerList,
+        StateChangeListener.notifyListeners(propertiesStatsChangeListenerList,
                 new PropertiesStatsChange(gameProperties, gameStats)); //announce new rules added.
 
         chessBoard.advanceBoardState(gameStateChanges.getBoardStateChanges()); //throws nullpointerexcep
@@ -600,7 +605,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
             chessBoard.disableDebugMode();
         }
     }
-
+    @SuppressWarnings("unused")
     public void changeConfigurations(Configurations configurations){
         this.configurations = configurations;
         updateConfigurations();
@@ -611,3 +616,4 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     }
     //endregion
 }
+

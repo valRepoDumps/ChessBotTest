@@ -11,7 +11,7 @@ public class IrregularPieceData extends PieceData{
 
     //region KNIGHT_FUNCS
     public static final BiFunction<Object, Integer, int[]> KNIGHT_MOVES_FUNC =
-            (Object game, Integer spaceId) ->{
+            (Object _, Integer spaceId) ->{
 
                 int[] possibleSquares = new int[] {ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
                         ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
@@ -266,6 +266,7 @@ public class IrregularPieceData extends PieceData{
 
     public BiFunction<Object, Integer, int[]> movesFunc;
 
+    @SuppressWarnings("unused")
     public IrregularPieceData(short pieceId, boolean color, int value, String name, ImageIcon graphic,
                               BiFunction<Object, Integer, int[]> movesFunc) {
         super(pieceId, color, value, name, graphic);

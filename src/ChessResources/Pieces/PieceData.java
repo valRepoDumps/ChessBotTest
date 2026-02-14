@@ -8,7 +8,7 @@ public class PieceData {
     public static final boolean WHITE = true;
 
 
-    public static final short EMPTY_SPACE = 0;
+    //public static final short EMPTY_SPACE = 0;
     public static final short BPAWN = 1;
     public static final short BKNIGHT = 2;
     public static final short BBISHOP = 3;
@@ -24,6 +24,7 @@ public class PieceData {
     public static final short WKING = 22;
 
     public static final short INVALID_PIECES = 27;
+    public final static int PIECES_DIFF = 16;
     //endregion
 
     public short pieceId;
@@ -39,13 +40,6 @@ public class PieceData {
         this.name = name;
         this.graphic = graphic;
     }
-
-//    public PieceData(boolean color, int value, String name) {
-//        this.color = color;
-//        this.value = value;
-//        this.name = name;
-//        this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + name + ".png");
-//    }
 
     public PieceData(PieceData piece)
     {
@@ -78,8 +72,8 @@ public class PieceData {
         this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + this.name + ".png");
     }
 
-    public boolean isColor(){
-        return (pieceId&16) == 0 ? WHITE:BLACK;
+    public boolean getColor(){
+        return (pieceId&PIECES_DIFF) == 0 ? BLACK:WHITE;
     }
 }
 
