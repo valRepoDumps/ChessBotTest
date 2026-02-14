@@ -72,7 +72,7 @@ public class ChessPredictionEngine<T extends ChessBoard, U extends MinimalChessG
 
         return new MinimalChessGame<ChessBoard>(boardClone, choosePiecePromotion,
                 game.gameProperties, game.gameStats,
-                new Configurations(false, false, false));
+                Configurations.createCloneGameConfig());
     }
 
     public void advanceSimulation(GameStateChanges gameStateChanges){

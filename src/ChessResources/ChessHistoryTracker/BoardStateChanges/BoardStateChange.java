@@ -1,6 +1,7 @@
 package ChessResources.ChessHistoryTracker.BoardStateChanges;
 
 import ChessResources.Pieces.PieceData;
+import ChessResources.Pieces.PieceDatas;
 
 public class BoardStateChange{
     private PieceData piece;
@@ -9,7 +10,7 @@ public class BoardStateChange{
 
     public BoardStateChange(PieceData piece, int spaceId, int spaceIdArriveAt)
     {
-        this.piece = PieceData.copyPiece(piece); //should always be a copy.
+        this.piece = PieceDatas.copyPiece(piece); //should always be a copy.
         this.spaceId = spaceId;
         this.spaceIdArriveAt = spaceIdArriveAt;
     }

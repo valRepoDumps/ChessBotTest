@@ -2,6 +2,7 @@ package ChessResources.ChessHistoryTracker;
 
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
+import ChessResources.Hasher.HashContainer;
 
 import java.sql.Array;
 import java.util.ArrayList;
@@ -11,7 +12,8 @@ public class GameStateChanges {
 
     private PropertiesStatsChange currentPropertiesStats; //the properties and stats of the game BEFORE any moves
     private ArrayList<BoardStateChange> boardStateChanges = new ArrayList<>();
-    //region call method??
+    private HashContainer hs;
+    //region CONSTRUCTOR
     public GameStateChanges(BoardStateChange boardStateChange, boolean[] gameProperties,
                             int[] gameStats)
     {
@@ -43,6 +45,7 @@ public class GameStateChanges {
         boardStateChanges.add(boardStateChange);
     }
     //endregion
+
     //region SETTERS
     public void setGamePropertiesStats(boolean[] gameProperties,
                                         int[] gameStats)
@@ -58,8 +61,12 @@ public class GameStateChanges {
         return boardStateChanges.getLast();
     }
     public void addBoardStateChanges(BoardStateChange b){boardStateChanges.add(b);}
+    public void setHash(HashContainer hs){
+        this.hs = hs.clone();
+    }
     //endregion
 
+    //region GETTERS
     public int[] getGameStats()
     {
         return Arrays.copyOf(currentPropertiesStats.getGameStats(), currentPropertiesStats.getGameStats().length);
@@ -69,8 +76,14 @@ public class GameStateChanges {
         return Arrays.copyOf(currentPropertiesStats.getGameProperties(),
                 currentPropertiesStats.getGameProperties().length);
     }
+    public HashContainer getHashOfPosition(){
+        return hs;
+    }
+
     public ArrayList<BoardStateChange> getBoardStateChanges(){return  boardStateChanges;}
-;
+
+    //endregion
+
     @Override
     public String toString()
     {

@@ -2,12 +2,18 @@ package ChessResources.ChessHistoryTracker;
 
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
+import ChessResources.ChessListener.StateChangeListener;
+import ChessResources.Hasher.HashContainer;
 
 import java.util.ArrayList;
+import java.util.Hashtable;
 
 public class ChessHistoryTracker {
-    ArrayList<GameStateChanges> history = new ArrayList<>();
-    private GameStateChanges currentGameState;
+    protected ArrayList<GameStateChanges> history = new ArrayList<>();
+    protected Hashtable<HashContainer, Integer> tableOfPositions = new Hashtable<>();
+    protected GameStateChanges currentGameState;
+
+    protected boolean threeFoldRepitionFlag = false;
     public ChessHistoryTracker()
     {}
 
@@ -31,7 +37,15 @@ public class ChessHistoryTracker {
             System.out.println("There should exist a non-null current game state");
         }
         currentGameState = null; //reset temp currentGameState
+
+        tableOfPositions.put(peekTurn().getHashOfPosition(),
+                tableOfPositions.getOrDefault(peekTurn().getHashOfPosition(), 0)+1);
+
+        if (tableOfPositions.getOrDefault(peekTurn().getHashOfPosition(), 0) == 3){
+            threeFoldRepitionFlag = true;
+        }
     }
+
     public void setGamePropertiesStats(boolean[] gameProperties, int[] gameStats)
     {
         if(currentGameState == null)
@@ -53,6 +67,10 @@ public class ChessHistoryTracker {
         {
             currentGameState.setGamePropertiesStats(propertiesStatsChange);
         }
+    }
+
+    public void setHash(HashContainer hs){
+        currentGameState.setHash(hs);
     }
     public void pushBoardStateChange(BoardStateChange boardStateChange)
     {
@@ -82,7 +100,24 @@ public class ChessHistoryTracker {
     {
         return history.getLast();
     }
+
+    public GameStateChanges getTurn(int idx){
+//        if (idx < 0 || idx >= totalTurns()){
+//            return null;
+//        }
+
+        return history.get(idx);
+    }
+
+    public boolean isThreeFoldRepitionFlag(){
+        return threeFoldRepitionFlag;
+    }
+    public int totalTurns(){
+        return history.size();
+    }
     public boolean isEmpty(){return history.isEmpty();}
+
+    public Hashtable<HashContainer, Integer> getTableOfPositions(){return tableOfPositions;}
     @Override
     public String toString()
     {

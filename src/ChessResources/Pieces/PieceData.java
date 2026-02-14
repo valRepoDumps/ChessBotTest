@@ -12,16 +12,16 @@ public class PieceData {
     public static final short BPAWN = 1;
     public static final short BKNIGHT = 2;
     public static final short BBISHOP = 3;
-    public static final short BROOK = 5;
-    public static final short BQUEEN = 9;
-    public static final short BKING = 10;
+    public static final short BROOK = 4;
+    public static final short BQUEEN = 5;
+    public static final short BKING = 6;
 
     public static final short WPAWN = 17;
     public static final short WKNIGHT = 18;
     public static final short WBISHOP = 19;
-    public static final short WROOK = 21;
-    public static final short WQUEEN = 25;
-    public static final short WKING = 26;
+    public static final short WROOK = 20;
+    public static final short WQUEEN = 21;
+    public static final short WKING = 22;
 
     public static final short INVALID_PIECES = 27;
     //endregion
@@ -78,24 +78,8 @@ public class PieceData {
         this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + this.name + ".png");
     }
 
-    public static boolean getColor(PieceData piece)
-    {
-        return switch (piece.pieceId) {
-            case BPAWN, BKING, BKNIGHT, BROOK, BBISHOP, BQUEEN -> BLACK;
-            case WPAWN, WKING, WKNIGHT, WBISHOP, WROOK, WQUEEN -> WHITE;
-            default -> WHITE;
-        };
+    public boolean isColor(){
+        return (pieceId&16) == 0 ? WHITE:BLACK;
     }
-
-    public static PieceData copyPiece(PieceData pieceData)
-    {
-        return switch (pieceData) {
-            case null -> PieceDatas.NO_PIECE;
-            case SlidingPieceData slidingPieceData -> new SlidingPieceData(slidingPieceData);
-            case IrregularPieceData irregularPieceData -> new IrregularPieceData(irregularPieceData);
-            default -> new PieceData(pieceData);
-        };
-    }
-    
 }
 

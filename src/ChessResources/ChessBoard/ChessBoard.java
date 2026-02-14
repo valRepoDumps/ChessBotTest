@@ -11,8 +11,7 @@ import ChessResources.Pieces.PieceDatas;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static ChessResources.Pieces.PieceData.INVALID_PIECES;
-import static ChessResources.Pieces.PieceData.copyPiece;
+import static ChessResources.Pieces.PieceDatas.copyPiece;
 
 public class ChessBoard implements Debuggable {
     //region PRE_CODE
@@ -399,7 +398,7 @@ public class ChessBoard implements Debuggable {
     public static ChessBoard cloneBoard(ChessBoard original){
         ChessBoard clone = new ChessBoard();
         for (int i = 0; i < ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE; ++i){
-            clone.setPieceAt(i, PieceData.copyPiece(original.getPiece(i)));
+            clone.setPieceAt(i, PieceDatas.copyPiece(original.getPiece(i)));
         }
 
         return clone;
