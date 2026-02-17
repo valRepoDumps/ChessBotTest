@@ -57,12 +57,7 @@ public class PieceDatas
 
     public static PieceData copyPiece(PieceData pieceData)
     {
-        return switch (pieceData) {
-            case null -> PieceDatas.NO_PIECE;
-            case SlidingPieceData slidingPieceData -> new SlidingPieceData(slidingPieceData);
-            case IrregularPieceData irregularPieceData -> new IrregularPieceData(irregularPieceData);
-            default -> new PieceData(pieceData);
-        };
+        if (pieceData == null) return null;
+        return pieceData.getCopyofPiece();
     }
-
 }

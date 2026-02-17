@@ -5,6 +5,7 @@ import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
 
 import javax.swing.*;
+import java.util.UUID;
 import java.util.function.BiFunction;
 
 public class IrregularPieceData extends PieceData{
@@ -273,6 +274,11 @@ public class IrregularPieceData extends PieceData{
         this.movesFunc = movesFunc;
     }
 
+    public IrregularPieceData(UUID uniqueId, short pieceId, boolean color, int value, String name, ImageIcon graphic,
+                              BiFunction<Object, Integer, int[]> movesFunc) {
+        super(uniqueId, pieceId, color, value, name, graphic);
+        this.movesFunc = movesFunc;
+    }
     public IrregularPieceData(short pieceId)
     {
         super(pieceId);
@@ -290,8 +296,19 @@ public class IrregularPieceData extends PieceData{
         super(piece);
         this.movesFunc = piece.movesFunc;
     }
+
     public int[] getPossibleMoves(MinimalChessGame<?> game, int spaceId)
     {
         return movesFunc.apply(game, spaceId);
+    }
+
+    @Override
+    public IrregularPieceData clonePiece() {
+        return new IrregularPieceData(uniqueId, pieceId, color, value, name, graphic, movesFunc);
+    }
+
+    @Override
+    public IrregularPieceData getCopyofPiece(){
+        return new IrregularPieceData(this);
     }
 }

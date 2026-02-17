@@ -1,8 +1,8 @@
 package ChessResources.Pieces;
 
 import javax.swing.*;
-
-public class PieceData {
+import java.util.UUID;
+public abstract class PieceData {
     //region PIECE_DATA_CONSTS
     public static final boolean BLACK = false;
     public static final boolean WHITE = true;
@@ -27,13 +27,27 @@ public class PieceData {
     public final static int PIECES_DIFF = 16;
     //endregion
 
+    //region VALUES
+    protected final UUID uniqueId;
     public short pieceId;
     public boolean color;
     public int value;
     public String name;
     public ImageIcon graphic;
+    //endregion
+
+    //region CONSTRUCTORS
+    public PieceData(UUID uniqueId, short pieceId, boolean color, int value, String name, ImageIcon graphic) {
+        this.uniqueId = uniqueId;
+        this.pieceId = pieceId;
+        this.color = color;
+        this.value = value;
+        this.name = name;
+        this.graphic = graphic;
+    }
 
     public PieceData(short pieceId, boolean color, int value, String name, ImageIcon graphic) {
+        this.uniqueId = UUID.randomUUID();
         this.pieceId = pieceId;
         this.color = color;
         this.value = value;
@@ -43,15 +57,12 @@ public class PieceData {
 
     public PieceData(PieceData piece)
     {
-        this.pieceId = piece.pieceId;
-        this.color = piece.color;
-        this.value = piece.value;
-        this.name = piece.name;
-        this.graphic = piece.graphic;
+        this(UUID.randomUUID(), piece.pieceId, piece.color, piece.value, piece.name, piece.graphic);
     }
 
     public PieceData(short pieceId)
     {
+        this.uniqueId = UUID.randomUUID();
         this.pieceId = pieceId;
         switch(pieceId) {
             case BPAWN: this.color = BLACK;this.value = 1;this.name = "black_pawn";break;
@@ -71,9 +82,30 @@ public class PieceData {
         }
         this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + this.name + ".png");
     }
+    //endregion
+
+    public UUID getUniqueId(){return uniqueId;}
 
     public boolean getColor(){
         return (pieceId&PIECES_DIFF) == 0 ? BLACK:WHITE;
+    }
+
+    @Override
+    public boolean equals(Object pd){
+        if (!(pd instanceof PieceData)) return false;
+        return uniqueId.equals(((PieceData)pd).getUniqueId());
+    }
+
+    public abstract PieceData clonePiece();
+    public abstract PieceData getCopyofPiece();
+    @Override
+    public int hashCode(){
+        return uniqueId.hashCode();
+    }
+
+    @Override
+    public String toString(){
+        return this.name;
     }
 }
 

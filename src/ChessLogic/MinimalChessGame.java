@@ -177,6 +177,8 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         return possibleMoves[color == ChessBoard.WHITE ? WHITE_PM : BLACK_PM];
     }
 
+    public Configurations getConfigurations(){return configurations;}
+
     //endregion
 
     //region HELPERS
@@ -281,20 +283,21 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     //region TURN_HANDLING
     public boolean movePiece(int spaceIdToMove, int spaceIdArriveAt)
     {
+        chessBoard.checkBoardMapParity("9");
         StateChangeListener.notifyListeners(propertiesStatsChangeListenerList,
                 new PropertiesStatsChange(gameProperties, gameStats)); //announce new rules added.
 
         //int promotionSpaceId = -1; //should doubled as check to see if promotion is possible.
         int opCode = NORMAL_MOVE;
         PieceData piece = chessBoard.getPiece(spaceIdToMove);
-
+        chessBoard.checkBoardMapParity("10");
         if (possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM : BLACK_PM]
                 .possibleMoves.containsKey(spaceIdToMove) &&
                 possibleMoves[gameProperties[SIDE_TO_MOVE] == PieceData.WHITE? WHITE_PM : BLACK_PM]
                         .possibleMoves.get(spaceIdToMove).containSpace(spaceIdArriveAt)
         ) {
             int spaceIdCaptureAt = spaceIdArriveAt;
-
+            chessBoard.checkBoardMapParity("11");
             gameStats[ENPASSANT_TARGET] = INVALID_ENPASSANT_TARGET;
             if (piece.pieceId == PieceData.BPAWN || piece.pieceId == PieceData.WPAWN)
             {
@@ -303,7 +306,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                         ChessBoard.isImmediateWest(spaceIdToMove, spaceIdArriveAt) ||
                                 ChessBoard.isImmediateEast(spaceIdToMove, spaceIdArriveAt)))
                 {//if the spaceIdArriveAt is east or west of pawn, must be diagonal move. With no piece -> enpassant
-
+                    chessBoard.checkBoardMapParity("12");
                     short northId = chessBoard.getPieceIdAt(spaceIdArriveAt +
                             ChessBoard.directionOffsets[ChessBoard.NORTH]);
 
@@ -318,6 +321,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                     opCode = ENPASSANT;
                     //secondPiece = chessBoard.getPiece(spaceIdCaptureAt);
                 }
+                chessBoard.checkBoardMapParity("13");
                 //en passant logic
                 if (Math.abs(ChessBoard.getRow(spaceIdToMove) - ChessBoard.getRow(spaceIdArriveAt)) == 2) //pawn moved 2 space
                 {
@@ -333,7 +337,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                     }
                 }
                 //endregion
-
+                chessBoard.checkBoardMapParity("14");
                 //region PROMOTION_LOGIC
                 if (piece.pieceId == PieceData.BPAWN && ChessBoard.getRow(spaceIdArriveAt) == ChessBoard.BOARD_SIZE-1)
                 //check pawn color, do not assume pawn dont go backward or start at like row 0 or 8.
@@ -347,6 +351,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                     opCode = PROMOTION;
                 }
                 //endregion
+                chessBoard.checkBoardMapParity("7");
             }
 
             //region CASTLING_LOGIC_&_TRACK_KINGS
@@ -615,5 +620,6 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         return configurations.isDebugMode();
     }
     //endregion
+
 }
 

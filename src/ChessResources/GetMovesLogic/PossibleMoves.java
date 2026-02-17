@@ -9,6 +9,7 @@ import ChessResources.Pieces.PieceDatas;
 import ChessResources.Pieces.SlidingPieceData;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class PossibleMoves {
     //region PRE_CONSTRUCTOR
@@ -36,9 +37,10 @@ public class PossibleMoves {
     //region MOVE_GEN
     public void generateMoves()
     {
-        for (int startSquare = 0; startSquare < ChessBoardUI.BOARD_SIZE* ChessBoardUI.BOARD_SIZE; ++startSquare)
+        for (Map.Entry<PieceData, Integer> entry : chessGame.chessBoard.getPieceOnBoardMap().entrySet())
         {
-            PieceData piece = chessGame.chessBoard.getPiece(startSquare);
+            PieceData piece = entry.getKey();
+            int startSquare = entry.getValue();
 
             if (piece != PieceDatas.NO_PIECE && piece.color == color)
             {
@@ -50,7 +52,6 @@ public class PossibleMoves {
                 {
                     generateJumpingMoves(startSquare, (IrregularPieceData) piece);
                 }
-
             }
         }
     }

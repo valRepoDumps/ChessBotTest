@@ -6,6 +6,7 @@ import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.ChessBoard.ChessBoardUI;
 
 import javax.swing.*;
+import java.util.UUID;
 import java.util.function.BiFunction;
 
 public class SlidingPieceData extends PieceData {
@@ -136,8 +137,10 @@ public class SlidingPieceData extends PieceData {
                 ChessBoard chessBoard = ((MinimalChessGame<?>) game).chessBoard;
                 SlidingPieceData piece = (SlidingPieceData) chessBoard.getPiece(spaceId);
 
-                if (chessBoard.isEnemyPieceAt(spaceId + ChessBoardUI.directionOffsets[ChessBoardUI.NORTH], piece.color) ||
-                        chessBoard.isEnemyPieceAt(spaceId + 2* ChessBoardUI.directionOffsets[ChessBoardUI.NORTH], piece.color))
+                if (chessBoard.isEnemyPieceAt(spaceId +
+                        ChessBoardUI.directionOffsets[ChessBoardUI.NORTH], piece.color) ||
+                        chessBoard.isEnemyPieceAt(spaceId +
+                                2* ChessBoardUI.directionOffsets[ChessBoardUI.NORTH], piece.color))
                 {
                     return 1; //if enemy is right in front, or up to 2 range in front, range will always be 1.
                 }
@@ -208,6 +211,15 @@ public class SlidingPieceData extends PieceData {
         this.directionFunc = directionFunc;
     }
 
+    SlidingPieceData(UUID uniqueId, short pieceId, boolean color, int value, String name, ImageIcon graphic,
+                     BiFunction<Object, Integer, Integer> maxRangeFunc,
+                     BiFunction<Object, Integer, short[]> directionFunc)
+    {
+        super(uniqueId, pieceId, color, value, name, graphic);
+        this.maxRangeFunc = maxRangeFunc;
+        this.directionFunc = directionFunc;
+    }
+
     public SlidingPieceData(SlidingPieceData piece)
     {
         super(piece);
@@ -222,6 +234,18 @@ public class SlidingPieceData extends PieceData {
     }
     public int getMaxRange(MinimalChessGame<?> chessGame, int spaceId) {
         return maxRangeFunc.apply(chessGame, spaceId);
+    }
+
+    @Override
+    public SlidingPieceData clonePiece(){
+        return new SlidingPieceData(uniqueId, pieceId, color, value,
+                name, graphic, maxRangeFunc, directionFunc);
+    }
+
+
+    @Override
+    public SlidingPieceData getCopyofPiece(){
+        return new SlidingPieceData(this);
     }
 }
 
