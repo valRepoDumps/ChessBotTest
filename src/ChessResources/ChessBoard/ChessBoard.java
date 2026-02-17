@@ -9,6 +9,7 @@ import ChessResources.Pieces.PieceDatas;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import static ChessResources.Pieces.PieceDatas.copyPiece;
 
@@ -38,6 +39,7 @@ public class ChessBoard implements Debuggable {
     public static final boolean WHITE = true;
 
     protected PieceData[] boardSquares = new PieceData[BOARD_SIZE*BOARD_SIZE];
+    protected HashMap<PieceData, Integer> currPieceLocation = new HashMap<>();
     protected final ArrayList<StateChangeListener<BoardStateChange>> stateChangeListenerList = new ArrayList<>();
 
     protected boolean debugMode = false;
@@ -269,7 +271,7 @@ public class ChessBoard implements Debuggable {
         if (!isValidSpaceId(spaceId)) return false;
         if (getPiece(spaceId) == PieceDatas.NO_PIECE) return false;//no enemy piece
 
-        return getPiece(spaceId).color != pieceColor;
+        return getPiece(spaceId).getColor() != pieceColor;
     }
 
     public boolean isAlliedPieceAt(int spaceId, boolean pieceColor)
@@ -281,12 +283,12 @@ public class ChessBoard implements Debuggable {
     public short getPieceIdAt(int spaceId)
     {
         if (getPiece(spaceId) == PieceDatas.NO_PIECE) return PieceData.INVALID_PIECES;
-        else return getPiece(spaceId).pieceId;
+        else return getPiece(spaceId).getPieceId();
     }
 
     public int findPiece(int pieceId){
         for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; ++i){
-            if (boardSquares[i] != null && boardSquares[i].pieceId == pieceId) return i;
+            if (boardSquares[i] != null && boardSquares[i].getPieceId() == pieceId) return i;
         }
         return INVALID_SPACE_ID;
     }
@@ -351,7 +353,7 @@ public class ChessBoard implements Debuggable {
                     boardStateChange.getSpaceId() != INVALID_SPACE_ID);
 
             if (boardStateChange.getSpaceIdArriveAt() == INVALID_SPACE_ID) {//piece is taken out of board, thus must be spawned back in.
-                DebugMode.debugPrint(this, "Spawned in, piece is: " + boardStateChange.getPiece().name );
+                DebugMode.debugPrint(this, "Spawned in, piece is: " + boardStateChange.getPiece().getName() );
                 setPieceAt(boardStateChange.getSpaceId(), boardStateChange.getPiece());
             } else if (boardStateChange.getSpaceId() == INVALID_SPACE_ID) {//piece is spawned, must be taken out of board.
                 DebugMode.debugPrint(this, "Delete Piece");

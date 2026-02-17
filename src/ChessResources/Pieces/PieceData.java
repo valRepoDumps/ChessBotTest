@@ -1,8 +1,9 @@
 package ChessResources.Pieces;
 
 import javax.swing.*;
+import java.util.UUID;
 
-public class PieceData {
+public abstract class PieceData {
     //region PIECE_DATA_CONSTS
     public static final boolean BLACK = false;
     public static final boolean WHITE = true;
@@ -27,13 +28,15 @@ public class PieceData {
     public final static int PIECES_DIFF = 16;
     //endregion
 
-    public short pieceId;
-    public boolean color;
-    public int value;
-    public String name;
-    public ImageIcon graphic;
+    protected UUID uuid;
+    protected short pieceId;
+    protected boolean color;
+    protected int value;
+    protected String name;
+    protected ImageIcon graphic;
 
-    public PieceData(short pieceId, boolean color, int value, String name, ImageIcon graphic) {
+    public PieceData(UUID uuid, short pieceId, boolean color, int value, String name, ImageIcon graphic) {
+        this.uuid = uuid;
         this.pieceId = pieceId;
         this.color = color;
         this.value = value;
@@ -41,17 +44,20 @@ public class PieceData {
         this.graphic = graphic;
     }
 
+    public PieceData(short pieceId, boolean color, int value, String name, ImageIcon graphic) {
+        this(UUID.randomUUID(), pieceId, color,value,name, graphic);
+    }
+
     public PieceData(PieceData piece)
     {
-        this.pieceId = piece.pieceId;
-        this.color = piece.color;
-        this.value = piece.value;
-        this.name = piece.name;
-        this.graphic = piece.graphic;
+        this(piece.getUuid(), piece.getPieceId(),
+                piece.getColor(), piece.getValue(),
+                piece.getName(), piece.getGraphic());
     }
 
     public PieceData(short pieceId)
     {
+        this.uuid = UUID.randomUUID();
         this.pieceId = pieceId;
         switch(pieceId) {
             case BPAWN: this.color = BLACK;this.value = 1;this.name = "black_pawn";break;
@@ -72,8 +78,37 @@ public class PieceData {
         this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + this.name + ".png");
     }
 
+    @Override
+    public int hashCode() {
+        return uuid.hashCode();
+    }
+
+    public boolean equals(PieceData pd){
+        return uuid.equals(pd.uuid);
+    }
+
+    public abstract PieceData clone();
+
+    //region GETTERS
+    public UUID getUuid(){return  uuid;}
     public boolean getColor(){
         return (pieceId&PIECES_DIFF) == 0 ? BLACK:WHITE;
     }
+    public short getPieceId() {
+        return pieceId;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public ImageIcon getGraphic() {
+        return graphic;
+    }
+    //endregion
 }
 

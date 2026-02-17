@@ -40,7 +40,7 @@ public class PossibleMoves {
         {
             PieceData piece = chessGame.chessBoard.getPiece(startSquare);
 
-            if (piece != PieceDatas.NO_PIECE && piece.color == color)
+            if (piece != PieceDatas.NO_PIECE && piece.getColor() == color)
             {
                 if (piece instanceof SlidingPieceData)
                 {
@@ -107,7 +107,7 @@ public class PossibleMoves {
         int[] moves = piece.getPossibleMoves(chessGame, startSquare);
         for (int move : moves)
         {
-            if (ChessBoard.isValidSpaceId(move) && !chessGame.isAlliedPieceAt(move, piece.color))
+            if (ChessBoard.isValidSpaceId(move) && !chessGame.isAlliedPieceAt(move, piece.getColor()))
             {
                 addMoveToPossibleMoves(startSquare, move, piece);
             }
@@ -115,7 +115,7 @@ public class PossibleMoves {
     }
 
     private void addMoveToPossibleMoves(int startSquare, int move, PieceData piece){
-        if (strictMovesChecker && chessGame.selfMoveWontThreatenSelfKing(startSquare, move, piece.color)) return;
+        if (strictMovesChecker && chessGame.selfMoveWontThreatenSelfKing(startSquare, move, piece.getColor())) return;
 
         if (possibleMoves.containsKey(startSquare)) {
             possibleMoves.get(startSquare).addMoves(move);

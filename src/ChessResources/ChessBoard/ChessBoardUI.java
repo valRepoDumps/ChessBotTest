@@ -89,7 +89,7 @@ public class ChessBoardUI extends ChessBoard {
 
                 square.setPreferredSize(new Dimension(SQUARE_PIXEL_SIZE,SQUARE_PIXEL_SIZE));
                 if (getPiece(row*BOARD_SIZE + col) != PieceDatas.NO_PIECE) {
-                    square.setIcon(getPiece(row*BOARD_SIZE + col).graphic);
+                    square.setIcon(getPiece(row*BOARD_SIZE + col).getGraphic());
                 }
                 square.setBackground(boardSquaresColor[row*BOARD_SIZE + col] == BLACK ? BLACK_COLOR : WHITE_COLOR);
 
@@ -105,7 +105,7 @@ public class ChessBoardUI extends ChessBoard {
 
         //this is private, so dont need much check.
         if (getPiece(spaceId) != PieceDatas.NO_PIECE) {
-            getGraphicAt(spaceId).setIcon(getPiece(spaceId).graphic);
+            getGraphicAt(spaceId).setIcon(getPiece(spaceId).getGraphic());
             getGraphicAt(spaceId).setBorder(null); //reset all borders.
         }
         else

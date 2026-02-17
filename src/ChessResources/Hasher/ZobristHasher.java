@@ -54,7 +54,7 @@ public final class ZobristHasher<Board extends ChessBoard> {
 
         for (int spaceId = 0; spaceId < Board.BOARD_SIZE*Board.BOARD_SIZE; ++spaceId){
             if (!game.getBoard().isEmptySpaceAt(spaceId))
-                key^=getHashWithSpaceIdAndPiece(spaceId, game.getBoard().getBoardSquares()[spaceId].pieceId);
+                key^=getHashWithSpaceIdAndPiece(spaceId, game.getBoard().getBoardSquares()[spaceId].getPieceId());
         }
 
         if (game.getGameProperties()[MinimalChessGame.SIDE_TO_MOVE] == Board.BLACK){

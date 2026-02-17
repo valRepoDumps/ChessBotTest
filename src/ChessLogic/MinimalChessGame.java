@@ -220,8 +220,8 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         gameStats[TOTAL_MOVES_ELAPSED] = Integer.parseInt(args[5]);
 
         //region ASSIGN_KINGS_LOCATION
-        gameStats[WHITE_KING_SPACEID] = chessBoard.findPiece(PieceDatas.WKING_DATA.pieceId);
-        gameStats[BLACK_KING_SPACEID] = chessBoard.findPiece(PieceDatas.BKING_DATA.pieceId);
+        gameStats[WHITE_KING_SPACEID] = chessBoard.findPiece(PieceDatas.WKING_DATA.getPieceId());
+        gameStats[BLACK_KING_SPACEID] = chessBoard.findPiece(PieceDatas.BKING_DATA.getPieceId());
         //endregion
     }
 
@@ -296,7 +296,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
             int spaceIdCaptureAt = spaceIdArriveAt;
 
             gameStats[ENPASSANT_TARGET] = INVALID_ENPASSANT_TARGET;
-            if (piece.pieceId == PieceData.BPAWN || piece.pieceId == PieceData.WPAWN)
+            if (piece.getPieceId() == PieceData.BPAWN || piece.getPieceId() == PieceData.WPAWN)
             {
                 //region EN_PASSANT_LOGIC
                 if (chessBoard.isEmptySpaceAt(spaceIdArriveAt) && (
@@ -321,7 +321,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                 //en passant logic
                 if (Math.abs(ChessBoard.getRow(spaceIdToMove) - ChessBoard.getRow(spaceIdArriveAt)) == 2) //pawn moved 2 space
                 {
-                    if (piece.pieceId == PieceData.BPAWN)
+                    if (piece.getPieceId() == PieceData.BPAWN)
                     {
                         this.gameStats[ENPASSANT_TARGET] = spaceIdArriveAt + ChessBoard.directionOffsets[ChessBoard.NORTH];
                         //no need to check column and row validity, always exist North in case pawn moved 2 space in standard board.
@@ -335,13 +335,13 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                 //endregion
 
                 //region PROMOTION_LOGIC
-                if (piece.pieceId == PieceData.BPAWN && ChessBoard.getRow(spaceIdArriveAt) == ChessBoard.BOARD_SIZE-1)
+                if (piece.getPieceId() == PieceData.BPAWN && ChessBoard.getRow(spaceIdArriveAt) == ChessBoard.BOARD_SIZE-1)
                 //check pawn color, do not assume pawn dont go backward or start at like row 0 or 8.
                 {
                     //promotionSpaceId = spaceIdArriveAt;
                     opCode = PROMOTION;
                 }
-                else if (piece.pieceId == PieceData.WPAWN && ChessBoard.getRow(spaceIdArriveAt) == 0)
+                else if (piece.getPieceId() == PieceData.WPAWN && ChessBoard.getRow(spaceIdArriveAt) == 0)
                 {
                     //promotionSpaceId = spaceIdArriveAt;
                     opCode = PROMOTION;
@@ -350,7 +350,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
             }
 
             //region CASTLING_LOGIC_&_TRACK_KINGS
-            if (piece.pieceId == PieceData.WKING)
+            if (piece.getPieceId() == PieceData.WKING)
             {
                 gameStats[WHITE_KING_SPACEID] = spaceIdArriveAt;
                 if (ChessBoard.getCol(spaceIdToMove) - ChessBoard.getCol(spaceIdArriveAt) > 1)
@@ -373,7 +373,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                 gameProperties[WHITE_CASTLE_QUEEN] = false;
                 gameProperties[WHITE_CASTLE_KING] = false;
             }
-            else if (piece.pieceId == PieceData.BKING)
+            else if (piece.getPieceId() == PieceData.BKING)
             {
                 gameStats[BLACK_KING_SPACEID] = spaceIdArriveAt;
                 if (ChessBoard.getCol(spaceIdToMove) - ChessBoard.getCol(spaceIdArriveAt) > 1)
@@ -395,7 +395,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                 gameProperties[BLACK_CASTLE_QUEEN] = false;
                 gameProperties[BLACK_CASTLE_KING] = false;
             }
-            else if (piece.pieceId == PieceData.WROOK) //these rook funcs wont work if i ever want to implement chess960.
+            else if (piece.getPieceId() == PieceData.WROOK) //these rook funcs wont work if i ever want to implement chess960.
             {
                 if (gameProperties[WHITE_CASTLE_KING] && ChessBoard.getCol(spaceIdToMove) == 7)
                 {
@@ -406,7 +406,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                     gameProperties[WHITE_CASTLE_QUEEN] = false;
                 }
             }
-            else if (piece.pieceId == PieceData.BROOK)
+            else if (piece.getPieceId() == PieceData.BROOK)
             {
                 if (gameProperties[BLACK_CASTLE_KING] && ChessBoard.getCol(spaceIdToMove) == 7)
                 {
@@ -421,8 +421,8 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
 
             //region ACTUALLY_MOVING_THE_PIECE
             if (chessBoard.getPiece(spaceIdToMove) != null &&
-                    (chessBoard.getPiece(spaceIdToMove).pieceId == PieceData.BPAWN ||
-                            chessBoard.getPiece(spaceIdToMove).pieceId == PieceData.WPAWN)){
+                    (chessBoard.getPiece(spaceIdToMove).getPieceId() == PieceData.BPAWN ||
+                            chessBoard.getPiece(spaceIdToMove).getPieceId() == PieceData.WPAWN)){
                 resetHalfMoves();
             }
             if (chessBoard.isPieceAt(spaceIdCaptureAt)){
@@ -434,10 +434,10 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
             {
                 try{
                 promotionHandler(spaceIdArriveAt,
-                        PieceDatas.makePiece(choosePromotionPiece.apply(spaceIdArriveAt, piece.color)));}
+                        PieceDatas.makePiece(choosePromotionPiece.apply(spaceIdArriveAt, piece.getColor())));}
                 catch(NullPointerException e){
                     promotionHandler(spaceIdArriveAt,
-                            PieceDatas.makePiece(DEFAULT_PROMOTION_FUNC.apply(spaceIdArriveAt, piece.color)));}
+                            PieceDatas.makePiece(DEFAULT_PROMOTION_FUNC.apply(spaceIdArriveAt, piece.getColor())));}
             }
             //endregion
 

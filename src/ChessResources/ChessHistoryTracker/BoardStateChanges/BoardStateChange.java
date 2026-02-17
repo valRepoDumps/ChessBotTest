@@ -24,6 +24,6 @@ public class BoardStateChange{
         if (piece == null){
             return "null : " + spaceId +"->" + spaceIdArriveAt;
         }
-        return piece.name + ": " + spaceId + "->" + spaceIdArriveAt;
+        return piece.getName() + ": " + spaceId + "->" + spaceIdArriveAt;
     }
 }

@@ -6,6 +6,7 @@ import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.ChessBoard.ChessBoardUI;
 
 import javax.swing.*;
+import java.util.UUID;
 import java.util.function.BiFunction;
 
 public class SlidingPieceData extends PieceData {
@@ -208,6 +209,15 @@ public class SlidingPieceData extends PieceData {
         this.directionFunc = directionFunc;
     }
 
+    SlidingPieceData(UUID uuid, short pieceId, boolean color, int value, String name, ImageIcon graphic,
+                     BiFunction<Object, Integer, Integer> maxRangeFunc,
+                     BiFunction<Object, Integer, short[]> directionFunc)
+    {
+        super(uuid, pieceId, color, value, name, graphic);
+        this.maxRangeFunc = maxRangeFunc;
+        this.directionFunc = directionFunc;
+    }
+
     public SlidingPieceData(SlidingPieceData piece)
     {
         super(piece);
@@ -222,6 +232,10 @@ public class SlidingPieceData extends PieceData {
     }
     public int getMaxRange(MinimalChessGame<?> chessGame, int spaceId) {
         return maxRangeFunc.apply(chessGame, spaceId);
+    }
+
+    public SlidingPieceData clone(){
+        return new SlidingPieceData(uuid, pieceId, color, value, name, graphic, maxRangeFunc, directionFunc);
     }
 }
 
