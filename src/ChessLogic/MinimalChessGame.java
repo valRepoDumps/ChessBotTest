@@ -269,6 +269,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
 
     private void promotionHandler(int spaceId, PieceData piece)
     {
+        //chessBoard.movePieceCapture(ChessBoard.INVALID_SPACE_ID, spaceId, spaceId);
         chessBoard.spawnPieceAt(spaceId, piece);
     }
 

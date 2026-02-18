@@ -10,8 +10,9 @@ import ChessResources.Pieces.PieceDatas;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
-import static ChessResources.Pieces.PieceDatas.copyPiece;
+import static ChessResources.Pieces.PieceDatas.getUniqueClone;
 
 public class ChessBoard implements Debuggable {
     //region PRE_CODE
@@ -39,17 +40,40 @@ public class ChessBoard implements Debuggable {
     public static final boolean WHITE = true;
 
     protected PieceData[] boardSquares = new PieceData[BOARD_SIZE*BOARD_SIZE];
-    protected HashMap<PieceData, Integer> currPieceLocation = new HashMap<>();
-    protected final ArrayList<StateChangeListener<BoardStateChange>> stateChangeListenerList = new ArrayList<>();
-
+    public Map<PieceData, Integer> currPieceLocation = new HashMap<>();
+    protected final ArrayList<StateChangeListener<BoardStateChange>> boardMoveListeners = new ArrayList<>();
+    protected final ArrayList<StateChangeListener<BoardStateChange>> stateChangeListeners = new ArrayList<>();
     protected boolean debugMode = false;
     //endregion
 
+    public final StateChangeListener<BoardStateChange> BOARD_STATE_CHANGE_LOGGER =
+            (BoardStateChange boardStateChange)->{
+
+                PieceData pieceData = boardStateChange.getPiece();
+                int spaceId = boardStateChange.getSpaceId();
+                int spaceIdArriveAt = boardStateChange.getSpaceIdArriveAt();
+
+                if (ChessBoard.isValidSpaceId(boardStateChange.getSpaceIdArriveAt())){
+                    if (pieceData == PieceDatas.NO_PIECE){
+                        currPieceLocation.remove(getPiece(spaceIdArriveAt));
+                    }
+                    else
+                        currPieceLocation.put(pieceData, spaceIdArriveAt);
+                }
+                else{
+                    currPieceLocation.remove(pieceData);
+                }
+                DebugMode.debugPrint(this, currPieceLocation);
+                DebugMode.debugPrint(this, currPieceLocation.size());
+            };
     //region CONSTRUCTOR
-    public ChessBoard(){}
+    public ChessBoard(){
+        stateChangeListeners.add(BOARD_STATE_CHANGE_LOGGER);
+    }
     
     public ChessBoard(String piecePlacement)
     {
+        this();
         setUpPieces(piecePlacement);
     }
     //endregion
@@ -81,19 +105,19 @@ public class ChessBoard implements Debuggable {
 
                     switch(c)
                     {
-                        case 'k': setPieceAt(i*BOARD_SIZE+currCol, copyPiece(PieceDatas.BKING_DATA)); break;
-                        case 'q': setPieceAt(i*BOARD_SIZE+currCol, copyPiece(PieceDatas.BQUEEN_DATA)); break;
-                        case 'b': setPieceAt(i*BOARD_SIZE+currCol, copyPiece(PieceDatas.BBISHOP_DATA)); break;
-                        case 'n': setPieceAt(i*BOARD_SIZE+currCol, copyPiece(PieceDatas.BKNIGHT_DATA)); break;
-                        case 'r': setPieceAt(i*BOARD_SIZE+currCol, copyPiece(PieceDatas.BROOK_DATA)); break;
-                        case 'p': setPieceAt(i*BOARD_SIZE+currCol, copyPiece(PieceDatas.BPAWN_DATA)); break;
+                        case 'k': setPieceAt(i*BOARD_SIZE+currCol, getUniqueClone(PieceDatas.BKING_DATA)); break;
+                        case 'q': setPieceAt(i*BOARD_SIZE+currCol, getUniqueClone(PieceDatas.BQUEEN_DATA)); break;
+                        case 'b': setPieceAt(i*BOARD_SIZE+currCol, getUniqueClone(PieceDatas.BBISHOP_DATA)); break;
+                        case 'n': setPieceAt(i*BOARD_SIZE+currCol, getUniqueClone(PieceDatas.BKNIGHT_DATA)); break;
+                        case 'r': setPieceAt(i*BOARD_SIZE+currCol, getUniqueClone(PieceDatas.BROOK_DATA)); break;
+                        case 'p': setPieceAt(i*BOARD_SIZE+currCol, getUniqueClone(PieceDatas.BPAWN_DATA)); break;
 
-                        case 'K': setPieceAt(i*BOARD_SIZE+currCol, copyPiece(PieceDatas.WKING_DATA)); break;
-                        case 'Q': setPieceAt(i*BOARD_SIZE+currCol, copyPiece(PieceDatas.WQUEEN_DATA)); break;
-                        case 'B': setPieceAt(i*BOARD_SIZE+currCol, copyPiece(PieceDatas.WBISHOP_DATA)); break;
-                        case 'N': setPieceAt(i*BOARD_SIZE+currCol, copyPiece(PieceDatas.WKNIGHT_DATA)); break;
-                        case 'R': setPieceAt(i*BOARD_SIZE+currCol, copyPiece(PieceDatas.WROOK_DATA)); break;
-                        case 'P': setPieceAt(i*BOARD_SIZE+currCol, copyPiece(PieceDatas.WPAWN_DATA)); break;
+                        case 'K': setPieceAt(i*BOARD_SIZE+currCol, getUniqueClone(PieceDatas.WKING_DATA)); break;
+                        case 'Q': setPieceAt(i*BOARD_SIZE+currCol, getUniqueClone(PieceDatas.WQUEEN_DATA)); break;
+                        case 'B': setPieceAt(i*BOARD_SIZE+currCol, getUniqueClone(PieceDatas.WBISHOP_DATA)); break;
+                        case 'N': setPieceAt(i*BOARD_SIZE+currCol, getUniqueClone(PieceDatas.WKNIGHT_DATA)); break;
+                        case 'R': setPieceAt(i*BOARD_SIZE+currCol, getUniqueClone(PieceDatas.WROOK_DATA)); break;
+                        case 'P': setPieceAt(i*BOARD_SIZE+currCol, getUniqueClone(PieceDatas.WPAWN_DATA)); break;
 
                         default: throw new IllegalArgumentException("Incorrect FEN format!");
                     }
@@ -196,25 +220,28 @@ public class ChessBoard implements Debuggable {
     //region PIECE_FUNCS
     protected void setPieceAt(int spaceId, PieceData piece)
     {//protected to avoid uses messing with listener. used during initilization
+        StateChangeListener.notifyListeners(this.stateChangeListeners,
+                new BoardStateChange(piece, ChessBoard.INVALID_SPACE_ID, spaceId));
         if (isValidSpaceId(spaceId)) boardSquares[spaceId] = piece;
     }
 
     public void spawnPieceAt(int spaceId, PieceData piece)
     {
+        setPieceAt(spaceId, PieceDatas.NO_PIECE);
         setPieceAt(spaceId, piece);
 
         //spawn piece by moving it in from nowhere.
-        StateChangeListener.notifyListeners(this.stateChangeListenerList,
+        StateChangeListener.notifyListeners(this.boardMoveListeners,
                 new BoardStateChange(piece, ChessBoard.INVALID_SPACE_ID, spaceId));
 
     }
 
-    public void deSpawnPieceAt(int spaceId){
+    protected void deSpawnPieceAt(int spaceId){
         PieceData disappearedPiece = getPiece(spaceId);
 
         if (disappearedPiece != PieceDatas.NO_PIECE) //ensure proper reconstruction later.
         {
-            StateChangeListener.notifyListeners(this.stateChangeListenerList,
+            StateChangeListener.notifyListeners(this.boardMoveListeners,
                     new BoardStateChange(disappearedPiece, spaceId, ChessBoard.INVALID_SPACE_ID));
         }
         setPieceAt(spaceId, PieceDatas.NO_PIECE); //disappear piece.
@@ -240,7 +267,7 @@ public class ChessBoard implements Debuggable {
         //notifyMoveListener(new BoardStateChange(capturedPiece, spaceIdArriveAt, ChessBoard.INVALID_SPACE_ID));
 
         PieceData piece = movePiecePrimitive(spaceIdToMove, spaceIdArriveAt);
-        StateChangeListener.notifyListeners(this.stateChangeListenerList,
+        StateChangeListener.notifyListeners(this.boardMoveListeners,
                 new BoardStateChange(piece, spaceIdToMove, spaceIdArriveAt));
     }
 
@@ -319,7 +346,7 @@ public class ChessBoard implements Debuggable {
     public ChessBoard clone(){
         ChessBoard clone = new ChessBoard();
         for (int i = 0; i < ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE; ++i){
-            clone.setPieceAt(i, PieceDatas.copyPiece(this.getPiece(i)));
+            clone.setPieceAt(i, PieceDatas.getUniqueClone(this.getPiece(i)));
         }
 
         return clone;
@@ -331,7 +358,7 @@ public class ChessBoard implements Debuggable {
     //ways to addMoveListener to Board
     public void addMoveListener(StateChangeListener<BoardStateChange> stateChangeListener)
     {
-        stateChangeListenerList.add(stateChangeListener);
+        boardMoveListeners.add(stateChangeListener);
     }
     //endregion
 

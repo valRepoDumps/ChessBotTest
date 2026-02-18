@@ -26,8 +26,8 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
     }
 
     public ChessGame(ChessGUI chessGUI, BiFunction<Integer, Boolean, Short> choosePromotionPiece) {
-        this("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", chessGUI,
-                choosePromotionPiece, new Configurations());
+        this("3qk3/3pp3/8/8/8/8/3PP3/3QK3 w - - 0 1", chessGUI,
+                choosePromotionPiece, new Configurations(true, true, true, true));
     }
 
     private void playerClick(int spaceId)

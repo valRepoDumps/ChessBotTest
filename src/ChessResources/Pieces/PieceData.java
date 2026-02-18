@@ -83,12 +83,20 @@ public abstract class PieceData {
         return uuid.hashCode();
     }
 
-    public boolean equals(PieceData pd){
-        return uuid.equals(pd.uuid);
+    @Override
+    public boolean equals(Object pd){
+        if (!(pd instanceof PieceData)) return false;
+
+        return uuid.equals(((PieceData)pd).uuid);
     }
 
     public abstract PieceData clone();
+    public abstract PieceData getUniqueClone();
 
+    @Override
+    public String toString(){
+        return uuid + " " + name;
+    }
     //region GETTERS
     public UUID getUuid(){return  uuid;}
     public boolean getColor(){

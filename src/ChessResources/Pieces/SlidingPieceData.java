@@ -234,8 +234,14 @@ public class SlidingPieceData extends PieceData {
         return maxRangeFunc.apply(chessGame, spaceId);
     }
 
+    @Override
     public SlidingPieceData clone(){
         return new SlidingPieceData(uuid, pieceId, color, value, name, graphic, maxRangeFunc, directionFunc);
+    }
+
+    @Override
+    public SlidingPieceData getUniqueClone(){
+        return new SlidingPieceData(pieceId, color, value, name, graphic, maxRangeFunc, directionFunc);
     }
 }
 

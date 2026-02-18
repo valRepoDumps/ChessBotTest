@@ -306,4 +306,8 @@ public class IrregularPieceData extends PieceData{
         return new IrregularPieceData(uuid, pieceId, color, value, name, graphic, movesFunc);
     }
 
+    @Override
+    public IrregularPieceData getUniqueClone(){
+        return new IrregularPieceData(pieceId, color, value, name, graphic, movesFunc);
+    }
 }

@@ -36,10 +36,9 @@ public class PossibleMoves {
     //region MOVE_GEN
     public void generateMoves()
     {
-        for (int startSquare = 0; startSquare < ChessBoardUI.BOARD_SIZE* ChessBoardUI.BOARD_SIZE; ++startSquare)
+        for (PieceData piece : chessGame.chessBoard.currPieceLocation.keySet())
         {
-            PieceData piece = chessGame.chessBoard.getPiece(startSquare);
-
+            int startSquare = chessGame.chessBoard.currPieceLocation.get(piece);
             if (piece != PieceDatas.NO_PIECE && piece.getColor() == color)
             {
                 if (piece instanceof SlidingPieceData)
