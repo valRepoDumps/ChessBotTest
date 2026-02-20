@@ -2,8 +2,10 @@ package ChessResources.Hasher;
 
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
+import ChessResources.Pieces.PieceData;
 import ChessResources.Pieces.PieceDatas;
 
+import java.util.Map;
 import java.util.Random;
 
 public final class ZobristHasher<Board extends ChessBoard> {
@@ -52,9 +54,20 @@ public final class ZobristHasher<Board extends ChessBoard> {
     public long getGameHash(MinimalChessGame<Board> game) {
         long key = 0L;
 
-        for (int spaceId = 0; spaceId < Board.BOARD_SIZE*Board.BOARD_SIZE; ++spaceId){
-            if (!game.getBoard().isEmptySpaceAt(spaceId))
-                key^=getHashWithSpaceIdAndPiece(spaceId, game.getBoard().getBoardSquares()[spaceId].getPieceId());
+        for (Map.Entry<PieceData, Integer> entry : game.chessBoard.currPieceLocationWhite.entrySet())
+        {
+            int startSquare = entry.getValue();
+            PieceData piece = entry.getKey();
+
+            key^=getHashWithSpaceIdAndPiece(startSquare, piece.getPieceId());
+        }
+
+        for (Map.Entry<PieceData, Integer> entry : game.chessBoard.currPieceLocationBlack.entrySet())
+        {
+            int startSquare = entry.getValue();
+            PieceData piece = entry.getKey();
+
+            key^=getHashWithSpaceIdAndPiece(startSquare, piece.getPieceId());
         }
 
         if (game.getGameProperties()[MinimalChessGame.SIDE_TO_MOVE] == Board.BLACK){

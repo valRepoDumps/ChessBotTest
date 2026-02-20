@@ -2,6 +2,7 @@ package ChessResources.ChessBoard;
 
 import ChessLogic.Debug.DebugMode;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
+import ChessResources.ChessListener.StateChangeListener;
 import ChessResources.Pieces.PieceData;
 import ChessResources.Pieces.PieceDatas;
 
@@ -27,13 +28,21 @@ public class ChessBoardUI extends ChessBoard {
     private IntConsumer onSquareClicked = null;
     //endregion
 
+    public final StateChangeListener<BoardStateChange> GRAPHIC_UPDATE_LOGGER =
+            (BoardStateChange boardStateChange)->{
+
+                updateBoardGraphic(boardStateChange.getSpaceId());
+                updateBoardGraphic(boardStateChange.getSpaceIdArriveAt());
+                //this.chessHistoryTracker.pushBoardStateChange(boardStateChange);
+                //DebugMode.debugPrint(this, "Board State Change: " + boardStateChange);
+            };
     public ChessBoardUI(){}
     @SuppressWarnings("unused")
     public ChessBoardUI(String piecePlacement)
     {
+        addMoveListener(GRAPHIC_UPDATE_LOGGER);
         this.setUpPieces(piecePlacement);
     }
-
 
     public void setOnSquareClicked(IntConsumer handler) {
         this.onSquareClicked = handler;

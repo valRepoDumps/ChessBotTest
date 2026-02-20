@@ -9,13 +9,14 @@ import ChessResources.Pieces.PieceDatas;
 import ChessResources.Pieces.SlidingPieceData;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class PossibleMoves {
     //region PRE_CONSTRUCTOR
     //region DATAS
     public HashMap<Integer, ChessSpaces> possibleMoves = new HashMap<>();
     protected MinimalChessGame<?> chessGame;
-    protected boolean color;
+    //protected boolean color;
     public int[][] numSquaresToEdge = new int[ChessBoard.BOARD_SIZE* ChessBoard.BOARD_SIZE][8];
     //endregion
 
@@ -25,21 +26,25 @@ public class PossibleMoves {
     //endregion
     //endregion
 
-
-    public PossibleMoves(MinimalChessGame<?> chessGame, boolean color)
+    public PossibleMoves(MinimalChessGame<?> chessGame)
     {
         this.chessGame = chessGame;
-        this.color = color;
         precomputeSquaresToEdgeData();
     }
 
     //region MOVE_GEN
     public void generateMoves()
     {
-        for (PieceData piece : chessGame.chessBoard.currPieceLocation.keySet())
+        Map<PieceData, Integer> currPieceLocation = chessGame.getCurrentColorToMove() == PieceData.WHITE?
+                chessGame.chessBoard.currPieceLocationWhite : chessGame.chessBoard.currPieceLocationBlack;
+
+        for (Map.Entry<PieceData, Integer> entry : currPieceLocation.entrySet())
         {
-            int startSquare = chessGame.chessBoard.currPieceLocation.get(piece);
-            if (piece != PieceDatas.NO_PIECE && piece.getColor() == color)
+            int startSquare = entry.getValue();
+            PieceData piece = entry.getKey();
+
+            if (piece != PieceDatas.NO_PIECE &&
+                    piece.getColor() == chessGame.getCurrentColorToMove())
             {
                 if (piece instanceof SlidingPieceData)
                 {
@@ -63,39 +68,40 @@ public class PossibleMoves {
         {
             for (int n = 0; n < maxRange && n < numSquaresToEdge[startSquare][direction]; ++n)
             {
-                int targetSquare = startSquare + ChessBoardUI.directionOffsets[direction]*(n+1);
+                int targetSquare = startSquare + ChessBoard.directionOffsets[direction]*(n+1);
 
                 if (targetSquare >= 64) break;
 
-                if (chessGame.isAlliedPieceAt(targetSquare, color)) break;
+                if (chessGame.isAlliedPieceAt(targetSquare, chessGame.getCurrentColorToMove())) break;
                 //encounter piece of our color, dont move in this dir any more
 
                 addMoveToPossibleMoves(startSquare, targetSquare, piece);
 
-                if (chessGame.isEnemyPieceAt(targetSquare, color)) break; //encounter opponents color, also break.
+                if (chessGame.isEnemyPieceAt(targetSquare, chessGame.getCurrentColorToMove())) break; //encounter opponents color, also break.
             }
         }
+
     }
 
     public void precomputeSquaresToEdgeData()
     {
-        for (int row = 0; row< ChessBoardUI.BOARD_SIZE; ++row)
+        for (int row = 0; row< ChessBoard.BOARD_SIZE; ++row)
         {
-            for (int col = 0; col < ChessBoardUI.BOARD_SIZE; ++col)
+            for (int col = 0; col < ChessBoard.BOARD_SIZE; ++col)
             {
                 int numSouth = 7 - row;
                 int numEast = 7 - col;
 
-                int squareIdx = row* ChessBoardUI.BOARD_SIZE + col;
+                int squareIdx = row* ChessBoard.BOARD_SIZE + col;
 
-                numSquaresToEdge[squareIdx][ChessBoardUI.NORTH] = row;
-                numSquaresToEdge[squareIdx][ChessBoardUI.SOUTH] = numSouth;
-                numSquaresToEdge[squareIdx][ChessBoardUI.EAST] = numEast;
-                numSquaresToEdge[squareIdx][ChessBoardUI.WEST] = col;
-                numSquaresToEdge[squareIdx][ChessBoardUI.NORTH_WEST] = Math.min(row, col);
-                numSquaresToEdge[squareIdx][ChessBoardUI.NORTH_EAST] = Math.min(row, numEast);
-                numSquaresToEdge[squareIdx][ChessBoardUI.SOUTH_WEST] = Math.min(numSouth, col);
-                numSquaresToEdge[squareIdx][ChessBoardUI.SOUTH_EAST] = Math.min(numSouth, numEast);
+                numSquaresToEdge[squareIdx][ChessBoard.NORTH] = row;
+                numSquaresToEdge[squareIdx][ChessBoard.SOUTH] = numSouth;
+                numSquaresToEdge[squareIdx][ChessBoard.EAST] = numEast;
+                numSquaresToEdge[squareIdx][ChessBoard.WEST] = col;
+                numSquaresToEdge[squareIdx][ChessBoard.NORTH_WEST] = Math.min(row, col);
+                numSquaresToEdge[squareIdx][ChessBoard.NORTH_EAST] = Math.min(row, numEast);
+                numSquaresToEdge[squareIdx][ChessBoard.SOUTH_WEST] = Math.min(numSouth, col);
+                numSquaresToEdge[squareIdx][ChessBoard.SOUTH_EAST] = Math.min(numSouth, numEast);
 
             }
         }
@@ -116,17 +122,21 @@ public class PossibleMoves {
     private void addMoveToPossibleMoves(int startSquare, int move, PieceData piece){
         if (strictMovesChecker && chessGame.selfMoveWontThreatenSelfKing(startSquare, move, piece.getColor())) return;
 
-        if (possibleMoves.containsKey(startSquare)) {
-            possibleMoves.get(startSquare).addMoves(move);
+        ChessSpaces spaces = possibleMoves.get(startSquare);
+
+        if (spaces == null) {
+            spaces = new ChessSpaces(move);
+            possibleMoves.put(startSquare, spaces);
         } else {
-            possibleMoves.put(startSquare, new ChessSpaces(move));
+            spaces.addMoves(move);
         }
     }
     //endregion
+
     //region HELPERS
     public void clearPossibleMoves()
     {
-        possibleMoves = new HashMap<>();
+        possibleMoves.clear();
     }
 
     public void highlightPossibleMoves(int spaceId, ChessBoardUI chessBoardUI)

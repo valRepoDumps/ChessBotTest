@@ -13,55 +13,11 @@ public class IrregularPieceData extends PieceData{
     //region KNIGHT_FUNCS
     public static final BiFunction<Object, Integer, int[]> KNIGHT_MOVES_FUNC =
             (Object _, Integer spaceId) ->{
-
-                int[] possibleSquares = new int[] {ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
-                        ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
-                        ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID};
-
-                int row = spaceId/ ChessBoard.BOARD_SIZE;
-                int col = spaceId% ChessBoard.BOARD_SIZE;
-
-                if (row - 2 >= 0 && col-1 >= 0) { //assumes input is already valid.
-                    possibleSquares[0] = spaceId + 2 * ChessBoard.directionOffsets[ChessBoard.NORTH] + //upleft
-                            ChessBoard.directionOffsets[ChessBoard.WEST];
-                }
-
-                if (row-2>=0 && col+1 < ChessBoard.BOARD_SIZE){
-                    possibleSquares[1] = spaceId + 2* ChessBoard.directionOffsets[ChessBoard.NORTH] + //upright
-                        ChessBoard.directionOffsets[ChessBoard.EAST];
-                }
-
-                if (row+2< ChessBoard.BOARD_SIZE && col-1 >= 0) {
-                    possibleSquares[2] = spaceId + 2 * ChessBoard.directionOffsets[ChessBoard.SOUTH] + //downleft
-                            ChessBoard.directionOffsets[ChessBoard.WEST];
-                }
-
-                if (row+2< ChessBoard.BOARD_SIZE && col+1 < ChessBoard.BOARD_SIZE){
-                    possibleSquares[3] = spaceId + 2* ChessBoard.directionOffsets[ChessBoard.SOUTH] + //downright
-                        ChessBoard.directionOffsets[ChessBoard.EAST];
-                }
-
-                if (col-2 >= 0 && row -1 >= 0){
-                    possibleSquares[4] = spaceId + 2* ChessBoard.directionOffsets[ChessBoard.WEST] + //leftup
-                        ChessBoard.directionOffsets[ChessBoard.NORTH];}
-                if (col-2 >= 0 && row +1 < ChessBoard.BOARD_SIZE){
-                    possibleSquares[5] = spaceId + 2* ChessBoard.directionOffsets[ChessBoard.WEST] + //leftdown
-                        ChessBoard.directionOffsets[ChessBoard.SOUTH];
-                }
-
-                if (col+2 < ChessBoard.BOARD_SIZE && row-1 >= 0){
-                    possibleSquares[6] = spaceId + 2* ChessBoard.directionOffsets[ChessBoard.EAST] + //rightup
-                        ChessBoard.directionOffsets[ChessBoard.NORTH];
-                }
-                if (col+2 < ChessBoard.BOARD_SIZE && row + 1 < ChessBoard.BOARD_SIZE) {
-                    possibleSquares[7] = spaceId + 2 * ChessBoard.directionOffsets[ChessBoard.EAST] + //rightdown
-                            ChessBoard.directionOffsets[ChessBoard.SOUTH];
-                }
-
-                return possibleSquares;
+                return getPreGenerateKnightMoves(spaceId);
             };
 
     //endregion
+
     //region KING FUNCS
     public static BiFunction<Object, Integer, int[]> WKING_MOVES_FUNC =
             (Object game, Integer spaceId) ->{
@@ -131,7 +87,8 @@ public class IrregularPieceData extends PieceData{
                 //region MOVEMENT_EAST
                 if (c < ChessBoard.BOARD_SIZE-1)
                 {
-                    if (((MinimalChessGame<?>) game).spaceNotUnderThreat(ChessBoard.getEastSpaceId(spaceId, 1), WHITE)) {
+                    if (((MinimalChessGame<?>) game).
+                            spaceNotUnderThreat(ChessBoard.getEastSpaceId(spaceId, 1), WHITE)) {
                         possibleSquares[EAST] = ChessBoard.getEastSpaceId(spaceId, 1);
                     }
                 }
@@ -265,7 +222,17 @@ public class IrregularPieceData extends PieceData{
             };
     //endregion
 
+    public static int POSSIBLE_KNIGHT_MOVES = 8;
+    public static int POSSIBLE_KING_MOVES = 6;
+
+    protected static int[][] preCalcKnightMoves = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][];
+
+    protected static int[][] preCalcKingMoves = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][];
     public BiFunction<Object, Integer, int[]> movesFunc;
+
+    static {
+        preGenerateIrregularPieceMoves();
+    }
 
     @SuppressWarnings("unused")
     public IrregularPieceData(short pieceId, boolean color, int value, String name, ImageIcon graphic,
@@ -309,5 +276,134 @@ public class IrregularPieceData extends PieceData{
     @Override
     public IrregularPieceData getUniqueClone(){
         return new IrregularPieceData(pieceId, color, value, name, graphic, movesFunc);
+    }
+
+    private static int[] getPreGenerateKnightMoves(int spaceId){
+        return preCalcKnightMoves[spaceId];
+    }
+
+    private static int[] getPreGenerateKingMoves(int spaceId){
+        return preCalcKingMoves[spaceId];
+    }
+
+    private static void assignPreGenerateKnightMoves(int spaceId, int[] moves){
+        preCalcKnightMoves[spaceId] = moves;
+    }
+
+    private static void assignPreGenerateKingMoves(int spaceId, int[] moves){
+        preCalcKingMoves[spaceId] = moves;
+    }
+
+    private static void preGenerateKnightMoves(int spaceId){
+
+        int[] possibleSquares = new int[] {ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
+                ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
+                ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID};
+
+        int row = ChessBoard.getRow(spaceId);
+        int col = ChessBoard.getCol(spaceId);
+
+        if (row-2 >= 0 && col-1 >= 0) { //assumes input is already valid.
+            possibleSquares[0] = spaceId +
+                    2*ChessBoard.directionOffsets[ChessBoard.NORTH] + //upleft
+                    ChessBoard.directionOffsets[ChessBoard.WEST];
+        }
+
+        if (row-2>=0 && col+1 < ChessBoard.BOARD_SIZE){
+            possibleSquares[1] = spaceId +
+                    2*ChessBoard.directionOffsets[ChessBoard.NORTH] + //upright
+                    ChessBoard.directionOffsets[ChessBoard.EAST];
+        }
+
+        if (row+2< ChessBoard.BOARD_SIZE && col-1 >= 0) {
+            possibleSquares[2] = spaceId + 2 * ChessBoard.directionOffsets[ChessBoard.SOUTH] + //downleft
+                    ChessBoard.directionOffsets[ChessBoard.WEST];
+        }
+
+        if (row+2< ChessBoard.BOARD_SIZE && col+1 < ChessBoard.BOARD_SIZE){
+            possibleSquares[3] = spaceId + 2* ChessBoard.directionOffsets[ChessBoard.SOUTH] + //downright
+                    ChessBoard.directionOffsets[ChessBoard.EAST];
+        }
+
+        if (col-2 >= 0 && row -1 >= 0){
+            possibleSquares[4] = spaceId + 2* ChessBoard.directionOffsets[ChessBoard.WEST] + //leftup
+                    ChessBoard.directionOffsets[ChessBoard.NORTH];}
+
+        if (col-2 >= 0 && row +1 < ChessBoard.BOARD_SIZE){
+            possibleSquares[5] = spaceId +
+                    2*ChessBoard.directionOffsets[ChessBoard.WEST] + //leftdown
+                    ChessBoard.directionOffsets[ChessBoard.SOUTH];
+        }
+
+        if (col+2 < ChessBoard.BOARD_SIZE && row-1 >= 0){
+            possibleSquares[6] = spaceId +
+                    2*ChessBoard.directionOffsets[ChessBoard.EAST] + //rightup
+                    ChessBoard.directionOffsets[ChessBoard.NORTH];
+        }
+        if (col+2 < ChessBoard.BOARD_SIZE && row + 1 < ChessBoard.BOARD_SIZE) {
+            possibleSquares[7] = spaceId +
+                    2*ChessBoard.directionOffsets[ChessBoard.EAST] + //rightdown
+                    ChessBoard.directionOffsets[ChessBoard.SOUTH];
+        }
+
+        assignPreGenerateKnightMoves(spaceId, possibleSquares);
+    }
+
+    private static void preGenerateKingMoves(int spaceId){
+
+        int[] possibleSquares = new int[] {ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
+                ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
+                ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
+                ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID};
+
+        int row = ChessBoard.getRow(spaceId);
+        int col = ChessBoard.getCol(spaceId);
+
+        if (row < ChessBoard.BOARD_SIZE-1){
+            possibleSquares[0] = spaceId + ChessBoard.directionOffsets[ChessBoard.SOUTH];
+            if (col < ChessBoard.BOARD_SIZE-1){
+                possibleSquares[1] = spaceId + ChessBoard.directionOffsets[ChessBoard.SOUTH_EAST];
+            }
+            if (col > 0){
+                possibleSquares[2] = spaceId + ChessBoard.directionOffsets[ChessBoard.SOUTH_WEST];
+            }
+        }
+
+        if (row > 0){
+            possibleSquares[3] = spaceId + ChessBoard.directionOffsets[ChessBoard.NORTH];
+            if (col < ChessBoard.BOARD_SIZE-1){
+                possibleSquares[4] = spaceId + ChessBoard.directionOffsets[ChessBoard.NORTH_EAST];
+            }
+            if (col > 0){
+                possibleSquares[5] = spaceId + ChessBoard.directionOffsets[ChessBoard.NORTH_WEST];
+            }
+        }
+
+        if (col > 0){
+            possibleSquares[6] = spaceId + ChessBoard.directionOffsets[ChessBoard.WEST];
+        }
+
+        if (col < ChessBoard.BOARD_SIZE-1){
+            possibleSquares[7] = spaceId + ChessBoard.directionOffsets[ChessBoard.EAST];
+        }
+
+        //
+        if (row == 0 || row == ChessBoard.BOARD_SIZE - 1){
+            if (col > 3){
+                possibleSquares[8] = spaceId + 2*ChessBoard.directionOffsets[ChessBoard.WEST];
+            }
+            if (col < 5){
+                possibleSquares[9] = spaceId + 2*ChessBoard.directionOffsets[ChessBoard.EAST];
+            }
+        }
+
+        assignPreGenerateKingMoves(spaceId, possibleSquares);
+    }
+
+    private static void preGenerateIrregularPieceMoves(){
+        for (int i = 0; i < ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE; ++i){
+            preGenerateKnightMoves(i);
+            preGenerateKingMoves(i);
+        }
     }
 }

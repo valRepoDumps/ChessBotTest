@@ -52,7 +52,12 @@ public class PieceDatas
     }
     public static boolean getColor(PieceData piece)
     {
-        return (piece.pieceId & 16) == 0 ? PieceData.BLACK : PieceData.WHITE;
+        return getColor(piece.getPieceId());
+    }
+
+    public static boolean getColor(int pieceId)
+    {
+        return (pieceId & 16) == 0 ? PieceData.BLACK : PieceData.WHITE;
     }
 
     public static PieceData getUniqueClone(PieceData pieceData)

@@ -40,7 +40,10 @@ public class ChessBoard implements Debuggable {
     public static final boolean WHITE = true;
 
     protected PieceData[] boardSquares = new PieceData[BOARD_SIZE*BOARD_SIZE];
-    public Map<PieceData, Integer> currPieceLocation = new HashMap<>();
+
+    public Map<PieceData, Integer> currPieceLocationWhite = new HashMap<>();
+    public Map<PieceData, Integer> currPieceLocationBlack = new HashMap<>();
+
     protected final ArrayList<StateChangeListener<BoardStateChange>> boardMoveListeners = new ArrayList<>();
     protected final ArrayList<StateChangeListener<BoardStateChange>> stateChangeListeners = new ArrayList<>();
     protected boolean debugMode = false;
@@ -55,20 +58,26 @@ public class ChessBoard implements Debuggable {
 
                 if (ChessBoard.isValidSpaceId(boardStateChange.getSpaceIdArriveAt())){
                     if (pieceData == PieceDatas.NO_PIECE){
-                        currPieceLocation.remove(getPiece(spaceIdArriveAt));
+                        currPieceLocationWhite.remove(getPiece(spaceIdArriveAt));
+                        currPieceLocationBlack.remove(getPiece(spaceIdArriveAt));
                     }
-                    else
-                        currPieceLocation.put(pieceData, spaceIdArriveAt);
+                    else {
+                        if (pieceData.getColor() == PieceData.WHITE)
+                            currPieceLocationWhite.put(pieceData, spaceIdArriveAt);
+                        else
+                            currPieceLocationBlack.put(pieceData, spaceIdArriveAt);
+                    }
                 }
                 else{
-                    currPieceLocation.remove(pieceData);
+                    currPieceLocationWhite.remove(pieceData);
+                    currPieceLocationBlack.remove(pieceData);
                 }
-                DebugMode.debugPrint(this, currPieceLocation);
-                DebugMode.debugPrint(this, currPieceLocation.size());
+//                DebugMode.debugPrint(this, currPieceLocation);
+//                DebugMode.debugPrint(this, currPieceLocation.size());
             };
     //region CONSTRUCTOR
     public ChessBoard(){
-        stateChangeListeners.add(BOARD_STATE_CHANGE_LOGGER);
+        addStateChangeListener(BOARD_STATE_CHANGE_LOGGER);
     }
     
     public ChessBoard(String piecePlacement)
@@ -141,13 +150,6 @@ public class ChessBoard implements Debuggable {
     public PieceData[] getBoardSquares(){return Arrays.copyOf(boardSquares, boardSquares.length);}
     //endregion
 
-    //region SETTERS
-    //this method wrongs, should clone all PieceData within too.
-//    public void setBoardSquares(PieceData[] boardSquares){
-//        this.boardSquares = boardSquares.clone();
-//    }
-    //endregion
-
     //region IMMEDIATE_SPACE_FUNCS
     public static boolean isImmediateNorth(int currSpaceId, int targetSpaceId)
     {
@@ -155,7 +157,7 @@ public class ChessBoard implements Debuggable {
     }
     public static int getNorthSpaceId(int currSpaceId, int offset)
     { //user ensure valid input. should use isImmediateNorth check first.
-        return currSpaceId + offset*directionOffsets[NORTH];
+        return getDirSpaceId(currSpaceId, offset,NORTH);
     }
 
     public static boolean isImmediateSouth(int currSpaceId, int targetSpaceId)
@@ -164,7 +166,7 @@ public class ChessBoard implements Debuggable {
     }
     public static int getSouthSpaceId(int currSpaceId, int offset)
     { //user ensure valid input.
-        return currSpaceId + offset*directionOffsets[SOUTH];
+        return getDirSpaceId(currSpaceId, offset,SOUTH);
     }
 
     public static boolean isImmediateEast(int currSpaceId, int targetSpaceId)
@@ -173,33 +175,38 @@ public class ChessBoard implements Debuggable {
     }
     public static int getEastSpaceId(int currSpaceId, int offset)
     { //user ensure good input
-        return currSpaceId + offset*directionOffsets[EAST];
+        return getDirSpaceId(currSpaceId, offset,EAST);
     }
 
     public static boolean isImmediateWest(int currSpaceId, int targetSpaceId)
     {
         return getCol(targetSpaceId) == getCol(currSpaceId) - 1;
     }
+
     public static int getWestSpaceId(int currSpaceId, int offset)
     { //user ensure good input
-        return currSpaceId + offset*directionOffsets[WEST];
+        return getDirSpaceId(currSpaceId, offset,WEST);
     }
 
     public static int getNorthEastSpaceId(int currSpaceId, int offset)
     { //user ensure good input
-        return currSpaceId + directionOffsets[NORTH_EAST]*offset;
+        return getDirSpaceId(currSpaceId, offset,NORTH_EAST);
     }
     public static int getNorthWestSpaceId(int currSpaceId, int offset)
     { //user ensure good input
-        return currSpaceId + directionOffsets[NORTH_WEST]*offset;
+        return getDirSpaceId(currSpaceId, offset,NORTH_WEST);
     }
     public static int getSouthEastSpaceId(int currSpaceId, int offset)
     { //user ensure good input
-        return currSpaceId + directionOffsets[SOUTH_EAST]*offset;
+        return getDirSpaceId(currSpaceId, offset,SOUTH_EAST);
     }
     public static int getSouthWestSpaceId(int currSpaceId, int offset)
     { //user ensure good input
-        return currSpaceId + directionOffsets[SOUTH_WEST]*offset;
+        return getDirSpaceId(currSpaceId, offset,SOUTH_WEST);
+    }
+
+    public static int getDirSpaceId(int spaceId, int offset, int dir){
+        return spaceId + directionOffsets[dir]*offset;
     }
     //endregion
 
@@ -286,7 +293,6 @@ public class ChessBoard implements Debuggable {
         }
     }
 
-
     public boolean isPieceAt(int spaceId)
     {
         if (!isValidSpaceId(spaceId)) return false;
@@ -314,8 +320,14 @@ public class ChessBoard implements Debuggable {
     }
 
     public int findPiece(int pieceId){
-        for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; ++i){
-            if (boardSquares[i] != null && boardSquares[i].getPieceId() == pieceId) return i;
+        Map<PieceData, Integer> currPieceLocation = null;
+
+        if (PieceDatas.getColor(pieceId) == PieceData.WHITE) currPieceLocation = currPieceLocationWhite;
+        else currPieceLocation = currPieceLocationBlack;
+
+        for (PieceData pd : currPieceLocation.keySet()){
+            if (pd.getPieceId() == pieceId)
+                return currPieceLocation.getOrDefault(pd, INVALID_SPACE_ID);
         }
         return INVALID_SPACE_ID;
     }
@@ -356,9 +368,12 @@ public class ChessBoard implements Debuggable {
 
     //region LISTENERS
     //ways to addMoveListener to Board
-    public void addMoveListener(StateChangeListener<BoardStateChange> stateChangeListener)
+    public void addMoveListener(StateChangeListener<BoardStateChange> moveChangeListener)
     {
-        boardMoveListeners.add(stateChangeListener);
+        boardMoveListeners.add(moveChangeListener);
+    }
+    public void addStateChangeListener(StateChangeListener<BoardStateChange> stateChangeListener){
+        stateChangeListeners.add(stateChangeListener);
     }
     //endregion
 
@@ -387,8 +402,8 @@ public class ChessBoard implements Debuggable {
                 setPieceAt(boardStateChange.getSpaceIdArriveAt(), PieceDatas.NO_PIECE);
             } else {
                 DebugMode.debugPrint(this, "Moving piece back");
-                setPieceAt(boardStateChange.getSpaceId(), boardStateChange.getPiece());
                 setPieceAt(boardStateChange.getSpaceIdArriveAt(), PieceDatas.NO_PIECE);
+                setPieceAt(boardStateChange.getSpaceId(), boardStateChange.getPiece());
             }
         }
     }

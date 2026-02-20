@@ -3,15 +3,16 @@ package ChessResources.Pieces;
 import ChessLogic.ChessGame;
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
-import ChessResources.ChessBoard.ChessBoardUI;
+import ChessResources.ChessBoard.ChessBoard;
 
 import javax.swing.*;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.function.BiFunction;
 
 public class SlidingPieceData extends PieceData {
     //region PRE_CONSTRUCTOR
-    public static final int NO_RANGE_LIMIT = ChessBoardUI.BOARD_SIZE;
+    public static final int NO_RANGE_LIMIT = ChessBoard.BOARD_SIZE;
 
     //region PIECE FUNCS
     //region PAWN FUNCS
@@ -23,48 +24,48 @@ public class SlidingPieceData extends PieceData {
 
                 int opCode = 1;
 
-                if (spaceId <= ChessBoardUI.BOARD_SIZE * (ChessBoardUI.BOARD_SIZE-1))
+                if (spaceId <= ChessBoard.BOARD_SIZE * (ChessBoard.BOARD_SIZE-1))
                 {
                     if (chessBoard.isEnemyPieceAt(spaceId +
-                            ChessBoardUI.directionOffsets[ChessBoardUI.SOUTH_EAST], piece.color) ||
-                            (ChessBoardUI.isImmediateSouth(spaceId, 
+                            ChessBoard.directionOffsets[ChessBoard.SOUTH_EAST], piece.color) ||
+                            (ChessBoard.isImmediateSouth(spaceId, 
                                     ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
-                                    ChessBoardUI.isImmediateEast(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]))
+                                    ChessBoard.isImmediateEast(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]))
                     )
                     {
                         opCode = 2;
                         if (chessBoard.isEnemyPieceAt(spaceId +
-                                ChessBoardUI.directionOffsets[ChessBoardUI.SOUTH_WEST], piece.color) ||
-                                (ChessBoardUI.isImmediateSouth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
-                                        ChessBoardUI.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
+                                ChessBoard.directionOffsets[ChessBoard.SOUTH_WEST], piece.color) ||
+                                (ChessBoard.isImmediateSouth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
+                                        ChessBoard.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
                         {
                             opCode = 3;
                         }
                     }
 
                     else if (chessBoard.isEnemyPieceAt(spaceId +
-                            ChessBoardUI.directionOffsets[ChessBoardUI.SOUTH_WEST], piece.color) ||
-                            (ChessBoardUI.isImmediateSouth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
-                                    ChessBoardUI.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
+                            ChessBoard.directionOffsets[ChessBoard.SOUTH_WEST], piece.color) ||
+                            (ChessBoard.isImmediateSouth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
+                                    ChessBoard.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
                     {
                         opCode = 4;
                     }
 
                     if (!chessBoard.isEnemyPieceAt(spaceId +
-                            ChessBoardUI.directionOffsets[ChessBoardUI.SOUTH], piece.color))
+                            ChessBoard.directionOffsets[ChessBoard.SOUTH], piece.color))
                     {
                         opCode*=-1;
                     }
                 }
 
                 return switch (opCode) {
-                    case -1 -> new short[]{ChessBoardUI.SOUTH};
-                    case 2 -> new short[]{ChessBoardUI.SOUTH_EAST};
-                    case -2 -> new short[]{ChessBoardUI.SOUTH_EAST, ChessBoardUI.SOUTH};
-                    case 3 -> new short[]{ChessBoardUI.SOUTH_WEST, ChessBoardUI.SOUTH_EAST};
-                    case -3 -> new short[]{ChessBoardUI.SOUTH, ChessBoardUI.SOUTH_WEST, ChessBoardUI.SOUTH_EAST};
-                    case 4 -> new short[]{ChessBoardUI.SOUTH_WEST};
-                    case -4 -> new short[]{ChessBoardUI.SOUTH_WEST, ChessBoardUI.SOUTH};
+                    case -1 -> new short[]{ChessBoard.SOUTH};
+                    case 2 -> new short[]{ChessBoard.SOUTH_EAST};
+                    case -2 -> new short[]{ChessBoard.SOUTH_EAST, ChessBoard.SOUTH};
+                    case 3 -> new short[]{ChessBoard.SOUTH_WEST, ChessBoard.SOUTH_EAST};
+                    case -3 -> new short[]{ChessBoard.SOUTH, ChessBoard.SOUTH_WEST, ChessBoard.SOUTH_EAST};
+                    case 4 -> new short[]{ChessBoard.SOUTH_WEST};
+                    case -4 -> new short[]{ChessBoard.SOUTH_WEST, ChessBoard.SOUTH};
                     default -> new short[]{};
                 };
             };
@@ -73,12 +74,12 @@ public class SlidingPieceData extends PieceData {
                 ChessBoard chessBoard = ((MinimalChessGame<?>) game).chessBoard;
                 SlidingPieceData piece = (SlidingPieceData) chessBoard.getPiece(spaceId);
 
-                if (chessBoard.isEnemyPieceAt(spaceId + ChessBoardUI.directionOffsets[ChessBoardUI.SOUTH], piece.color) ||
-                chessBoard.isEnemyPieceAt(spaceId + 2* ChessBoardUI.directionOffsets[ChessBoardUI.SOUTH], piece.color))
+                if (chessBoard.isEnemyPieceAt(spaceId + ChessBoard.directionOffsets[ChessBoard.SOUTH], piece.color) ||
+                chessBoard.isEnemyPieceAt(spaceId + 2* ChessBoard.directionOffsets[ChessBoard.SOUTH], piece.color))
                 {
                     return 1; //if enemy is right in front, range will always be 1.
                 }
-                return spaceId / ChessBoardUI.BOARD_SIZE == 1 ? 2 : 1;
+                return spaceId / ChessBoard.BOARD_SIZE == 1 ? 2 : 1;
             };
 
     public static BiFunction<Object, Integer, short[]> WPAWN_DIR_FUNC =
@@ -88,46 +89,46 @@ public class SlidingPieceData extends PieceData {
 
                 int opCode = 1;
 
-                if (spaceId <= ChessBoardUI.BOARD_SIZE * (ChessBoardUI.BOARD_SIZE-1))
+                if (spaceId <= ChessBoard.BOARD_SIZE * (ChessBoard.BOARD_SIZE-1))
                 {
                     if (chessBoard.isEnemyPieceAt(spaceId +
-                            ChessBoardUI.directionOffsets[ChessBoardUI.NORTH_EAST], piece.color) ||
-                            (ChessBoardUI.isImmediateNorth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
-                                    ChessBoardUI.isImmediateEast(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
+                            ChessBoard.directionOffsets[ChessBoard.NORTH_EAST], piece.color) ||
+                            (ChessBoard.isImmediateNorth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
+                                    ChessBoard.isImmediateEast(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
                     {
                         opCode = 2;
                         if (chessBoard.isEnemyPieceAt(spaceId +
-                                ChessBoardUI.directionOffsets[ChessBoardUI.NORTH_WEST], piece.color)||
-                                (ChessBoardUI.isImmediateNorth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
-                                        ChessBoardUI.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
+                                ChessBoard.directionOffsets[ChessBoard.NORTH_WEST], piece.color)||
+                                (ChessBoard.isImmediateNorth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
+                                        ChessBoard.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
                         {
                             opCode = 3;
                         }
                     }
 
                     else if (chessBoard.isEnemyPieceAt(spaceId +
-                            ChessBoardUI.directionOffsets[ChessBoardUI.NORTH_WEST], piece.color) ||
-                            (ChessBoardUI.isImmediateNorth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
-                                    ChessBoardUI.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
+                            ChessBoard.directionOffsets[ChessBoard.NORTH_WEST], piece.color) ||
+                            (ChessBoard.isImmediateNorth(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET]) &&
+                                    ChessBoard.isImmediateWest(spaceId, ((MinimalChessGame<?>) game).gameStats[ChessGame.ENPASSANT_TARGET])))
                     {
                         opCode = 4;
                     }
 
                     if (!chessBoard.isEnemyPieceAt(spaceId +
-                            ChessBoardUI.directionOffsets[ChessBoardUI.NORTH], piece.color))
+                            ChessBoard.directionOffsets[ChessBoard.NORTH], piece.color))
                     {
                         opCode*=-1;
                     }
                 }
 
                 return switch (opCode) {
-                    case -1 -> new short[]{ChessBoardUI.NORTH};
-                    case 2 -> new short[]{ChessBoardUI.NORTH_EAST};
-                    case -2 -> new short[]{ChessBoardUI.NORTH_EAST, ChessBoardUI.NORTH};
-                    case 3 -> new short[]{ChessBoardUI.NORTH_WEST, ChessBoardUI.NORTH_EAST};
-                    case -3 -> new short[]{ChessBoardUI.NORTH, ChessBoardUI.NORTH_WEST, ChessBoardUI.NORTH_EAST};
-                    case 4 -> new short[]{ChessBoardUI.NORTH_WEST};
-                    case -4 -> new short[]{ChessBoardUI.NORTH_WEST, ChessBoardUI.NORTH};
+                    case -1 -> new short[]{ChessBoard.NORTH};
+                    case 2 -> new short[]{ChessBoard.NORTH_EAST};
+                    case -2 -> new short[]{ChessBoard.NORTH_EAST, ChessBoard.NORTH};
+                    case 3 -> new short[]{ChessBoard.NORTH_WEST, ChessBoard.NORTH_EAST};
+                    case -3 -> new short[]{ChessBoard.NORTH, ChessBoard.NORTH_WEST, ChessBoard.NORTH_EAST};
+                    case 4 -> new short[]{ChessBoard.NORTH_WEST};
+                    case -4 -> new short[]{ChessBoard.NORTH_WEST, ChessBoard.NORTH};
                     default -> new short[]{};
                 };
             };
@@ -137,29 +138,29 @@ public class SlidingPieceData extends PieceData {
                 ChessBoard chessBoard = ((MinimalChessGame<?>) game).chessBoard;
                 SlidingPieceData piece = (SlidingPieceData) chessBoard.getPiece(spaceId);
 
-                if (chessBoard.isEnemyPieceAt(spaceId + ChessBoardUI.directionOffsets[ChessBoardUI.NORTH], piece.color) ||
-                        chessBoard.isEnemyPieceAt(spaceId + 2* ChessBoardUI.directionOffsets[ChessBoardUI.NORTH], piece.color))
+                if (chessBoard.isEnemyPieceAt(spaceId + ChessBoard.directionOffsets[ChessBoard.NORTH], piece.color) ||
+                        chessBoard.isEnemyPieceAt(spaceId + 2* ChessBoard.directionOffsets[ChessBoard.NORTH], piece.color))
                 {
                     return 1; //if enemy is right in front, or up to 2 range in front, range will always be 1.
                 }
-                return spaceId / ChessBoardUI.BOARD_SIZE == 6 ? 2 : 1;
+                return spaceId / ChessBoard.BOARD_SIZE == 6 ? 2 : 1;
             };
     //endregion
 
     //region R_B_Q_K FUNCS
     public static BiFunction<Object, Integer, short[]> ROOK_DIR_FUNC =
-            (Object _, Integer _) -> new short[]{ChessBoardUI.NORTH, ChessBoardUI.SOUTH, ChessBoardUI.WEST, ChessBoardUI.EAST};
+            (Object _, Integer _) -> new short[]{ChessBoard.NORTH, ChessBoard.SOUTH, ChessBoard.WEST, ChessBoard.EAST};
     public static BiFunction<Object, Integer, Integer> ROOK_RANGE_FUNC =
             (_, _) -> NO_RANGE_LIMIT;
 
     public static BiFunction<Object, Integer, short[]> BISHOP_DIR_FUNC =
-            (Object _, Integer _) -> new short[]{ChessBoardUI.NORTH_WEST, ChessBoardUI.NORTH_EAST, ChessBoardUI.SOUTH_WEST, ChessBoardUI.SOUTH_EAST};
+            (Object _, Integer _) -> new short[]{ChessBoard.NORTH_WEST, ChessBoard.NORTH_EAST, ChessBoard.SOUTH_WEST, ChessBoard.SOUTH_EAST};
     public static BiFunction<Object, Integer, Integer> BISHOP_RANGE_FUNC =
             (_, _) -> NO_RANGE_LIMIT;
 
     public static BiFunction<Object, Integer, short[]> QUEEN_DIR_FUNC =
-            (Object _, Integer _) -> new short[]{ChessBoardUI.NORTH, ChessBoardUI.SOUTH, ChessBoardUI.WEST, ChessBoardUI.EAST,
-                    ChessBoardUI.NORTH_WEST, ChessBoardUI.NORTH_EAST, ChessBoardUI.SOUTH_WEST, ChessBoardUI.SOUTH_EAST};
+            (Object _, Integer _) -> new short[]{ChessBoard.NORTH, ChessBoard.SOUTH, ChessBoard.WEST, ChessBoard.EAST,
+                    ChessBoard.NORTH_WEST, ChessBoard.NORTH_EAST, ChessBoard.SOUTH_WEST, ChessBoard.SOUTH_EAST};
     public static BiFunction<Object, Integer, Integer> QUEEN_RANGE_FUNC =
             (_, _) -> NO_RANGE_LIMIT;
     //endregion
@@ -168,6 +169,9 @@ public class SlidingPieceData extends PieceData {
 
     public BiFunction<Object, Integer, Integer> maxRangeFunc;
     public BiFunction<Object, Integer, short[]> directionFunc;
+
+    protected int[][][] preComputeBishopMoves = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][][];
+    protected int[][][] preComputeRookMoves = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][][];
     //endregion
 
     //region CONSTRUCTOR
@@ -242,6 +246,42 @@ public class SlidingPieceData extends PieceData {
     @Override
     public SlidingPieceData getUniqueClone(){
         return new SlidingPieceData(pieceId, color, value, name, graphic, maxRangeFunc, directionFunc);
+    }
+
+    private static int[][] preComputeBishopMoves(int spaceId){
+        int[][] bishopMultiDirectionsMoves = new int[4][];
+
+        bishopMultiDirectionsMoves[0] = preComputeDirectionalMoves(spaceId, ChessBoard.NORTH_EAST);
+        bishopMultiDirectionsMoves[1] = preComputeDirectionalMoves(spaceId, ChessBoard.SOUTH_EAST);
+        bishopMultiDirectionsMoves[2] = preComputeDirectionalMoves(spaceId, ChessBoard.SOUTH_WEST);
+        bishopMultiDirectionsMoves[3] = preComputeDirectionalMoves(spaceId, ChessBoard.NORTH_WEST);
+
+        return bishopMultiDirectionsMoves;
+    }
+
+    private static int[][] preComputeRookMoves(int spaceId){
+        int[][] rookMultiDirectionsMoves = new int[4][];
+
+        rookMultiDirectionsMoves[0] = preComputeDirectionalMoves(spaceId, ChessBoard.NORTH);
+        rookMultiDirectionsMoves[1] = preComputeDirectionalMoves(spaceId, ChessBoard.EAST);
+        rookMultiDirectionsMoves[2] = preComputeDirectionalMoves(spaceId, ChessBoard.SOUTH);
+        rookMultiDirectionsMoves[3] = preComputeDirectionalMoves(spaceId, ChessBoard.WEST);
+
+        return rookMultiDirectionsMoves;
+    }
+
+    private static int[] preComputeDirectionalMoves(int spaceId, int dir){
+        int[] bishopMoves = new int[7];
+        Arrays.fill(bishopMoves, ChessBoard.INVALID_SPACE_ID);
+
+        int counter = 1;
+        int move = ChessBoard.getDirSpaceId(spaceId, dir, counter);
+        while (ChessBoard.isValidSpaceId(move)){
+            bishopMoves[counter-1] = move;
+            ++ counter;
+            move = ChessBoard.getDirSpaceId(spaceId, dir, counter);
+        }
+        return bishopMoves;
     }
 }
 

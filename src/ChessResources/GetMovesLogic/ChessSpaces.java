@@ -26,5 +26,6 @@ public class ChessSpaces {
 
     public boolean containSpace(int spaceId) {return chessMoves.contains(spaceId);}
 
+    public List<Integer> getChessMoves(){return chessMoves;}
     //public List<Integer> getChessMoves(){return chessMoves;}
 }

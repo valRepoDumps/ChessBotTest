@@ -1,6 +1,7 @@
 package ChessGUI;
 
 import ChessLogic.ChessGame;
+import ChessLogic.Debug.Tests;
 import ChessResources.ChessBoard.ChessBoardUI;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
 import ChessResources.Pieces.PieceData;
@@ -8,6 +9,7 @@ import ChessResources.Pieces.PieceData;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.util.function.BiFunction;
 
 public class ChessGUI {
@@ -63,9 +65,9 @@ public class ChessGUI {
 
         //region ADDING_INPUTS
         outerPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
-                .put(KeyStroke.getKeyStroke("ENTER"), "enterPressed");
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "backspacePressed");
 
-        outerPanel.getActionMap().put("enterPressed", new AbstractAction() {
+        outerPanel.getActionMap().put("backspacePressed", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 //System.out.println("ENTER pressed!");
@@ -82,9 +84,7 @@ public class ChessGUI {
         //endregion
         //region CHESS_GAME_GRAPHICS
         chessGame = new ChessGame(this, choosePiecePromotionUI);
-        //chessGame = new ChessGame("r1bqkbnr/pp1ppppp/2n5/2p5/4PP2/8/PPPP2PP/RNBQKBNR w KQkq - 1 3   ",
-                //this, choosePiecePromotionUI,
-                //new Configurations(true, true, true));
+
         boardGraphic = chessGame.chessBoard.boardGraphic;
         BOARD_PIXEL_SIZE = ChessBoardUI.BOARD_SIZE * ChessBoardUI.SQUARE_PIXEL_SIZE;
 
@@ -106,4 +106,7 @@ public class ChessGUI {
         frame.setVisible(true);
     }
 
+    public int test(int depth){
+        return Tests.moveGenerationTest(depth, chessGame);
+    }
 }
