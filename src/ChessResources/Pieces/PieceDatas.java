@@ -50,6 +50,7 @@ public class PieceDatas
             return ((TOTAL_PIECES/2 + pieceId&0b111)-1);
         }
     }
+
     public static boolean getColor(PieceData piece)
     {
         return getColor(piece.getPieceId());

@@ -1,234 +1,150 @@
 package ChessResources.Pieces;
 
-import ChessLogic.ChessGame;
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
+import ChessResources.GetMovesLogic.ChessSpaces;
+import ChessResources.HelperFuncs.BoardScan.BoardScan;
+import ChessResources.HelperFuncs.BoardScan.ScanResult;
+import ChessResources.HelperFuncs.PieceFunc;
+import ChessResources.PreCalc;
 
 import javax.swing.*;
 import java.util.UUID;
-import java.util.function.BiFunction;
 
 public class IrregularPieceData extends PieceData{
+    public static final int QUEEN_SIDE_CASTLE = 8;
+    public static final int KING_SIDE_CASTLE = 9;
 
     //region KNIGHT_FUNCS
-    public static final BiFunction<Object, Integer, int[]> KNIGHT_MOVES_FUNC =
-            (Object _, Integer spaceId) ->{
-                return getPreGenerateKnightMoves(spaceId);
+    public static final PieceFunc KNIGHT_MOVES_FUNC =
+            (game,  spaceId,  spaces) ->{
+                ScanResult[] sqrs = BoardScan.jumpScan(game, getPreGenerateKnightMoves(spaceId), spaces);
+                for (ScanResult sq : sqrs){
+                    if (ScanResult.isValid(sq) && game.isEnemyPieceAt(sq.getSpaceId())){
+                        spaces.addMoves(sq.getSpaceId());
+                    }
+                }
             };
 
     //endregion
 
     //region KING FUNCS
-    public static BiFunction<Object, Integer, int[]> WKING_MOVES_FUNC =
-            (Object game, Integer spaceId) ->{
-                int NORTHWEST = 0, NORTH = 1, NORTHEAST = 2, EAST = 3,
-                        SOUTHEAST = 4, SOUTH = 5, SOUTHWEST = 6, WEST = 7,
-                        CASTLE_KING_SIDE = 8, CASTLE_QUEEN_SIDE = 9;
-
-                int[] possibleSquares = new int[] {ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
-                        ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
-                        ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
-                        ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID};
-
-                int r = ChessBoard.getRow(spaceId), c = ChessBoard.getCol(spaceId);
-                //region MOVEMENT_NORTH
-                if (r>0)
-                {
-                    if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                            ChessBoard.getNorthSpaceId(spaceId, 1), WHITE))
-                        possibleSquares[NORTH] = ChessBoard.getNorthSpaceId(spaceId, 1);
-
-                    if (c > 0)
-                    {
-                        if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                                ChessBoard.getNorthWestSpaceId(spaceId, 1), WHITE))
-                            possibleSquares[NORTHWEST] = ChessBoard.getNorthWestSpaceId(spaceId, 1);
+    public static PieceFunc WKING_MOVES_FUNC =
+            (game, spaceId, spaces) ->{
+                int[] moves = getPreGenerateKingMoves(spaceId);
+                for (int i = 0; i < moves.length; ++i){
+                    if (!ChessBoard.isValidSpaceId(moves[i])){
+                        continue;
                     }
-                    if (c < ChessBoard.BOARD_SIZE-1)
-                    {
-                        if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                                ChessBoard.getNorthEastSpaceId(spaceId, 1), WHITE))
-                            possibleSquares[NORTHEAST] = ChessBoard.getNorthEastSpaceId(spaceId, 1);
-                    }
-                }
-                //endregion
 
-                //region MOVEMENT_SOUTH
-                if(r< ChessBoard.BOARD_SIZE-1)
-                {
-                    if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                            ChessBoard.getSouthSpaceId(spaceId, 1), WHITE))
-                        possibleSquares[SOUTH] = ChessBoard.getSouthSpaceId(spaceId, 1);
-                    if (c > 0)
-                    {
-                        if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                                ChessBoard.getSouthWestSpaceId(spaceId, 1), WHITE))
-                            possibleSquares[SOUTHWEST] = ChessBoard.getSouthWestSpaceId(spaceId, 1);
+                    if ((i == QUEEN_SIDE_CASTLE)) {
+                        if (game.gameProperties[MinimalChessGame.WHITE_CASTLE_QUEEN]){
+                            //meaning neither rook nor king has moved
+                            ChessSpaces tmp = new ChessSpaces();
+
+                            ScanResult sr = BoardScan.rayScan(game,
+                                    PreCalc.PRECOMPUTED_MOVES[spaceId][ChessBoard.WEST],
+                                    SlidingPieceData.NO_RANGE_LIMIT, tmp);
+                            if (ScanResult.isValid(sr) && sr.getPieceId() == PieceData.WROOK){
+                                boolean flag = true;
+                                for (int sq : tmp.getChessMoves()){
+                                    if (!game.spaceNotUnderThreatAndEmpty(sq)) flag = false;
+                                }
+                                if (flag)
+                                    spaces.addMoves(moves[i]);}
+                            }
                     }
-                    if (c < ChessBoard.BOARD_SIZE-1)
-                    {
-                        if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                                ChessBoard.getSouthEastSpaceId(spaceId, 1), WHITE))
-                            possibleSquares[SOUTHEAST] = ChessBoard.getSouthEastSpaceId(spaceId, 1);
+                    else if ((i == KING_SIDE_CASTLE)) {
+                        if (game.gameProperties[MinimalChessGame.WHITE_CASTLE_KING]){
+                            //meaning neither rook nor king has moved
+                            ChessSpaces tmp = new ChessSpaces();
+
+                            ScanResult sr = BoardScan.rayScan(game,
+                                    PreCalc.PRECOMPUTED_MOVES[spaceId][ChessBoard.EAST],
+                                    SlidingPieceData.NO_RANGE_LIMIT, tmp);
+
+                            if (ScanResult.isValid(sr) && sr.getPieceId() == PieceData.WROOK){
+                                boolean flag = true;
+                                for (int sq : tmp.getChessMoves()){
+                                    if (!game.spaceNotUnderThreatAndEmpty(sq)) flag = false;
+                                }
+                                if (flag)
+                                    spaces.addMoves(moves[i]);}
+                        }
+                    }
+                    else if (game.spaceNotUnderThreatAndEmpty(moves[i])){
+                        spaces.addMoves(moves[i]);
+                    }
+                    else if (game.isEnemyPieceAt(moves[i]) && game.spaceNotUnderThreat(moves[i])){
+
+                        spaces.addMoves(moves[i]);
                     }
                 }
-                //endregion
-
-                //region WEST_MOVEMENT
-                if (c > 0)
-                {
-                    if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                            ChessBoard.getWestSpaceId(spaceId, 1), WHITE)) {
-                        possibleSquares[WEST] = ChessBoard.getWestSpaceId(spaceId, 1);
-                    }
-                }
-                //endregion
-
-                //region MOVEMENT_EAST
-                if (c < ChessBoard.BOARD_SIZE-1)
-                {
-                    if (((MinimalChessGame<?>) game).
-                            spaceNotUnderThreat(ChessBoard.getEastSpaceId(spaceId, 1), WHITE)) {
-                        possibleSquares[EAST] = ChessBoard.getEastSpaceId(spaceId, 1);
-                    }
-                }
-                //endregion
-
-                //region CASTLING
-                if ((((MinimalChessGame<?>) game).spaceNotUnderThreat(spaceId, WHITE)))
-                {
-                    if (((MinimalChessGame<?>)game).gameProperties[ChessGame.WHITE_CASTLE_KING]
-                    && ((MinimalChessGame<?>) game).spaceNotUnderThreatAndEmpty(
-                            ChessBoard.getEastSpaceId(spaceId, 1), WHITE)
-                    && ((MinimalChessGame<?>) game).spaceNotUnderThreatAndEmpty(
-                            ChessBoard.getEastSpaceId(spaceId, 2), WHITE)
-                    )
-                    {
-                        possibleSquares[CASTLE_KING_SIDE] = ChessBoard.getEastSpaceId(spaceId, 2);
-                    }
-
-                    if (((MinimalChessGame<?>)game).gameProperties[ChessGame.WHITE_CASTLE_QUEEN]
-                    && ((MinimalChessGame<?>) game).spaceNotUnderThreatAndEmpty(
-                            ChessBoard.getWestSpaceId(spaceId, 1), WHITE)
-                    &&((MinimalChessGame<?>) game).spaceNotUnderThreatAndEmpty(
-                            ChessBoard.getWestSpaceId(spaceId, 2), WHITE)
-                    )
-                    {
-                        possibleSquares[CASTLE_QUEEN_SIDE] = ChessBoard.getWestSpaceId(spaceId, 2);
-                    }
-                }
-                //endregion
-                return possibleSquares;
             };
 
-    public static BiFunction<Object, Integer, int[]> BKING_MOVES_FUNC =
-            (Object game, Integer spaceId) ->{
-                int NORTHWEST = 0, NORTH = 1, NORTHEAST = 2, EAST = 3,
-                        SOUTHEAST = 4, SOUTH = 5, SOUTHWEST = 6, WEST = 7,
-                        CASTLE_KING_SIDE = 8, CASTLE_QUEEN_SIDE = 9;
-
-                int[] possibleSquares = new int[] {ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
-                        ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
-                        ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID,
-                        ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID, ChessBoard.INVALID_SPACE_ID};
-
-                int r = ChessBoard.getRow(spaceId), c = ChessBoard.getCol(spaceId);
-                //region MOVEMENT_NORTH
-                if (r>0)
-                {
-                    if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                            ChessBoard.getNorthSpaceId(spaceId, 1), BLACK))
-                        possibleSquares[NORTH] = ChessBoard.getNorthSpaceId(spaceId, 1);
-
-                    if (c > 0)
-                    {
-                        if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                                ChessBoard.getNorthWestSpaceId(spaceId, 1), BLACK))
-                            possibleSquares[NORTHWEST] = ChessBoard.getNorthWestSpaceId(spaceId, 1);
+    public static PieceFunc BKING_MOVES_FUNC =
+            (game, spaceId, spaces) ->{
+                int[] moves = getPreGenerateKingMoves(spaceId);
+                for (int i = 0; i < moves.length; ++i){
+                    if (!ChessBoard.isValidSpaceId(moves[i])){
+                        continue;
                     }
-                    if (c < ChessBoard.BOARD_SIZE-1)
-                    {
-                        if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                                ChessBoard.getNorthEastSpaceId(spaceId, 1), BLACK))
-                            possibleSquares[NORTHEAST] = ChessBoard.getNorthEastSpaceId(spaceId, 1);
+                    if ((i == QUEEN_SIDE_CASTLE)) {
+                        if (game.gameProperties[MinimalChessGame.BLACK_CASTLE_QUEEN]){
+                            //meaning neither rook nor king has moved
+                            ChessSpaces tmp = new ChessSpaces();
+
+                            ScanResult sr = BoardScan.rayScan(game,
+                                    PreCalc.PRECOMPUTED_MOVES[spaceId][ChessBoard.WEST],
+                                    SlidingPieceData.NO_RANGE_LIMIT, tmp);
+                            if (ScanResult.isValid(sr) && sr.getPieceId() == PieceData.BROOK){
+                                boolean flag = true;
+                                for (int sq : tmp.getChessMoves()){
+                                    if (!game.spaceNotUnderThreatAndEmpty(sq)) flag = false;
+                                }
+                                if (flag)
+                                    spaces.addMoves(moves[i]);}
+                        }
+                    }
+                    else if ((i == KING_SIDE_CASTLE)) {
+                        if (game.gameProperties[MinimalChessGame.BLACK_CASTLE_KING]){
+                            //meaning neither rook nor king has moved
+                            ChessSpaces tmp = new ChessSpaces();
+
+                            ScanResult sr = BoardScan.rayScan(game,
+                                    PreCalc.PRECOMPUTED_MOVES[spaceId][ChessBoard.EAST],
+                                    SlidingPieceData.NO_RANGE_LIMIT, tmp);
+
+                            if (ScanResult.isValid(sr) && sr.getPieceId() == PieceData.BROOK){
+                                boolean flag = true;
+                                for (int sq : tmp.getChessMoves()){
+                                    if (!game.spaceNotUnderThreatAndEmpty(sq)) flag = false;
+                                }
+                                if (flag)
+                                    spaces.addMoves(moves[i]);}
+                        }
+                    }
+                    else if (game.spaceNotUnderThreatAndEmpty(moves[i])){
+                        spaces.addMoves(moves[i]);
+                    }
+                    else if (game.isEnemyPieceAt(moves[i]) && game.spaceNotUnderThreat(moves[i])){
+
+                        spaces.addMoves(moves[i]);
                     }
                 }
-                //endregion
-                //region MOVEMENT_SOUTH
-                if(r< ChessBoard.BOARD_SIZE-1)
-                {
-                    if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                            ChessBoard.getSouthSpaceId(spaceId, 1), BLACK))
-                        possibleSquares[SOUTH] = ChessBoard.getSouthSpaceId(spaceId, 1);
-                    if (c > 0)
-                    {
-                        if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                                ChessBoard.getSouthWestSpaceId(spaceId, 1), BLACK))
-                            possibleSquares[SOUTHWEST] = ChessBoard.getSouthWestSpaceId(spaceId, 1);
-                    }
-                    if (c < ChessBoard.BOARD_SIZE-1)
-                    {
-                        if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                                ChessBoard.getSouthEastSpaceId(spaceId, 1), BLACK))
-                            possibleSquares[SOUTHEAST] = ChessBoard.getSouthEastSpaceId(spaceId, 1);
-                    }
-                }
-                //endregion
-                //region MOVEMENT_WEST
-                if (c > 0)
-                {
-                    if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                            ChessBoard.getWestSpaceId(spaceId, 1), BLACK)) {
-                        possibleSquares[WEST] = ChessBoard.getWestSpaceId(spaceId, 1);
-                    }
-                }
-                //endregion
-                //region MOVEMENT_EAST
-                if (c < ChessBoard.BOARD_SIZE-1)
-                {
-                    if (((MinimalChessGame<?>) game).spaceNotUnderThreat(
-                            ChessBoard.getEastSpaceId(spaceId, 1), BLACK)) {
-                        possibleSquares[EAST] = ChessBoard.getEastSpaceId(spaceId, 1);
-                    }
-                }
-                //endregion
-
-                //region CASTLING
-                if ((((MinimalChessGame<?>) game).spaceNotUnderThreat(spaceId, BLACK)))
-                {
-                    if (((MinimalChessGame<?>)game).gameProperties[ChessGame.BLACK_CASTLE_KING]
-                            && ((MinimalChessGame<?>) game).spaceNotUnderThreatAndEmpty(
-                            ChessBoard.getEastSpaceId(spaceId, 1), BLACK)
-                            && ((MinimalChessGame<?>) game).spaceNotUnderThreatAndEmpty(
-                            ChessBoard.getEastSpaceId(spaceId, 2), BLACK)
-                    )
-                    {
-                        possibleSquares[CASTLE_KING_SIDE] = ChessBoard.getEastSpaceId(spaceId, 2);
-                    }
-
-                    if (((MinimalChessGame<?>)game).gameProperties[ChessGame.BLACK_CASTLE_QUEEN]
-                            && ((MinimalChessGame<?>) game).spaceNotUnderThreatAndEmpty(
-                            ChessBoard.getWestSpaceId(spaceId, 1), BLACK)
-                            &&((MinimalChessGame<?>) game).spaceNotUnderThreatAndEmpty(
-                            ChessBoard.getWestSpaceId(spaceId, 2), BLACK)
-                    )
-                    {
-                        possibleSquares[CASTLE_QUEEN_SIDE] = ChessBoard.getWestSpaceId(spaceId, 2);
-                    }
-                }
-                //endregion
-
-                return possibleSquares;
             };
+
+
     //endregion
 
     public static int POSSIBLE_KNIGHT_MOVES = 8;
     public static int POSSIBLE_KING_MOVES = 6;
 
-    protected static int[][] preCalcKnightMoves = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][];
+    public static int[][] PRECALC_KNIGHT_MOVES = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][];
 
-    protected static int[][] preCalcKingMoves = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][];
-    public BiFunction<Object, Integer, int[]> movesFunc;
+    public static int[][] PRECALC_KING_MOVES = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][];
+
+    public PieceFunc movesFunc;
 
     static {
         preGenerateIrregularPieceMoves();
@@ -236,12 +152,12 @@ public class IrregularPieceData extends PieceData{
 
     @SuppressWarnings("unused")
     public IrregularPieceData(short pieceId, boolean color, int value, String name, ImageIcon graphic,
-                              BiFunction<Object, Integer, int[]> movesFunc) {
+                              PieceFunc movesFunc) {
         super(pieceId, color, value, name, graphic);
         this.movesFunc = movesFunc;
     }
     public IrregularPieceData(UUID uuid, short pieceId, boolean color, int value, String name, ImageIcon graphic,
-                              BiFunction<Object, Integer, int[]> movesFunc) {
+                              PieceFunc movesFunc) {
         super(uuid, pieceId, color, value, name, graphic);
         this.movesFunc = movesFunc;
     }
@@ -263,9 +179,9 @@ public class IrregularPieceData extends PieceData{
         super(piece);
         this.movesFunc = piece.movesFunc;
     }
-    public int[] getPossibleMoves(MinimalChessGame<?> game, int spaceId)
+    public void getPossibleMoves(MinimalChessGame<?> game, int spaceId, ChessSpaces spaces)
     {
-        return movesFunc.apply(game, spaceId);
+        movesFunc.apply(game, spaceId, spaces);
     }
 
     @Override
@@ -279,19 +195,19 @@ public class IrregularPieceData extends PieceData{
     }
 
     private static int[] getPreGenerateKnightMoves(int spaceId){
-        return preCalcKnightMoves[spaceId];
+        return PRECALC_KNIGHT_MOVES[spaceId];
     }
 
     private static int[] getPreGenerateKingMoves(int spaceId){
-        return preCalcKingMoves[spaceId];
+        return PRECALC_KING_MOVES[spaceId];
     }
 
     private static void assignPreGenerateKnightMoves(int spaceId, int[] moves){
-        preCalcKnightMoves[spaceId] = moves;
+        PRECALC_KNIGHT_MOVES[spaceId] = moves;
     }
 
     private static void assignPreGenerateKingMoves(int spaceId, int[] moves){
-        preCalcKingMoves[spaceId] = moves;
+        PRECALC_KING_MOVES[spaceId] = moves;
     }
 
     private static void preGenerateKnightMoves(int spaceId){
@@ -390,10 +306,10 @@ public class IrregularPieceData extends PieceData{
         //
         if (row == 0 || row == ChessBoard.BOARD_SIZE - 1){
             if (col > 3){
-                possibleSquares[8] = spaceId + 2*ChessBoard.directionOffsets[ChessBoard.WEST];
+                possibleSquares[QUEEN_SIDE_CASTLE] = spaceId + 2*ChessBoard.directionOffsets[ChessBoard.WEST];
             }
             if (col < 5){
-                possibleSquares[9] = spaceId + 2*ChessBoard.directionOffsets[ChessBoard.EAST];
+                possibleSquares[KING_SIDE_CASTLE] = spaceId + 2*ChessBoard.directionOffsets[ChessBoard.EAST];
             }
         }
 

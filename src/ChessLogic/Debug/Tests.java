@@ -25,14 +25,12 @@ public class Tests {
         }
 
         for (Move move : allMoves){
-            game.movePiece(move.spaceId, move.spaceIdArriveAt);
+            game.movePiece(move.spaceIdToMove, move.spaceIdArriveAt);
 
             numPos+=moveGenerationTest(depth-1, game);
 
-            //System.out.println("Press Enter to continue...");
-            //scanner.nextLine();
-
             try{game.undoTurn();}
+            
             catch(Exception e){
                 System.out.println(e.getMessage());
             }

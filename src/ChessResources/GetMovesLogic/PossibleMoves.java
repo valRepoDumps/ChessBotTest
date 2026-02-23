@@ -1,5 +1,6 @@
 package ChessResources.GetMovesLogic;
 
+import ChessLogic.Debug.DebugMode;
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.ChessBoard.ChessBoardUI;
@@ -8,6 +9,8 @@ import ChessResources.Pieces.PieceData;
 import ChessResources.Pieces.PieceDatas;
 import ChessResources.Pieces.SlidingPieceData;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +32,6 @@ public class PossibleMoves {
     public PossibleMoves(MinimalChessGame<?> chessGame)
     {
         this.chessGame = chessGame;
-        precomputeSquaresToEdgeData();
     }
 
     //region MOVE_GEN
@@ -37,6 +39,34 @@ public class PossibleMoves {
     {
         Map<PieceData, Integer> currPieceLocation = chessGame.getCurrentColorToMove() == PieceData.WHITE?
                 chessGame.chessBoard.currPieceLocationWhite : chessGame.chessBoard.currPieceLocationBlack;
+
+        boolean kingSpaceNotUnderThreat = chessGame.spaceNotUnderThreat(chessGame.getKingToMoveSpaceId());
+
+        ChessSpaces spacesToMoveToStopKingThreat = ChessSpaces.UNIVERSE_SET;
+
+        if (!kingSpaceNotUnderThreat) {
+
+            spacesToMoveToStopKingThreat = chessGame.getSpacesToMoveToStopThreats(
+                    chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()),
+                    chessGame.getCurrentColorToMove());
+        }
+
+        DebugMode.debugPrint(chessGame, spacesToMoveToStopKingThreat);
+
+        if (spacesToMoveToStopKingThreat.isEmpty() && !kingSpaceNotUnderThreat){
+            PieceData king = chessGame.getBoard().
+                    getPiece(chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()));
+
+            DebugMode.debugPrint(chessGame, spacesToMoveToStopKingThreat);
+
+            ChessSpaces tmp = new ChessSpaces();
+            king.getPossibleMoves(chessGame, chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()), tmp);
+            if (!tmp.isEmpty()){
+                possibleMoves.put(chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()), tmp);
+            }
+            return;
+        }
+        //return if king can no longer be helped
 
         for (Map.Entry<PieceData, Integer> entry : currPieceLocation.entrySet())
         {
@@ -46,91 +76,38 @@ public class PossibleMoves {
             if (piece != PieceDatas.NO_PIECE &&
                     piece.getColor() == chessGame.getCurrentColorToMove())
             {
-                if (piece instanceof SlidingPieceData)
-                {
-                    generateSlidingMoves(startSquare, (SlidingPieceData) piece);
+                ChessSpaces spaces = new ChessSpaces();
+
+                piece.getPossibleMoves(chessGame, startSquare, spaces);
+
+                if (!spaces.isEmpty()) {
+                    //only put in if spaces isnt empty
+                    possibleMoves.put(startSquare, spaces);
                 }
-                else if (piece instanceof IrregularPieceData)
-                {
-                    generateJumpingMoves(startSquare, (IrregularPieceData) piece);
+                else{
+                    continue; //immediately continue if no move is possible.
+                }
+
+                if (!kingSpaceNotUnderThreat &&
+                        startSquare != chessGame.getKingSpaceId(chessGame.getCurrentColorToMove())){
+                    ChessSpaces replacement = new ChessSpaces();
+
+                    for (int spaceId : possibleMoves.get(startSquare).chessMoves){
+                        if (spacesToMoveToStopKingThreat.containSpace(spaceId)){
+                            replacement.addMoves(spaceId);
+                        }
+                    }
+                    if (!replacement.isEmpty()) {
+                        possibleMoves.put(startSquare, replacement);
+                    }else{
+                        possibleMoves.remove(startSquare);
+                    }
                 }
 
             }
         }
     }
 
-    private void generateSlidingMoves(int startSquare, SlidingPieceData piece)
-    {
-        int maxRange = piece.getMaxRange(chessGame, startSquare);
-        short[] possibleDirections = piece.getPossibleDirections(chessGame, startSquare);
-
-        for (short direction : possibleDirections)
-        {
-            for (int n = 0; n < maxRange && n < numSquaresToEdge[startSquare][direction]; ++n)
-            {
-                int targetSquare = startSquare + ChessBoard.directionOffsets[direction]*(n+1);
-
-                if (targetSquare >= 64) break;
-
-                if (chessGame.isAlliedPieceAt(targetSquare, chessGame.getCurrentColorToMove())) break;
-                //encounter piece of our color, dont move in this dir any more
-
-                addMoveToPossibleMoves(startSquare, targetSquare, piece);
-
-                if (chessGame.isEnemyPieceAt(targetSquare, chessGame.getCurrentColorToMove())) break; //encounter opponents color, also break.
-            }
-        }
-
-    }
-
-    public void precomputeSquaresToEdgeData()
-    {
-        for (int row = 0; row< ChessBoard.BOARD_SIZE; ++row)
-        {
-            for (int col = 0; col < ChessBoard.BOARD_SIZE; ++col)
-            {
-                int numSouth = 7 - row;
-                int numEast = 7 - col;
-
-                int squareIdx = row* ChessBoard.BOARD_SIZE + col;
-
-                numSquaresToEdge[squareIdx][ChessBoard.NORTH] = row;
-                numSquaresToEdge[squareIdx][ChessBoard.SOUTH] = numSouth;
-                numSquaresToEdge[squareIdx][ChessBoard.EAST] = numEast;
-                numSquaresToEdge[squareIdx][ChessBoard.WEST] = col;
-                numSquaresToEdge[squareIdx][ChessBoard.NORTH_WEST] = Math.min(row, col);
-                numSquaresToEdge[squareIdx][ChessBoard.NORTH_EAST] = Math.min(row, numEast);
-                numSquaresToEdge[squareIdx][ChessBoard.SOUTH_WEST] = Math.min(numSouth, col);
-                numSquaresToEdge[squareIdx][ChessBoard.SOUTH_EAST] = Math.min(numSouth, numEast);
-
-            }
-        }
-    }
-
-    private void generateJumpingMoves(int startSquare, IrregularPieceData piece)
-    {
-        int[] moves = piece.getPossibleMoves(chessGame, startSquare);
-        for (int move : moves)
-        {
-            if (ChessBoard.isValidSpaceId(move) && !chessGame.isAlliedPieceAt(move, piece.getColor()))
-            {
-                addMoveToPossibleMoves(startSquare, move, piece);
-            }
-        }
-    }
-
-    private void addMoveToPossibleMoves(int startSquare, int move, PieceData piece){
-        if (strictMovesChecker && chessGame.selfMoveWontThreatenSelfKing(startSquare, move, piece.getColor())) return;
-
-        ChessSpaces spaces = possibleMoves.get(startSquare);
-
-        if (spaces == null) {
-            spaces = new ChessSpaces(move);
-            possibleMoves.put(startSquare, spaces);
-        } else {
-            spaces.addMoves(move);
-        }
-    }
     //endregion
 
     //region HELPERS
@@ -169,4 +146,20 @@ public class PossibleMoves {
     @SuppressWarnings("unused")
     public HashMap<Integer, ChessSpaces> getMoves(){return possibleMoves;}
     //endregion
+
+    @Override
+    public String toString() {
+        if (possibleMoves == null || possibleMoves.isEmpty()) {
+            return "possibleMoves: <empty>";
+        }
+        StringBuilder sb = new StringBuilder("possibleMoves:\n");
+        for (Map.Entry<Integer, ChessSpaces> entry : possibleMoves.entrySet()) {
+            sb.append("  ")
+                    .append(entry.getKey())
+                    .append(" -> ")
+                    .append(entry.getValue())
+                    .append('\n');
+        }
+        return sb.toString();
+    }
 }

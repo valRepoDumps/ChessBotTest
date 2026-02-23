@@ -12,10 +12,16 @@ import ChessResources.ChessHistoryTracker.ChessHistoryTracker;
 import ChessResources.ChessHistoryTracker.GameStateChanges;
 import ChessResources.ChessListener.StateChangeListener;
 import ChessResources.GetMovesLogic.ChessPredictionEngine;
+import ChessResources.GetMovesLogic.ChessSpaces;
 import ChessResources.Hasher.HashGenerator;
+import ChessResources.HelperFuncs.BoardScan.BoardScan;
+import ChessResources.HelperFuncs.BoardScan.ScanResult;
+import ChessResources.Pieces.IrregularPieceData;
 import ChessResources.Pieces.PieceData;
 import ChessResources.Pieces.PieceDatas;
 import ChessResources.GetMovesLogic.PossibleMoves;
+import ChessResources.Pieces.SlidingPieceData;
+import ChessResources.PreCalc;
 
 import java.util.ArrayList;
 import java.util.function.BiFunction;
@@ -251,18 +257,144 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         possibleMoves.generateMoves();
     }
 
-    public boolean spaceNotUnderThreat(int spaceId, boolean color)
+    public boolean spaceNotUnderThreat(int spaceId, boolean alliedColor)
     {
-//        //ensure spaceId valid.
-//        for (ChessSpaces moves : possibleMoves.possibleMoves.values())
-//        {
-//            if (moves.containSpace(spaceId))
-//            {
-//                return false;
-//            }
-//        }
-//        return true;
-        return true;
+        int[][] slidingMoves = PreCalc.PRECOMPUTED_MOVES[spaceId];
+        int[] ids = new int[]{PieceData.WPAWN, PieceData.WQUEEN, PieceData.WBISHOP,
+                PieceData.WROOK, PieceData.WKNIGHT, PieceData.WKING};
+
+        if (alliedColor == PieceData.WHITE){
+            for (int i = 0; i < ids.length;++i){
+                ids[i] = PieceData.getOppositeColor(ids[i]);
+            }
+        }
+
+        boolean metEnemiesFlag;
+
+        if (ids[0] == PieceData.BPAWN)
+            metEnemiesFlag = BoardScan.rayScanFor(this, slidingMoves, 1,
+                new short[]{ChessBoard.NORTH_EAST, ChessBoard.NORTH_WEST}, ids[0]);
+        else {
+            metEnemiesFlag = BoardScan.rayScanFor(this, slidingMoves, 1,
+                    new short[]{ChessBoard.SOUTH_EAST, ChessBoard.SOUTH_WEST}, ids[0]);
+        }
+
+        if (metEnemiesFlag) return false;
+
+        metEnemiesFlag = BoardScan.rayScanFor(this, slidingMoves, SlidingPieceData.NO_RANGE_LIMIT,
+            SlidingPieceData.BISHOP_DIR, new int[]{ids[1], ids[2]});
+        if (metEnemiesFlag) return false;
+
+        metEnemiesFlag = BoardScan.rayScanFor(this, slidingMoves, SlidingPieceData.NO_RANGE_LIMIT,
+                SlidingPieceData.ROOK_DIR, new int[]{ids[1], ids[3]});
+        if (metEnemiesFlag) return false;
+
+       metEnemiesFlag = BoardScan.jumpScanFor(this,
+                IrregularPieceData.PRECALC_KNIGHT_MOVES[spaceId], ids[4]);
+        if (metEnemiesFlag) return false;
+
+        boolean metKing = BoardScan.rayScanFor(this, slidingMoves, 1,
+                SlidingPieceData.QUEEN_DIR, new int[]{ids[5]});
+
+        return !metKing;
+    }
+
+    public ChessSpaces getSpacesToMoveToStopThreats(int spaceId, boolean alliedColor)
+    {
+        //region ASSIGNMENT
+        int[][] slidingMoves = PreCalc.PRECOMPUTED_MOVES[spaceId];
+        int pawn   = PieceData.WPAWN;
+        int queen = PieceData.WQUEEN;
+        int bishop= PieceData.WBISHOP;
+        int rook  = PieceData.WROOK;
+        int knight= PieceData.WKNIGHT;
+        int king  = PieceData.WKING;
+
+        if (alliedColor == PieceData.WHITE){
+            pawn   = PieceData.getOppositeColor(pawn);
+            queen  = PieceData.getOppositeColor(queen);
+            bishop = PieceData.getOppositeColor(bishop);
+            rook   = PieceData.getOppositeColor(rook);
+            knight = PieceData.getOppositeColor(knight);
+            king   = PieceData.getOppositeColor(king);
+        }
+        //endregion
+
+        short[] pawnDirs;
+        ChessSpaces ans = ChessSpaces.getNewUniverseSet();
+
+        if (pawn == PieceData.BPAWN)
+            pawnDirs = new short[]{ChessBoard.NORTH_EAST, ChessBoard.NORTH_WEST};
+        else {
+            pawnDirs = new short[]{ChessBoard.SOUTH_EAST, ChessBoard.SOUTH_WEST};
+        }
+
+        //scanning for pawn
+        for (short dir : pawnDirs) {
+            ScanResult sr = BoardScan.rayScan(this, slidingMoves[dir], 1, null);
+            if (sr.getPieceId() == pawn){
+                ans.moveIntersection(new ChessSpaces(sr.getSpaceId()));
+            }
+        }
+
+        if (ans.isEmpty()) return ans;
+        ans.moveIntersection(getSpacesToMoveToStopThreats(SlidingPieceData.BISHOP_DIR, spaceId, bishop));
+        if (ans.isEmpty()) return ans;
+        ans.moveIntersection(getSpacesToMoveToStopThreats(SlidingPieceData.ROOK_DIR, spaceId, rook));
+        if (ans.isEmpty()) return ans;
+        ans.moveIntersection(getSpacesToMoveToStopThreats(SlidingPieceData.QUEEN_DIR, spaceId, queen));
+        if (ans.isEmpty()) return ans;
+        //for king moves
+        for (short dir : SlidingPieceData.QUEEN_DIR) {
+            ScanResult sr = BoardScan.rayScan(this,
+                    slidingMoves[dir],
+                    1,
+                    null);
+
+            if (sr.getPieceId() == king){
+                ans.moveIntersection(new ChessSpaces(sr.getSpaceId()));
+            }
+        }
+        if (ans.isEmpty()) return ans;
+
+        ScanResult[] srs = BoardScan.jumpScan(this, IrregularPieceData.PRECALC_KNIGHT_MOVES[spaceId], null);
+
+        for (ScanResult sr : srs){
+            if (!ScanResult.isValid(sr)) break;
+
+            if (sr.getPieceId() == knight){
+                ans.moveIntersection(new ChessSpaces( sr.getSpaceId()));
+            }
+            if (ans.isEmpty()) return ans;
+        }
+
+        return ans;
+    }
+
+    private ChessSpaces getSpacesToMoveToStopThreats(short[] dirs, int spaceId, int pieceId){
+
+        int[][] slidingMoves = PreCalc.PRECOMPUTED_MOVES[spaceId];
+        ChessSpaces ans = ChessSpaces.getNewUniverseSet();
+        for (short dir : dirs) {
+            ChessSpaces tmp = new ChessSpaces();
+            ScanResult sr = BoardScan.rayScan(this,
+                    slidingMoves[dir],
+                    SlidingPieceData.NO_RANGE_LIMIT,
+                    tmp);
+
+            if (sr.getPieceId() == pieceId){
+                //scan the pieceId needed to detect.
+                tmp.addMoves(sr.getSpaceId());
+                ans.moveIntersection(tmp);
+            }
+
+            if (ans.isEmpty()) return ans;
+        }
+        return ans;
+    }
+
+    public boolean spaceNotUnderThreat(int spaceId){
+        return spaceNotUnderThreat(spaceId, getCurrentColorToMove());
     }
 
     public boolean spaceNotUnderThreatAndEmpty(int spaceId, boolean color)
@@ -270,12 +402,27 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         return spaceNotUnderThreat(spaceId, color) && chessBoard.isEmptySpaceAt(spaceId);
     }
 
+    public boolean spaceNotUnderThreatAndEmpty(int spaceId)
+    {
+        return spaceNotUnderThreat(spaceId) && chessBoard.isEmptySpaceAt(spaceId);
+    }
+
     public boolean isAlliedPieceAt(int spaceId, boolean color){
         return chessBoard.isAlliedPieceAt(spaceId, color);
+    }
+    public boolean isAlliedPieceAt(int spaceId){
+        return chessBoard.isAlliedPieceAt(spaceId, getCurrentColorToMove());
     }
 
     public boolean isEnemyPieceAt(int spaceId, boolean color){
         return chessBoard.isEnemyPieceAt(spaceId, color);
+    }
+    public boolean isEnemyPieceAt(int spaceId){
+        return chessBoard.isEnemyPieceAt(spaceId, getCurrentColorToMove());
+    }
+    public boolean isEnemyPieceOrEnPassantAt(int spaceId){
+        DebugMode.debugPrint(this, "EN: "+  getEnpassantTarget());
+        return (isEnemyPieceAt(spaceId, getCurrentColorToMove())) || (spaceId == getEnpassantTarget());
     }
 
     public boolean selfMoveWontThreatenSelfKing(int spaceIdToMove, int spaceIdArriveAt, boolean color){
@@ -295,6 +442,13 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                 gameStats[WHITE_KING_SPACEID] : gameStats[BLACK_KING_SPACEID];
     }
 
+    public int getKingToMoveSpaceId(){
+        return getKingSpaceId(getCurrentColorToMove());
+    }
+
+    public int getEnpassantTarget(){
+        return getGameStats()[ENPASSANT_TARGET];
+    }
     private void promotionHandler(int spaceId, PieceData piece)
     {
         //chessBoard.movePieceCapture(ChessBoard.INVALID_SPACE_ID, spaceId, spaceId);

@@ -1,5 +1,9 @@
 package ChessResources.Pieces;
 
+import ChessLogic.MinimalChessGame;
+import ChessResources.ChessBoard.ChessBoard;
+import ChessResources.GetMovesLogic.ChessSpaces;
+
 import javax.swing.*;
 import java.util.UUID;
 
@@ -34,6 +38,7 @@ public abstract class PieceData {
     protected int value;
     protected String name;
     protected ImageIcon graphic;
+    protected boolean hasMoved = false;
 
     public PieceData(UUID uuid, short pieceId, boolean color, int value, String name, ImageIcon graphic) {
         this.uuid = uuid;
@@ -53,6 +58,7 @@ public abstract class PieceData {
         this(piece.getUuid(), piece.getPieceId(),
                 piece.getColor(), piece.getValue(),
                 piece.getName(), piece.getGraphic());
+        this.hasMoved = piece.hasMoved;
     }
 
     public PieceData(short pieceId)
@@ -92,7 +98,7 @@ public abstract class PieceData {
 
     public abstract PieceData clone();
     public abstract PieceData getUniqueClone();
-
+    public abstract void getPossibleMoves(MinimalChessGame<? extends ChessBoard> game, int spaceId, ChessSpaces spaces);
     @Override
     public String toString(){
         return uuid + " " + name;
@@ -100,7 +106,7 @@ public abstract class PieceData {
     //region GETTERS
     public UUID getUuid(){return  uuid;}
     public boolean getColor(){
-        return (pieceId&PIECES_DIFF) == 0 ? BLACK:WHITE;
+        return getColor(this.pieceId);
     }
     public short getPieceId() {
         return pieceId;
@@ -116,6 +122,24 @@ public abstract class PieceData {
 
     public ImageIcon getGraphic() {
         return graphic;
+    }
+
+    public static boolean isValidPieceId(int pieceId){
+        return pieceId != INVALID_PIECES;
+    }
+    public void setPieceMoved(){
+        this.hasMoved = true;
+    }
+    public boolean getHasMoved(){
+        return hasMoved;
+    }
+
+    public static int getOppositeColor(int pieceId){
+        if (getColor(pieceId) == BLACK) return pieceId | PIECES_DIFF;
+        else return pieceId ^ PIECES_DIFF;
+    }
+    public static boolean getColor(int pieceId){
+        return (pieceId&PIECES_DIFF) == 0 ? BLACK:WHITE;
     }
     //endregion
 }

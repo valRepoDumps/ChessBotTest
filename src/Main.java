@@ -13,13 +13,13 @@ void main() {
 //    long start = System.nanoTime();
 //    ChessGUI gui = new ChessGUI();
 //
-////    int num = gui.test(2);
-////    long end = System.nanoTime();
-////    double durationMs = (end-start) / 1_000_000.0;
-////    System.out.println("Num Pos: " +num + " Time: "+ durationMs + " ms");
-//
-//    //3-1020 ms
-//    //2-460 ms
+//    int num = gui.test(3);
+//    long end = System.nanoTime();
+//    double durationMs = (end-start) / 1_000_000.0;
+//    System.out.println("Num Pos: " +num + " Time: "+ durationMs + " ms");
+
+//    3-1034 ms
+//    2-460 ms
 
     long start = System.nanoTime();
     MinimalChessGame<ChessBoard> game = new MinimalChessGame<ChessBoard>(
@@ -27,17 +27,14 @@ void main() {
             new ChessBoard(), MinimalChessGame.DEFAULT_PROMOTION_FUNC,
             new Configurations(true, true, false, true));
 
-    int num = Tests.moveGenerationTest(4, game);
+    int num = Tests.moveGenerationTest(1, game);
 
     long end = System.nanoTime();
     double durationMs = (end-start) / 1_000_000.0;
     System.out.println("Num Pos: " + num);
     System.out.println(" Time: "+ durationMs + " ms");
-    start = System.nanoTime();
-    game.generatePossibleMoves();
-    end = System.nanoTime();
-    durationMs = (end-start) / 1_000_000.0;
-    System.out.println(" Time for gen moves: "+ durationMs + " ms");
-    //3-8902-220 ms - 1000 ms if strict
-    //4-197702-950 ms - 17000 ms if strict
+
+    //3-8902- 377
+    //4-197281- 2798
+    //5 - 4865609 - 600000
 }

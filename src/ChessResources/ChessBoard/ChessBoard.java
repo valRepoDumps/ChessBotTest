@@ -72,8 +72,10 @@ public class ChessBoard implements Debuggable {
                     currPieceLocationWhite.remove(pieceData);
                     currPieceLocationBlack.remove(pieceData);
                 }
-//                DebugMode.debugPrint(this, currPieceLocation);
-//                DebugMode.debugPrint(this, currPieceLocation.size());
+            };
+    public final StateChangeListener<BoardStateChange> PIECE_MOVED_LOGGER =
+            (BoardStateChange boardStateChange) ->{
+                boardStateChange.getPiece().setPieceMoved();
             };
     //region CONSTRUCTOR
     public ChessBoard(){
@@ -205,7 +207,7 @@ public class ChessBoard implements Debuggable {
         return getDirSpaceId(currSpaceId, offset,SOUTH_WEST);
     }
 
-    public static int getDirSpaceId(int spaceId, int offset, int dir){
+    public static int getDirSpaceId(int spaceId, int offset, short dir){
         return spaceId + directionOffsets[dir]*offset;
     }
     //endregion
@@ -302,10 +304,11 @@ public class ChessBoard implements Debuggable {
     public boolean isEnemyPieceAt(int spaceId, boolean pieceColor)
     {
         if (!isValidSpaceId(spaceId)) return false;
-        if (getPiece(spaceId) == PieceDatas.NO_PIECE) return false;//no enemy piece
+        else if (getPiece(spaceId) == PieceDatas.NO_PIECE) return false;//no enemy piece
 
         return getPiece(spaceId).getColor() != pieceColor;
     }
+
 
     public boolean isAlliedPieceAt(int spaceId, boolean pieceColor)
     {
