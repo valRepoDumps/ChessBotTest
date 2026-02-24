@@ -19,13 +19,6 @@ public class PossibleMoves {
     //region DATAS
     public HashMap<Integer, ChessSpaces> possibleMoves = new HashMap<>();
     protected MinimalChessGame<?> chessGame;
-    //protected boolean color;
-    public int[][] numSquaresToEdge = new int[ChessBoard.BOARD_SIZE* ChessBoard.BOARD_SIZE][8];
-    //endregion
-
-    //region setting
-    public boolean strictMovesChecker = false;//ensure all moves that threaten king unusable
-
     //endregion
     //endregion
 
@@ -45,27 +38,27 @@ public class PossibleMoves {
         ChessSpaces spacesToMoveToStopKingThreat = ChessSpaces.UNIVERSE_SET;
 
         if (!kingSpaceNotUnderThreat) {
-
+            //perform deeper scan.
             spacesToMoveToStopKingThreat = chessGame.getSpacesToMoveToStopThreats(
                     chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()),
                     chessGame.getCurrentColorToMove());
         }
 
-        DebugMode.debugPrint(chessGame, spacesToMoveToStopKingThreat);
+        if (chessGame.isDebuggable()) DebugMode.debugPrint(chessGame, spacesToMoveToStopKingThreat);
 
-        if (spacesToMoveToStopKingThreat.isEmpty() && !kingSpaceNotUnderThreat){
-            PieceData king = chessGame.getBoard().
-                    getPiece(chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()));
-
-            DebugMode.debugPrint(chessGame, spacesToMoveToStopKingThreat);
-
-            ChessSpaces tmp = new ChessSpaces();
-            king.getPossibleMoves(chessGame, chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()), tmp);
-            if (!tmp.isEmpty()){
-                possibleMoves.put(chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()), tmp);
-            }
-            return;
-        }
+//        if (spacesToMoveToStopKingThreat.isEmpty()){
+//            PieceData king = chessGame.getBoard().
+//                    getPiece(chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()));
+//
+//            if (chessGame.isDebuggable()) DebugMode.debugPrint(chessGame, spacesToMoveToStopKingThreat);
+//
+//            ChessSpaces tmp = new ChessSpaces();
+//            king.getPossibleMoves(chessGame, chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()), tmp);
+//            if (!tmp.isEmpty()){
+//                possibleMoves.put(chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()), tmp);
+//            }
+//            return;
+//        }
         //return if king can no longer be helped
 
         for (Map.Entry<PieceData, Integer> entry : currPieceLocation.entrySet())
@@ -73,38 +66,37 @@ public class PossibleMoves {
             int startSquare = entry.getValue();
             PieceData piece = entry.getKey();
 
-            if (piece != PieceDatas.NO_PIECE &&
-                    piece.getColor() == chessGame.getCurrentColorToMove())
-            {
-                ChessSpaces spaces = new ChessSpaces();
+            assert(piece != PieceDatas.NO_PIECE);
 
-                piece.getPossibleMoves(chessGame, startSquare, spaces);
+            ChessSpaces spaces = new ChessSpaces();
 
-                if (!spaces.isEmpty()) {
-                    //only put in if spaces isnt empty
-                    possibleMoves.put(startSquare, spaces);
-                }
-                else{
-                    continue; //immediately continue if no move is possible.
-                }
+            piece.getPossibleMoves(chessGame, startSquare, spaces);
 
-                if (!kingSpaceNotUnderThreat &&
-                        startSquare != chessGame.getKingSpaceId(chessGame.getCurrentColorToMove())){
-                    ChessSpaces replacement = new ChessSpaces();
-
-                    for (int spaceId : possibleMoves.get(startSquare).chessMoves){
-                        if (spacesToMoveToStopKingThreat.containSpace(spaceId)){
-                            replacement.addMoves(spaceId);
-                        }
-                    }
-                    if (!replacement.isEmpty()) {
-                        possibleMoves.put(startSquare, replacement);
-                    }else{
-                        possibleMoves.remove(startSquare);
-                    }
-                }
-
+            if (spaces.isEmpty()) {
+                //empty, immediately continue.
+                continue;
             }
+            else{
+                possibleMoves.put(startSquare, spaces);
+            }
+
+            if (!kingSpaceNotUnderThreat &&
+                    startSquare != chessGame.getKingSpaceId(chessGame.getCurrentColorToMove())){
+                ChessSpaces replacement = new ChessSpaces();
+
+                for (int spaceId : possibleMoves.get(startSquare).chessMoves){
+                    if (spacesToMoveToStopKingThreat.containSpace(spaceId)){
+                        replacement.addMoves(spaceId);
+                    }
+                }
+                if (replacement.isEmpty()) {
+                    possibleMoves.remove(startSquare);
+
+                }else{
+                    possibleMoves.put(startSquare, replacement);
+                }
+            }
+
         }
     }
 
@@ -139,12 +131,13 @@ public class PossibleMoves {
     public boolean isEmpty(){
         return possibleMoves.isEmpty();
     }
-    public void enableStrictMovesChecker(){strictMovesChecker = true;}
-
-    public  void disableStrictMovesChecker(){strictMovesChecker = false;}
 
     @SuppressWarnings("unused")
     public HashMap<Integer, ChessSpaces> getMoves(){return possibleMoves;}
+    public boolean canMoveToFrom(int spaceId, int spaceIdArriveAt) {
+        ChessSpaces s = possibleMoves.get(spaceId);
+        return s != null && s.containSpace(spaceIdArriveAt);
+    }
     //endregion
 
     @Override

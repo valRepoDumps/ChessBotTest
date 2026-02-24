@@ -8,10 +8,9 @@ import ChessResources.HelperFuncs.BoardScan.ScanResult;
 import ChessResources.HelperFuncs.PieceFunc;
 
 import javax.swing.*;
-import java.util.Arrays;
 import java.util.UUID;
 
-import static ChessResources.PreCalc.PRECOMPUTED_MOVES;
+import static ChessResources.PreCalc.SLIDING_MOVES;
 
 public class SlidingPieceData extends PieceData {
 
@@ -56,14 +55,18 @@ public class SlidingPieceData extends PieceData {
             (game, spaceId, out) -> {
                 int row = ChessBoard.getRow(spaceId);
                 int range = (row == 1 ? 2 : 1);
+                int EPTarget = game.getEnpassantTarget();
+
+                ChessSpaces tmpSpace = new ChessSpaces();
+                int[][] rays = SLIDING_MOVES[spaceId];
+
 
                 for (short dir : BPAWN_DIR){
-                    int[] ray = PRECOMPUTED_MOVES[spaceId][dir];
-                    ChessSpaces tmpSpace = new ChessSpaces();
-
+                    int[] ray = rays[dir];
+                    tmpSpace.clear();
                     if (dir != ChessBoard.SOUTH) {
                         ScanResult sr = BoardScan.rayScan(game, ray, 1, tmpSpace);
-                        if (tmpSpace.containSpace(game.getEnpassantTarget())){
+                        if (tmpSpace.containSpace(EPTarget)){
                             //scanned space empty, but empty space is enpassant target.
                             out.addMoves(game.getEnpassantTarget());
                         }
@@ -83,13 +86,16 @@ public class SlidingPieceData extends PieceData {
                 int row = ChessBoard.getRow(spaceId);
                 int range = (row == ChessBoard.BOARD_SIZE-2 ? 2 : 1);
 
-                for (short dir : WPAWN_DIR){
-                    int[] ray = PRECOMPUTED_MOVES[spaceId][dir];
-                    ChessSpaces tmpSpace = new ChessSpaces();
+                int EPTarget = game.getEnpassantTarget();
+                ChessSpaces tmpSpace = new ChessSpaces();
+                int[][] rays = SLIDING_MOVES[spaceId];
 
+                for (short dir : WPAWN_DIR){
+                    int[] ray = rays[dir];
+                    tmpSpace.clear();
                     if (dir != ChessBoard.NORTH) {
                         ScanResult sr = BoardScan.rayScan(game, ray, 1, tmpSpace);
-                        if (tmpSpace.containSpace(game.getEnpassantTarget())){
+                        if (tmpSpace.containSpace(EPTarget)){
                             //scanned space empty, but empty space is enpassant target.
                             out.addMoves(game.getEnpassantTarget());
                         }
@@ -170,10 +176,10 @@ public class SlidingPieceData extends PieceData {
         pieceFunc.apply(game, spaceId, spaces);
     }
 
-    private static void getSlidingMoves(
+    private static final void getSlidingMoves(
             int spaceId, short[] directions, int range,
             MinimalChessGame<? extends ChessBoard> game, ChessSpaces spaces){
-        BoardScan.rayScanMultiDirectional(game, PRECOMPUTED_MOVES[spaceId],
+        BoardScan.rayScanMultiDirectional(game, SLIDING_MOVES[spaceId],
                 range, directions, spaces, true);
     }
 

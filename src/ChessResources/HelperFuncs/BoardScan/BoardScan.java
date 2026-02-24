@@ -66,8 +66,9 @@ public class BoardScan {
 
     public static boolean rayScanFor(MinimalChessGame<?extends ChessBoard> game,
                                      int[][] targets, int range, short[] dirs, int[] pieceIds){
+        ScanResult sr;
         for (short dir : dirs){
-            ScanResult sr = rayScan(game, targets[dir], range, null);
+            sr = rayScan(game, targets[dir], range, null);
             if (!ScanResult.isValid(sr)) continue;
 
             for (int pieceId : pieceIds){

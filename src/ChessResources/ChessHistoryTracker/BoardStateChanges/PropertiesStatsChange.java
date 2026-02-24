@@ -15,8 +15,8 @@ public class PropertiesStatsChange {
 
     public void setPropertiesStats(boolean[] gameProperties, int[] gameStats)
     {
-        this.gameProperties = gameProperties.clone();
-        this.gameStats = gameStats.clone();
+        this.gameProperties = Arrays.copyOf(gameProperties, gameProperties.length);
+        this.gameStats = Arrays.copyOf(gameStats, gameStats.length);
     }
 
     public boolean[] getGameProperties() {

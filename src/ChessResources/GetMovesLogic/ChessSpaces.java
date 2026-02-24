@@ -1,17 +1,17 @@
 package ChessResources.GetMovesLogic;
 
+import ChessResources.ChessBoard.ChessBoard;
+
 import java.util.*;
 
 public class ChessSpaces {
     public static final ChessSpaces UNIVERSE_SET = new ChessSpaces(true);
     public static final ChessSpaces EMPTY_SET = new ChessSpaces();
 
-    protected Set<Integer> chessMoves;
+    protected Set<Integer> chessMoves = new HashSet<>();
     protected boolean containsAll = false;
     public ChessSpaces()
-    {
-        chessMoves = new HashSet<>();
-    }
+    {}
 
     public ChessSpaces(int spaceId)
     {
@@ -81,5 +81,16 @@ public class ChessSpaces {
     @Override
     public String toString(){
         return containsAll + " " + Arrays.toString(chessMoves.toArray());
+    }
+
+    public void clear(){
+        this.containsAll = false;
+        this.chessMoves.clear();
+    }
+
+    public static void fastIntersection(ChessSpaces ans, ChessSpaces tmp, int spaceId){
+        tmp.addMoves(spaceId);
+        ans.moveIntersection(tmp);
+        tmp.clear();
     }
 }
