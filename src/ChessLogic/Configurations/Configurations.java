@@ -2,18 +2,16 @@ package ChessLogic.Configurations;
 
 public class Configurations {
     private boolean enableBoardGraphic;
-    private boolean strictMoveChecker;
     private boolean debugMode;
     private boolean allowGameEnd;
 
     public Configurations(){
-        this(true,true,true, true);
+        this(true,true,true);
     }
 
-    public Configurations(boolean enableBoardGraphic, boolean strictMoveChecker,
+    public Configurations(boolean enableBoardGraphic,
                           boolean debugMode, boolean allowGameEnd){
         this.enableBoardGraphic = enableBoardGraphic;
-        this.strictMoveChecker = strictMoveChecker;
         this.debugMode = debugMode;
         this.allowGameEnd = allowGameEnd;
     }
@@ -30,14 +28,6 @@ public class Configurations {
     }
     //endregion
     //region MOVE_CHECKER
-    @SuppressWarnings("unused")
-    public void setStrictMoveChecker(boolean strictMoveChecker){
-        this.strictMoveChecker = strictMoveChecker;
-    }
-
-    public boolean isStrictMoveChecker() {
-        return strictMoveChecker;
-    }
     @SuppressWarnings("unused")
     public void enableDebugMode(){
         debugMode = true;
@@ -68,7 +58,7 @@ public class Configurations {
 
     //region HELPER
     public static Configurations createCloneGameConfig(){
-        return new Configurations(false, false, false, false);
+        return new Configurations(false, false, false);
     }
     //endregion
 }

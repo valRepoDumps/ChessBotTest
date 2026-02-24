@@ -30,6 +30,7 @@ public class ChessHistoryTracker {
     {
         history.add(new GameStateChanges(boardStateChange, gameProperties, gameStats));
     }
+
     public void pushTurn()
     {
         if (currentGameState != null)
@@ -40,6 +41,7 @@ public class ChessHistoryTracker {
         {
             System.out.println("There should exist a non-null current game state");
         }
+
         currentGameState = null; //reset temp currentGameState
 
         tableOfPositions.put(peekTurn().getHashOfPosition(),
@@ -128,6 +130,8 @@ public class ChessHistoryTracker {
     //region GETTERS
     public GameStateChanges popTurn()
     {
+        tableOfPositions.put(peekTurn().getHashOfPosition(),
+                tableOfPositions.getOrDefault(peekTurn().getHashOfPosition(), 0)-1);
         return history.removeLast();
     }
 

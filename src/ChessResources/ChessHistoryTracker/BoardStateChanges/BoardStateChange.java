@@ -10,7 +10,7 @@ public class BoardStateChange{
 
     public BoardStateChange(PieceData piece, int spaceId, int spaceIdArriveAt)
     {
-        this.piece = PieceDatas.copyPiece(piece); //should always be a copy.
+        this.piece = PieceDatas.getClone(piece); //should always be a copy.
         this.spaceId = spaceId;
         this.spaceIdArriveAt = spaceIdArriveAt;
     }
@@ -24,6 +24,6 @@ public class BoardStateChange{
         if (piece == null){
             return "null : " + spaceId +"->" + spaceIdArriveAt;
         }
-        return piece.name + ": " + spaceId + "->" + spaceIdArriveAt;
+        return piece.getName() + ": " + spaceId + "->" + spaceIdArriveAt;
     }
 }

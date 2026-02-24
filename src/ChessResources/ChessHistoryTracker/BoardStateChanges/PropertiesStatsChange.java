@@ -1,11 +1,13 @@
 package ChessResources.ChessHistoryTracker.BoardStateChanges;
 
+import ChessLogic.MinimalChessGame;
+
 import java.util.Arrays;
 
 public class PropertiesStatsChange {
 
-    private boolean[] gameProperties = new boolean[5]; //store all the property of the chess game
-    private int[] gameStats = new int[5];
+    private boolean[] gameProperties = new boolean[MinimalChessGame.GAME_PROPERTIES_LEN]; //store all the property of the chess game
+    private int[] gameStats = new int[MinimalChessGame.GAME_STATS_LEN];
 
     public PropertiesStatsChange(boolean[] gameProperties, int[] gameStats){
         setPropertiesStats(gameProperties, gameStats);
@@ -13,8 +15,8 @@ public class PropertiesStatsChange {
 
     public void setPropertiesStats(boolean[] gameProperties, int[] gameStats)
     {
-        this.gameProperties = gameProperties.clone();
-        this.gameStats = gameStats.clone();
+        this.gameProperties = Arrays.copyOf(gameProperties, gameProperties.length);
+        this.gameStats = Arrays.copyOf(gameStats, gameStats.length);
     }
 
     public boolean[] getGameProperties() {

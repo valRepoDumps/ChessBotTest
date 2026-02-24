@@ -1,8 +1,13 @@
 package ChessResources.Pieces;
 
-import javax.swing.*;
+import ChessLogic.MinimalChessGame;
+import ChessResources.ChessBoard.ChessBoard;
+import ChessResources.GetMovesLogic.ChessSpaces;
 
-public class PieceData {
+import javax.swing.*;
+import java.util.UUID;
+
+public abstract class PieceData {
     //region PIECE_DATA_CONSTS
     public static final boolean BLACK = false;
     public static final boolean WHITE = true;
@@ -27,13 +32,16 @@ public class PieceData {
     public final static int PIECES_DIFF = 16;
     //endregion
 
-    public short pieceId;
-    public boolean color;
-    public int value;
-    public String name;
-    public ImageIcon graphic;
+    protected UUID uuid;
+    protected short pieceId;
+    protected boolean color;
+    protected int value;
+    protected String name;
+    protected ImageIcon graphic;
+    protected boolean hasMoved = false;
 
-    public PieceData(short pieceId, boolean color, int value, String name, ImageIcon graphic) {
+    public PieceData(UUID uuid, short pieceId, boolean color, int value, String name, ImageIcon graphic) {
+        this.uuid = uuid;
         this.pieceId = pieceId;
         this.color = color;
         this.value = value;
@@ -41,17 +49,21 @@ public class PieceData {
         this.graphic = graphic;
     }
 
+    public PieceData(short pieceId, boolean color, int value, String name, ImageIcon graphic) {
+        this(UUID.randomUUID(), pieceId, color,value,name, graphic);
+    }
+
     public PieceData(PieceData piece)
     {
-        this.pieceId = piece.pieceId;
-        this.color = piece.color;
-        this.value = piece.value;
-        this.name = piece.name;
-        this.graphic = piece.graphic;
+        this(piece.getUuid(), piece.getPieceId(),
+                piece.getColor(), piece.getValue(),
+                piece.getName(), piece.getGraphic());
+        this.hasMoved = piece.hasMoved;
     }
 
     public PieceData(short pieceId)
     {
+        this.uuid = UUID.randomUUID();
         this.pieceId = pieceId;
         switch(pieceId) {
             case BPAWN: this.color = BLACK;this.value = 1;this.name = "black_pawn";break;
@@ -72,8 +84,63 @@ public class PieceData {
         this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + this.name + ".png");
     }
 
+    @Override
+    public int hashCode() {
+        return uuid.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object pd){
+        if (!(pd instanceof PieceData)) return false;
+
+        return uuid.equals(((PieceData)pd).uuid);
+    }
+
+    public abstract PieceData clone();
+    public abstract PieceData getUniqueClone();
+    public abstract void getPossibleMoves(MinimalChessGame<? extends ChessBoard> game, int spaceId, ChessSpaces spaces);
+    @Override
+    public String toString(){
+        return uuid + " " + name;
+    }
+    //region GETTERS
+    public UUID getUuid(){return  uuid;}
     public boolean getColor(){
+        return getColor(this.pieceId);
+    }
+    public short getPieceId() {
+        return pieceId;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public ImageIcon getGraphic() {
+        return graphic;
+    }
+
+    public static boolean isValidPieceId(int pieceId){
+        return pieceId != INVALID_PIECES;
+    }
+    public void setPieceMoved(){
+        this.hasMoved = true;
+    }
+    public boolean getHasMoved(){
+        return hasMoved;
+    }
+
+    public static int getOppositeColor(int pieceId){
+        if (getColor(pieceId) == BLACK) return pieceId | PIECES_DIFF;
+        else return pieceId ^ PIECES_DIFF;
+    }
+    public static boolean getColor(int pieceId){
         return (pieceId&PIECES_DIFF) == 0 ? BLACK:WHITE;
     }
+    //endregion
 }
 

@@ -1,5 +1,6 @@
 package ChessResources.GetMovesLogic;
 
+import ChessLogic.Debug.DebugMode;
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.ChessBoard.ChessBoardUI;
@@ -8,126 +9,103 @@ import ChessResources.Pieces.PieceData;
 import ChessResources.Pieces.PieceDatas;
 import ChessResources.Pieces.SlidingPieceData;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 public class PossibleMoves {
     //region PRE_CONSTRUCTOR
     //region DATAS
     public HashMap<Integer, ChessSpaces> possibleMoves = new HashMap<>();
     protected MinimalChessGame<?> chessGame;
-    protected boolean color;
-    public int[][] numSquaresToEdge = new int[ChessBoard.BOARD_SIZE* ChessBoard.BOARD_SIZE][8];
-    //endregion
-
-    //region setting
-    public boolean strictMovesChecker = false;//ensure all moves that threaten king unusable
-
     //endregion
     //endregion
 
-
-    public PossibleMoves(MinimalChessGame<?> chessGame, boolean color)
+    public PossibleMoves(MinimalChessGame<?> chessGame)
     {
         this.chessGame = chessGame;
-        this.color = color;
-        precomputeSquaresToEdgeData();
     }
 
     //region MOVE_GEN
     public void generateMoves()
     {
-        for (int startSquare = 0; startSquare < ChessBoardUI.BOARD_SIZE* ChessBoardUI.BOARD_SIZE; ++startSquare)
-        {
-            PieceData piece = chessGame.chessBoard.getPiece(startSquare);
+        Map<PieceData, Integer> currPieceLocation = chessGame.getCurrentColorToMove() == PieceData.WHITE?
+                chessGame.chessBoard.currPieceLocationWhite : chessGame.chessBoard.currPieceLocationBlack;
 
-            if (piece != PieceDatas.NO_PIECE && piece.color == color)
-            {
-                if (piece instanceof SlidingPieceData)
-                {
-                    generateSlidingMoves(startSquare, (SlidingPieceData) piece);
+        boolean kingSpaceNotUnderThreat = chessGame.spaceNotUnderThreat(chessGame.getKingToMoveSpaceId());
+
+        ChessSpaces spacesToMoveToStopKingThreat = ChessSpaces.UNIVERSE_SET;
+
+        if (!kingSpaceNotUnderThreat) {
+            //perform deeper scan.
+            spacesToMoveToStopKingThreat = chessGame.getSpacesToMoveToStopThreats(
+                    chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()),
+                    chessGame.getCurrentColorToMove());
+        }
+
+        if (chessGame.isDebuggable()) DebugMode.debugPrint(chessGame, spacesToMoveToStopKingThreat);
+
+//        if (spacesToMoveToStopKingThreat.isEmpty()){
+//            PieceData king = chessGame.getBoard().
+//                    getPiece(chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()));
+//
+//            if (chessGame.isDebuggable()) DebugMode.debugPrint(chessGame, spacesToMoveToStopKingThreat);
+//
+//            ChessSpaces tmp = new ChessSpaces();
+//            king.getPossibleMoves(chessGame, chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()), tmp);
+//            if (!tmp.isEmpty()){
+//                possibleMoves.put(chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()), tmp);
+//            }
+//            return;
+//        }
+        //return if king can no longer be helped
+
+        for (Map.Entry<PieceData, Integer> entry : currPieceLocation.entrySet())
+        {
+            int startSquare = entry.getValue();
+            PieceData piece = entry.getKey();
+
+            assert(piece != PieceDatas.NO_PIECE);
+
+            ChessSpaces spaces = new ChessSpaces();
+
+            piece.getPossibleMoves(chessGame, startSquare, spaces);
+
+            if (spaces.isEmpty()) {
+                //empty, immediately continue.
+                continue;
+            }
+            else{
+                possibleMoves.put(startSquare, spaces);
+            }
+
+            if (!kingSpaceNotUnderThreat &&
+                    startSquare != chessGame.getKingSpaceId(chessGame.getCurrentColorToMove())){
+                ChessSpaces replacement = new ChessSpaces();
+
+                for (int spaceId : possibleMoves.get(startSquare).chessMoves){
+                    if (spacesToMoveToStopKingThreat.containSpace(spaceId)){
+                        replacement.addMoves(spaceId);
+                    }
                 }
-                else if (piece instanceof IrregularPieceData)
-                {
-                    generateJumpingMoves(startSquare, (IrregularPieceData) piece);
+                if (replacement.isEmpty()) {
+                    possibleMoves.remove(startSquare);
+
+                }else{
+                    possibleMoves.put(startSquare, replacement);
                 }
-
             }
+
         }
     }
 
-    private void generateSlidingMoves(int startSquare, SlidingPieceData piece)
-    {
-        int maxRange = piece.getMaxRange(chessGame, startSquare);
-        short[] possibleDirections = piece.getPossibleDirections(chessGame, startSquare);
-
-        for (short direction : possibleDirections)
-        {
-            for (int n = 0; n < maxRange && n < numSquaresToEdge[startSquare][direction]; ++n)
-            {
-                int targetSquare = startSquare + ChessBoardUI.directionOffsets[direction]*(n+1);
-
-                if (targetSquare >= 64) break;
-
-                if (chessGame.isAlliedPieceAt(targetSquare, color)) break;
-                //encounter piece of our color, dont move in this dir any more
-
-                addMoveToPossibleMoves(startSquare, targetSquare, piece);
-
-                if (chessGame.isEnemyPieceAt(targetSquare, color)) break; //encounter opponents color, also break.
-            }
-        }
-    }
-
-    public void precomputeSquaresToEdgeData()
-    {
-        for (int row = 0; row< ChessBoardUI.BOARD_SIZE; ++row)
-        {
-            for (int col = 0; col < ChessBoardUI.BOARD_SIZE; ++col)
-            {
-                int numSouth = 7 - row;
-                int numEast = 7 - col;
-
-                int squareIdx = row* ChessBoardUI.BOARD_SIZE + col;
-
-                numSquaresToEdge[squareIdx][ChessBoardUI.NORTH] = row;
-                numSquaresToEdge[squareIdx][ChessBoardUI.SOUTH] = numSouth;
-                numSquaresToEdge[squareIdx][ChessBoardUI.EAST] = numEast;
-                numSquaresToEdge[squareIdx][ChessBoardUI.WEST] = col;
-                numSquaresToEdge[squareIdx][ChessBoardUI.NORTH_WEST] = Math.min(row, col);
-                numSquaresToEdge[squareIdx][ChessBoardUI.NORTH_EAST] = Math.min(row, numEast);
-                numSquaresToEdge[squareIdx][ChessBoardUI.SOUTH_WEST] = Math.min(numSouth, col);
-                numSquaresToEdge[squareIdx][ChessBoardUI.SOUTH_EAST] = Math.min(numSouth, numEast);
-
-            }
-        }
-    }
-
-    private void generateJumpingMoves(int startSquare, IrregularPieceData piece)
-    {
-        int[] moves = piece.getPossibleMoves(chessGame, startSquare);
-        for (int move : moves)
-        {
-            if (ChessBoard.isValidSpaceId(move) && !chessGame.isAlliedPieceAt(move, piece.color))
-            {
-                addMoveToPossibleMoves(startSquare, move, piece);
-            }
-        }
-    }
-
-    private void addMoveToPossibleMoves(int startSquare, int move, PieceData piece){
-        if (strictMovesChecker && chessGame.selfMoveWontThreatenSelfKing(startSquare, move, piece.color)) return;
-
-        if (possibleMoves.containsKey(startSquare)) {
-            possibleMoves.get(startSquare).addMoves(move);
-        } else {
-            possibleMoves.put(startSquare, new ChessSpaces(move));
-        }
-    }
     //endregion
+
     //region HELPERS
     public void clearPossibleMoves()
     {
-        possibleMoves = new HashMap<>();
+        possibleMoves.clear();
     }
 
     public void highlightPossibleMoves(int spaceId, ChessBoardUI chessBoardUI)
@@ -153,11 +131,28 @@ public class PossibleMoves {
     public boolean isEmpty(){
         return possibleMoves.isEmpty();
     }
-    public void enableStrictMovesChecker(){strictMovesChecker = true;}
-
-    public  void disableStrictMovesChecker(){strictMovesChecker = false;}
 
     @SuppressWarnings("unused")
     public HashMap<Integer, ChessSpaces> getMoves(){return possibleMoves;}
+    public boolean canMoveToFrom(int spaceId, int spaceIdArriveAt) {
+        ChessSpaces s = possibleMoves.get(spaceId);
+        return s != null && s.containSpace(spaceIdArriveAt);
+    }
     //endregion
+
+    @Override
+    public String toString() {
+        if (possibleMoves == null || possibleMoves.isEmpty()) {
+            return "possibleMoves: <empty>";
+        }
+        StringBuilder sb = new StringBuilder("possibleMoves:\n");
+        for (Map.Entry<Integer, ChessSpaces> entry : possibleMoves.entrySet()) {
+            sb.append("  ")
+                    .append(entry.getKey())
+                    .append(" -> ")
+                    .append(entry.getValue())
+                    .append('\n');
+        }
+        return sb.toString();
+    }
 }

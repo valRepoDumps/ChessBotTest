@@ -2,6 +2,7 @@ package ChessResources.ChessBoard;
 
 import ChessLogic.Debug.DebugMode;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
+import ChessResources.ChessListener.StateChangeListener;
 import ChessResources.Pieces.PieceData;
 import ChessResources.Pieces.PieceDatas;
 
@@ -27,13 +28,21 @@ public class ChessBoardUI extends ChessBoard {
     private IntConsumer onSquareClicked = null;
     //endregion
 
+    public final StateChangeListener<BoardStateChange> GRAPHIC_UPDATE_LOGGER =
+            (BoardStateChange boardStateChange)->{
+
+                updateBoardGraphic(boardStateChange.getSpaceId());
+                updateBoardGraphic(boardStateChange.getSpaceIdArriveAt());
+                //this.chessHistoryTracker.pushBoardStateChange(boardStateChange);
+                //DebugMode.debugPrint(this, "Board State Change: " + boardStateChange);
+            };
     public ChessBoardUI(){}
     @SuppressWarnings("unused")
     public ChessBoardUI(String piecePlacement)
     {
+        addMoveListener(GRAPHIC_UPDATE_LOGGER);
         this.setUpPieces(piecePlacement);
     }
-
 
     public void setOnSquareClicked(IntConsumer handler) {
         this.onSquareClicked = handler;
@@ -89,7 +98,7 @@ public class ChessBoardUI extends ChessBoard {
 
                 square.setPreferredSize(new Dimension(SQUARE_PIXEL_SIZE,SQUARE_PIXEL_SIZE));
                 if (getPiece(row*BOARD_SIZE + col) != PieceDatas.NO_PIECE) {
-                    square.setIcon(getPiece(row*BOARD_SIZE + col).graphic);
+                    square.setIcon(getPiece(row*BOARD_SIZE + col).getGraphic());
                 }
                 square.setBackground(boardSquaresColor[row*BOARD_SIZE + col] == BLACK ? BLACK_COLOR : WHITE_COLOR);
 
@@ -105,7 +114,7 @@ public class ChessBoardUI extends ChessBoard {
 
         //this is private, so dont need much check.
         if (getPiece(spaceId) != PieceDatas.NO_PIECE) {
-            getGraphicAt(spaceId).setIcon(getPiece(spaceId).graphic);
+            getGraphicAt(spaceId).setIcon(getPiece(spaceId).getGraphic());
             getGraphicAt(spaceId).setBorder(null); //reset all borders.
         }
         else

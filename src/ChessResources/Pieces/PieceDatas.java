@@ -26,18 +26,18 @@ public class PieceDatas
     public static PieceData makePiece(int pieceId)
     {
         return switch (pieceId) {
-            case PieceData.BPAWN -> PieceDatas.copyPiece(BPAWN_DATA);
-            case PieceData.WPAWN -> PieceDatas.copyPiece(WPAWN_DATA);
-            case PieceData.BROOK -> PieceDatas.copyPiece(BROOK_DATA);
-            case PieceData.WROOK -> PieceDatas.copyPiece(WROOK_DATA);
-            case PieceData.BKNIGHT -> PieceDatas.copyPiece(BKNIGHT_DATA);
-            case PieceData.WKNIGHT -> PieceDatas.copyPiece(WKNIGHT_DATA);
-            case PieceData.BBISHOP -> PieceDatas.copyPiece(BBISHOP_DATA);
-            case PieceData.WBISHOP -> PieceDatas.copyPiece(WBISHOP_DATA);
-            case PieceData.BQUEEN -> PieceDatas.copyPiece(BQUEEN_DATA);
-            case PieceData.WQUEEN -> PieceDatas.copyPiece(WQUEEN_DATA);
-            case PieceData.BKING -> PieceDatas.copyPiece(BKING_DATA);
-            case PieceData.WKING -> PieceDatas.copyPiece(WKING_DATA);
+            case PieceData.BPAWN -> PieceDatas.getUniqueClone(BPAWN_DATA);
+            case PieceData.WPAWN -> PieceDatas.getUniqueClone(WPAWN_DATA);
+            case PieceData.BROOK -> PieceDatas.getUniqueClone(BROOK_DATA);
+            case PieceData.WROOK -> PieceDatas.getUniqueClone(WROOK_DATA);
+            case PieceData.BKNIGHT -> PieceDatas.getUniqueClone(BKNIGHT_DATA);
+            case PieceData.WKNIGHT -> PieceDatas.getUniqueClone(WKNIGHT_DATA);
+            case PieceData.BBISHOP -> PieceDatas.getUniqueClone(BBISHOP_DATA);
+            case PieceData.WBISHOP -> PieceDatas.getUniqueClone(WBISHOP_DATA);
+            case PieceData.BQUEEN -> PieceDatas.getUniqueClone(BQUEEN_DATA);
+            case PieceData.WQUEEN -> PieceDatas.getUniqueClone(WQUEEN_DATA);
+            case PieceData.BKING -> PieceDatas.getUniqueClone(BKING_DATA);
+            case PieceData.WKING -> PieceDatas.getUniqueClone(WKING_DATA);
             default -> NO_PIECE;
         };
     }
@@ -50,19 +50,26 @@ public class PieceDatas
             return ((TOTAL_PIECES/2 + pieceId&0b111)-1);
         }
     }
+
     public static boolean getColor(PieceData piece)
     {
-        return (piece.pieceId & 16) == 0 ? PieceData.BLACK : PieceData.WHITE;
+        return getColor(piece.getPieceId());
     }
 
-    public static PieceData copyPiece(PieceData pieceData)
+    public static boolean getColor(int pieceId)
     {
-        return switch (pieceData) {
-            case null -> PieceDatas.NO_PIECE;
-            case SlidingPieceData slidingPieceData -> new SlidingPieceData(slidingPieceData);
-            case IrregularPieceData irregularPieceData -> new IrregularPieceData(irregularPieceData);
-            default -> new PieceData(pieceData);
-        };
+        return (pieceId & 16) == 0 ? PieceData.BLACK : PieceData.WHITE;
+    }
+
+    public static PieceData getUniqueClone(PieceData pieceData)
+    {
+        if (pieceData == null) return null;
+        return pieceData.getUniqueClone();
+    }
+
+    public static PieceData getClone(PieceData pieceData){
+        if (pieceData == null) return null;
+        return  pieceData.clone();
     }
 
 }
