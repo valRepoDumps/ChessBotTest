@@ -4,7 +4,6 @@ import ChessLogic.Debug.DebugMode;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
 import ChessResources.ChessListener.StateChangeListener;
 import ChessResources.Pieces.PieceData;
-import ChessResources.Pieces.PieceDatas;
 
 import javax.swing.*;
 import java.awt.*;
@@ -97,8 +96,8 @@ public class ChessBoardUI extends ChessBoard {
                 square.addActionListener(_ ->onSquareClicked.accept(r*BOARD_SIZE+c));
 
                 square.setPreferredSize(new Dimension(SQUARE_PIXEL_SIZE,SQUARE_PIXEL_SIZE));
-                if (getPiece(row*BOARD_SIZE + col) != PieceDatas.NO_PIECE) {
-                    square.setIcon(getPiece(row*BOARD_SIZE + col).getGraphic());
+                if (PieceData.isValidPieceId(getPiece(row*BOARD_SIZE + col))) {
+                    square.setIcon(PieceData.getGraphic(getPiece(row*BOARD_SIZE + col)));
                 }
                 square.setBackground(boardSquaresColor[row*BOARD_SIZE + col] == BLACK ? BLACK_COLOR : WHITE_COLOR);
 
@@ -113,8 +112,8 @@ public class ChessBoardUI extends ChessBoard {
         if (!displayGraphic) return;
 
         //this is private, so dont need much check.
-        if (getPiece(spaceId) != PieceDatas.NO_PIECE) {
-            getGraphicAt(spaceId).setIcon(getPiece(spaceId).getGraphic());
+        if (PieceData.isValidPieceId(getPiece(spaceId))) {
+            getGraphicAt(spaceId).setIcon(PieceData.getGraphic(getPiece(spaceId)));
             getGraphicAt(spaceId).setBorder(null); //reset all borders.
         }
         else
@@ -170,7 +169,7 @@ public class ChessBoardUI extends ChessBoard {
     }
 
     @Override
-    public void spawnPieceAt(int spaceId, PieceData piece) {
+    public void spawnPieceAt(int spaceId, int piece) {
         super.spawnPieceAt(spaceId, piece);
         updateBoardGraphic();
     }

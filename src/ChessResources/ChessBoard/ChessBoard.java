@@ -5,15 +5,11 @@ import ChessLogic.Debug.Debuggable;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
 import ChessResources.ChessListener.StateChangeListener;
 import ChessResources.Pieces.PieceData;
-import ChessResources.Pieces.PieceDatas;
 import ChessResources.PreCalc;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import static ChessResources.Pieces.PieceDatas.getUniqueClone;
+import static ChessResources.Pieces.PieceData.getUniqueClone;
 
 public class ChessBoard implements Debuggable {
     //region PRE_CODE
@@ -40,10 +36,10 @@ public class ChessBoard implements Debuggable {
     public static final boolean BLACK = false;
     public static final boolean WHITE = true;
 
-    protected PieceData[] boardSquares = new PieceData[BOARD_SIZE*BOARD_SIZE];
+    protected int[] boardSquares = new int[BOARD_SIZE*BOARD_SIZE];
 
-    public Map<PieceData, Integer> currPieceLocationWhite = new HashMap<>();
-    public Map<PieceData, Integer> currPieceLocationBlack = new HashMap<>();
+    public HashSet<Integer> currPieceLocationWhite = new HashSet<>();
+    public HashSet<Integer> currPieceLocationBlack = new HashSet<>();
 
     protected ArrayList<StateChangeListener<BoardStateChange>> boardMoveListeners = new ArrayList<>();
     protected ArrayList<StateChangeListener<BoardStateChange>> stateChangeListeners = new ArrayList<>();
@@ -56,37 +52,34 @@ public class ChessBoard implements Debuggable {
                 int spaceId = boardStateChange.getSpaceId();
                 int spaceIdArriveAt = boardStateChange.getSpaceIdArriveAt();
 
-                PieceData pieceData = boardStateChange.getPiece();
-                PieceData pieceDataAtArrival = this.getPiece(spaceIdArriveAt);
+                int pieceData = boardStateChange.getPiece();
+                int pieceDataAtArrival = this.getPiece(spaceIdArriveAt);
 
                 if (ChessBoard.isValidSpaceId(boardStateChange.getSpaceIdArriveAt())){
-                    if (pieceData == PieceDatas.NO_PIECE){
-                        if (pieceDataAtArrival == PieceDatas.NO_PIECE) return;
+                    if (!PieceData.isValidPieceId(pieceData)){
+                        if (!PieceData.isValidPieceId(pieceDataAtArrival)) return;
 
-                        if (PieceData.getColor(pieceDataAtArrival.getPieceId()) == PieceData.WHITE)
-                            currPieceLocationWhite.remove(pieceDataAtArrival);
+                        if (PieceData.getColor(pieceDataAtArrival) == PieceData.WHITE)
+                            currPieceLocationWhite.remove(spaceIdArriveAt);
                         else
-                            currPieceLocationBlack.remove(pieceDataAtArrival);
+                            currPieceLocationBlack.remove(spaceIdArriveAt);
                     }
                     else {
-                        if (pieceData.getColor() == PieceData.WHITE)
-                            currPieceLocationWhite.put(pieceData, spaceIdArriveAt);
+                        if (PieceData.getColor(pieceData) == PieceData.WHITE)
+                            currPieceLocationWhite.add(spaceIdArriveAt);
                         else
-                            currPieceLocationBlack.put(pieceData, spaceIdArriveAt);
+                            currPieceLocationBlack.add(spaceIdArriveAt);
                     }
                 }
                 else{
-                    if (pieceData == PieceDatas.NO_PIECE) return;
-                    if (PieceData.getColor(pieceData.getPieceId()) == PieceData.WHITE)
-                        currPieceLocationWhite.remove(pieceData);
+                    if (!PieceData.isValidPieceId(pieceData)) return;
+                    if (PieceData.getColor(pieceData) == PieceData.WHITE)
+                        currPieceLocationWhite.remove(spaceId);
                     else
-                        currPieceLocationBlack.remove(pieceData);
+                        currPieceLocationBlack.remove(spaceId);
                 }
             };
-    public final StateChangeListener<BoardStateChange> PIECE_MOVED_LOGGER =
-            (BoardStateChange boardStateChange) ->{
-                boardStateChange.getPiece().setPieceMoved();
-            };
+
     //region CONSTRUCTOR
     public ChessBoard(){
         addStateChangeListener(BOARD_STATE_CHANGE_LOGGER);
@@ -118,11 +111,7 @@ public class ChessBoard implements Debuggable {
                 if (c >= '1' && c <= '8') { col += c - '0'; continue; }
                 if (col > 7) throw new IllegalArgumentException("Column overflow");
 
-                PieceData proto = PreCalc.FEN_MAP[c];
-
-                PieceData clone = getUniqueClone(proto);
-
-                setPieceAt(i*ChessBoard.BOARD_SIZE + col, clone);
+                setPieceAt(i*ChessBoard.BOARD_SIZE + col, PreCalc.FEN_MAP[c]);
 
                 col++;
             }
@@ -132,13 +121,13 @@ public class ChessBoard implements Debuggable {
 
     protected void clearBoard()
     {
-        boardSquares = new PieceData[BOARD_SIZE*BOARD_SIZE];
+        boardSquares = new int[BOARD_SIZE*BOARD_SIZE];
     }
 
     //endregion
 
     //region GETTERS
-    public PieceData[] getBoardSquares(){return boardSquares;}
+    public int[] getBoardSquares(){return boardSquares;}
     //endregion
 
     //region IMMEDIATE_SPACE_FUNCS
@@ -216,16 +205,16 @@ public class ChessBoard implements Debuggable {
     //endregion
 
     //region PIECE_FUNCS
-    protected void setPieceAt(int spaceId, PieceData piece)
+    protected void setPieceAt(int spaceId, int piece)
     {//protected to avoid uses messing with listener. used during initilization
         StateChangeListener.notifyListeners(this.stateChangeListeners,
                 new BoardStateChange(piece, ChessBoard.INVALID_SPACE_ID, spaceId));
         if (isValidSpaceId(spaceId)) boardSquares[spaceId] = piece;
     }
 
-    public void spawnPieceAt(int spaceId, PieceData piece)
+    public void spawnPieceAt(int spaceId, int piece)
     {
-        setPieceAt(spaceId, PieceDatas.NO_PIECE);
+        setPieceAt(spaceId, PieceData.INVALID_PIECES);
         setPieceAt(spaceId, piece);
 
         //spawn piece by moving it in from nowhere.
@@ -235,21 +224,21 @@ public class ChessBoard implements Debuggable {
     }
 
     protected void deSpawnPieceAt(int spaceId){
-        PieceData disappearedPiece = getPiece(spaceId);
+        int disappearedPiece = getPiece(spaceId);
 
-        if (disappearedPiece != PieceDatas.NO_PIECE) //ensure proper reconstruction later.
+        if (PieceData.isValidPieceId(disappearedPiece)) //ensure proper reconstruction later.
         {
             StateChangeListener.notifyListeners(this.boardMoveListeners,
                     new BoardStateChange(disappearedPiece, spaceId, ChessBoard.INVALID_SPACE_ID));
         }
-        setPieceAt(spaceId, PieceDatas.NO_PIECE); //disappear piece.
+        setPieceAt(spaceId, PieceData.INVALID_PIECES); //disappear piece.
     }
 
-    protected PieceData movePiecePrimitive(int spaceIdToMove, int spaceIdArriveAt)
+    protected int movePiecePrimitive(int spaceIdToMove, int spaceIdArriveAt)
     {
-        PieceData piece = getPiece(spaceIdToMove);
+        int piece = getPiece(spaceIdToMove);
 
-        setPieceAt(spaceIdToMove, PieceDatas.NO_PIECE);
+        setPieceAt(spaceIdToMove, PieceData.INVALID_PIECES);
         setPieceAt(spaceIdArriveAt, piece);
         return piece;
     }
@@ -262,7 +251,7 @@ public class ChessBoard implements Debuggable {
         //assume enemy piece disappear before allied piece lands. this function dont handle capture.
         //notifyMoveListener(new BoardStateChange(capturedPiece, spaceIdArriveAt, ChessBoard.INVALID_SPACE_ID));
 
-        PieceData piece = movePiecePrimitive(spaceIdToMove, spaceIdArriveAt);
+        int piece = movePiecePrimitive(spaceIdToMove, spaceIdArriveAt);
         StateChangeListener.notifyListeners(this.boardMoveListeners,
                 new BoardStateChange(piece, spaceIdToMove, spaceIdArriveAt));
     }
@@ -273,51 +262,51 @@ public class ChessBoard implements Debuggable {
         movePiece(spaceIdToMove, spaceIdArriveAt); //piece land.
     }
 
-    public PieceData getPiece(int spaceId)
+    public int getPiece(int spaceId)
     {
         if (isValidSpaceId(spaceId)) return boardSquares[spaceId];
         else {
             DebugMode.debugPrint(this, "Invalid spaceId at getPiece");
-            return null;
+            return PieceData.INVALID_PIECES;
         }
     }
 
     public boolean isPieceAt(int spaceId)
     {
         if (!isValidSpaceId(spaceId)) return false;
-        return getPiece(spaceId) != PieceDatas.NO_PIECE;
+        return getPiece(spaceId) != PieceData.INVALID_PIECES;
     }
 
     public boolean isEnemyPieceAt(int spaceId, boolean pieceColor)
     {
         if (!isValidSpaceId(spaceId)) return false;
-        else if (getPiece(spaceId) == PieceDatas.NO_PIECE) return false;//no enemy piece
+        else if (getPiece(spaceId) == PieceData.INVALID_PIECES) return false;//no enemy piece
 
-        return getPiece(spaceId).getColor() != pieceColor;
+        return PieceData.getColor(getPiece(spaceId)) != pieceColor;
     }
 
 
     public boolean isAlliedPieceAt(int spaceId, boolean pieceColor)
     {
-        if (getPiece(spaceId) == PieceDatas.NO_PIECE) return false; //no alied piece.
-        return getPiece(spaceId).getColor() == pieceColor;
+        if (getPiece(spaceId) == PieceData.INVALID_PIECES) return false; //no alied piece.
+        return PieceData.getColor(getPiece(spaceId)) == pieceColor;
     }
 
     public short getPieceIdAt(int spaceId)
     {
-        if (getPiece(spaceId) == PieceDatas.NO_PIECE) return PieceData.INVALID_PIECES;
-        else return getPiece(spaceId).getPieceId();
+        if (getPiece(spaceId) == PieceData.INVALID_PIECES) return PieceData.INVALID_PIECES;
+        else return (short) getPiece(spaceId);
     }
 
     public int findPiece(int pieceId){
-        Map<PieceData, Integer> currPieceLocation = null;
+        HashSet<Integer> currPieceLocation = null;
 
-        if (PieceDatas.getColor(pieceId) == PieceData.WHITE) currPieceLocation = currPieceLocationWhite;
+        if (PieceData.getColor(pieceId) == PieceData.WHITE) currPieceLocation = currPieceLocationWhite;
         else currPieceLocation = currPieceLocationBlack;
 
-        for (PieceData pd : currPieceLocation.keySet()){
-            if (pd.getPieceId() == pieceId)
-                return currPieceLocation.getOrDefault(pd, INVALID_SPACE_ID);
+        for (int spc : currPieceLocation){
+            if (getPiece(spc) == pieceId)
+                return spc;
         }
         return INVALID_SPACE_ID;
     }
@@ -341,14 +330,14 @@ public class ChessBoard implements Debuggable {
 
     public boolean isEmptySpaceAt(int spaceId)
     {
-        return getPiece(spaceId) == PieceDatas.NO_PIECE;
+        return !PieceData.isValidPieceId(getPiece(spaceId));
     }
 
     @Override
     public ChessBoard clone(){
         ChessBoard clone = new ChessBoard();
         for (int i = 0; i < ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE; ++i){
-            clone.setPieceAt(i, PieceDatas.getUniqueClone(this.getPiece(i)));
+            clone.setPieceAt(i, getPiece(i));
         }
 
         return clone;
@@ -385,14 +374,14 @@ public class ChessBoard implements Debuggable {
                     boardStateChange.getSpaceId() != INVALID_SPACE_ID);
 
             if (boardStateChange.getSpaceIdArriveAt() == INVALID_SPACE_ID) {//piece is taken out of board, thus must be spawned back in.
-                DebugMode.debugPrint(this, "Spawned in, piece is: " + boardStateChange.getPiece().getName() );
+                DebugMode.debugPrint(this, "Spawned in, piece is: " + PieceData.getName(boardStateChange.getPiece()) );
                 setPieceAt(boardStateChange.getSpaceId(), boardStateChange.getPiece());
             } else if (boardStateChange.getSpaceId() == INVALID_SPACE_ID) {//piece is spawned, must be taken out of board.
                 DebugMode.debugPrint(this, "Delete Piece");
-                setPieceAt(boardStateChange.getSpaceIdArriveAt(), PieceDatas.NO_PIECE);
+                setPieceAt(boardStateChange.getSpaceIdArriveAt(), PieceData.INVALID_PIECES);
             } else {
                 DebugMode.debugPrint(this, "Moving piece back");
-                setPieceAt(boardStateChange.getSpaceIdArriveAt(), PieceDatas.NO_PIECE);
+                setPieceAt(boardStateChange.getSpaceIdArriveAt(), PieceData.INVALID_PIECES);
                 setPieceAt(boardStateChange.getSpaceId(), boardStateChange.getPiece());
             }
         }

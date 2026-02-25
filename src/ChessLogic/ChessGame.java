@@ -2,11 +2,9 @@ package ChessLogic;
 
 import ChessGUI.ChessGUI;
 import ChessLogic.Configurations.Configurations;
-import ChessLogic.Debug.Tests;
 import ChessResources.ChessBoard.ChessBoardUI;
 import ChessResources.ChessErrors.OutOfOldTurns;
 import ChessResources.Pieces.PieceData;
-import ChessResources.Pieces.PieceDatas;
 
 import java.util.Arrays;
 import java.util.function.BiFunction;
@@ -27,22 +25,22 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
     }
 
     public ChessGame(ChessGUI chessGUI, BiFunction<Integer, Boolean, Short> choosePromotionPiece) {
-        this("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", chessGUI,
+        this("rnbqkbnr/pppppppp/8/8/8/8/PPRQBPPP/RNBQKBNR w KQkq - 0 1", chessGUI,
                 choosePromotionPiece, new Configurations(true, true, true));
     }
 
     private void playerClick(int spaceId)
     {
         System.out.println("Click: " + spaceId);
-        PieceData piece = chessBoard.getPiece(spaceId);
+        short piece = (short) chessBoard.getPiece(spaceId);
 
         //ensure valid choice before proceeding. Won't handle cases where sleected row exceed max and min
         // posisble, as it shouldt happen
         if (selectedSpaceId == INVALID_SPACE_ID)
         {
             System.out.println(Arrays.toString(gameProperties) + " " + piece);
-            if (piece != null && PieceDatas.getColor(piece) == gameProperties[SIDE_TO_MOVE]) {
-//                System.out.println(Arrays.toString(gameProperties) + " " + piece + " in" + PieceDatas.getColor(piece));
+            if (PieceData.isValidPieceId(piece) && PieceData.getColor(piece) == gameProperties[SIDE_TO_MOVE]) {
+//                System.out.println(Arrays.toString(gameProperties) + " " + piece + " in" + shorts.getColor(piece));
                 selectedSpaceId = spaceId;
                 chessBoard.highlightSpace(spaceId);
                 possibleMoves.highlightPossibleMoves(selectedSpaceId, chessBoard);
@@ -64,7 +62,7 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
 
                 selectedSpaceId = spaceId;
                 chessBoard.highlightSpace(spaceId);
-                if (piece != null)
+                if (PieceData.isValidPieceId(piece))
                 {
                     possibleMoves.highlightPossibleMoves(selectedSpaceId, chessBoard);
                 }

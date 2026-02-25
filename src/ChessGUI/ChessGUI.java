@@ -13,7 +13,7 @@ import java.awt.event.KeyEvent;
 import java.util.function.BiFunction;
 
 public class ChessGUI {
-    protected static ChessGame chessGame;
+    public static ChessGame chessGame;
     public final int BOARD_PIXEL_SIZE;
     JPanel boardGraphic;
 

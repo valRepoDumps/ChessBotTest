@@ -3,13 +3,12 @@ package ChessResources.Hasher;
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.Pieces.PieceData;
-import ChessResources.Pieces.PieceDatas;
 
 import java.util.Map;
 import java.util.Random;
 
 public final class ZobristHasher<Board extends ChessBoard> {
-    long[] hashList = new long[Board.BOARD_SIZE*Board.BOARD_SIZE*PieceDatas.TOTAL_PIECES];
+    long[] hashList = new long[Board.BOARD_SIZE*Board.BOARD_SIZE*PieceData.TOTAL_PIECES];
 
     long[] castlingRights = new long[16];
     long sideToMoveIsBlack;
@@ -49,25 +48,23 @@ public final class ZobristHasher<Board extends ChessBoard> {
     }
 
     public long getHashWithSpaceIdAndPiece(int spaceId, int pieceId){
-        return hashList[spaceId*PieceDatas.TOTAL_PIECES + PieceDatas.convertPieceIdToArrayIdx(pieceId)];}
+        return hashList[spaceId*PieceData.TOTAL_PIECES + PieceData.convertPieceIdToArrayIdx(pieceId)];}
 
     public long getGameHash(MinimalChessGame<Board> game) {
         long key = 0L;
 
-        for (Map.Entry<PieceData, Integer> entry : game.chessBoard.currPieceLocationWhite.entrySet())
+        for (Integer startSquare : game.chessBoard.currPieceLocationWhite)
         {
-            int startSquare = entry.getValue();
-            PieceData piece = entry.getKey();
+            short piece = game.getBoard().getPieceIdAt(startSquare);
 
-            key^=getHashWithSpaceIdAndPiece(startSquare, piece.getPieceId());
+            key^=getHashWithSpaceIdAndPiece(startSquare, piece);
         }
 
-        for (Map.Entry<PieceData, Integer> entry : game.chessBoard.currPieceLocationBlack.entrySet())
+        for (Integer startSquare : game.chessBoard.currPieceLocationBlack)
         {
-            int startSquare = entry.getValue();
-            PieceData piece = entry.getKey();
+            short piece = game.getBoard().getPieceIdAt(startSquare);
 
-            key^=getHashWithSpaceIdAndPiece(startSquare, piece.getPieceId());
+            key^=getHashWithSpaceIdAndPiece(startSquare, piece);
         }
 
         if (game.getGameProperties()[MinimalChessGame.SIDE_TO_MOVE] == Board.BLACK){

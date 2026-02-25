@@ -2,12 +2,10 @@ package ChessResources;
 
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.GetMovesLogic.ChessSpaces;
+import ChessResources.Pieces.PieceConsts;
 import ChessResources.Pieces.PieceData;
-import ChessResources.Pieces.PieceDatas;
 
 import java.util.Arrays;
-
-import static ChessResources.Pieces.PieceData.BROOK;
 
 public class PreCalc {
 
@@ -22,18 +20,20 @@ public class PreCalc {
     public static int POSSIBLE_KING_MOVES = 6;
 
     public static int[][] KNIGHT_MOVES = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][];
-
     public static int[][] KING_MOVES = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][];
 
-    public static final PieceData[] FEN_MAP = new PieceData[128];
+    public static final int[] FEN_MAP = new int[128];
     public static final int[] WHITE_THREAT_IDS = { PieceData.BPAWN, PieceData.BQUEEN, PieceData.BBISHOP,
             PieceData.BROOK, PieceData.BKNIGHT, PieceData.BKING };
     public static final int[] BLACK_THREAT_IDS = { PieceData.WPAWN, PieceData.WQUEEN, PieceData.WBISHOP,
             PieceData.WROOK, PieceData.WKNIGHT, PieceData.WKING };
 
+    public static final PieceData[] PIECE_ID_TO_PIECE_DATA_MAP = new PieceData[PieceData.MAX_PIECES];
+
     static {
         preComputeAllMoves();
         assignFenMap();
+        assignPieceIdToPieceDataMap();
     }
 
     //region SLIDING_PIECE_PRE_CALC
@@ -240,19 +240,38 @@ public class PreCalc {
 
     //region FEN_MAP
     public static void assignFenMap(){
-        FEN_MAP['k'] = PieceDatas.BKING_DATA;
-        FEN_MAP['q'] = PieceDatas.BQUEEN_DATA;
-        FEN_MAP['b'] = PieceDatas.BBISHOP_DATA;
-        FEN_MAP['n'] = PieceDatas.BKNIGHT_DATA;
-        FEN_MAP['r'] = PieceDatas.BROOK_DATA;
-        FEN_MAP['p'] = PieceDatas.BPAWN_DATA;
+        FEN_MAP['k'] = PieceData.BKING;
+        FEN_MAP['q'] = PieceData.BQUEEN;
+        FEN_MAP['b'] = PieceData.BBISHOP;
+        FEN_MAP['n'] = PieceData.BKNIGHT;
+        FEN_MAP['r'] = PieceData.BROOK;
+        FEN_MAP['p'] = PieceData.BPAWN;
 
-        FEN_MAP['K'] = PieceDatas.WKING_DATA;
-        FEN_MAP['Q'] = PieceDatas.WQUEEN_DATA;
-        FEN_MAP['B'] = PieceDatas.WBISHOP_DATA;
-        FEN_MAP['N'] = PieceDatas.WKNIGHT_DATA;
-        FEN_MAP['R'] = PieceDatas.WROOK_DATA;
-        FEN_MAP['P'] = PieceDatas.WPAWN_DATA;
+        FEN_MAP['K'] = PieceData.WKING;
+        FEN_MAP['Q'] = PieceData.WQUEEN;
+        FEN_MAP['B'] = PieceData.WBISHOP;
+        FEN_MAP['N'] = PieceData.WKNIGHT;
+        FEN_MAP['R'] = PieceData.WROOK;
+        FEN_MAP['P'] = PieceData.WPAWN;
+    }
+    //endregion
+
+    //region PIECE_ID_TO_PIECE_DATA_MAP
+    public static void assignPieceIdToPieceDataMap(){
+        Arrays.fill(PIECE_ID_TO_PIECE_DATA_MAP, PieceConsts.NO_PIECE);
+
+        PIECE_ID_TO_PIECE_DATA_MAP[PieceData.BPAWN] = PieceData.BPAWN_DATA;
+        PIECE_ID_TO_PIECE_DATA_MAP[PieceData.WPAWN] = PieceData.WPAWN_DATA;
+        PIECE_ID_TO_PIECE_DATA_MAP[PieceData.BROOK] = PieceData.BROOK_DATA;
+        PIECE_ID_TO_PIECE_DATA_MAP[PieceData.WROOK] = PieceData.WROOK_DATA;
+        PIECE_ID_TO_PIECE_DATA_MAP[PieceData.BKNIGHT] = PieceData.BKNIGHT_DATA;
+        PIECE_ID_TO_PIECE_DATA_MAP[PieceData.WKNIGHT] = PieceData.WKNIGHT_DATA;
+        PIECE_ID_TO_PIECE_DATA_MAP[PieceData.BBISHOP] = PieceData.BBISHOP_DATA;
+        PIECE_ID_TO_PIECE_DATA_MAP[PieceData.WBISHOP] = PieceData.WBISHOP_DATA;
+        PIECE_ID_TO_PIECE_DATA_MAP[PieceData.BQUEEN] = PieceData.BQUEEN_DATA;
+        PIECE_ID_TO_PIECE_DATA_MAP[PieceData.WQUEEN] = PieceData.WQUEEN_DATA;
+        PIECE_ID_TO_PIECE_DATA_MAP[PieceData.BKING] = PieceData.BKING_DATA;
+        PIECE_ID_TO_PIECE_DATA_MAP[PieceData.WKING] = PieceData.WKING_DATA;
     }
     //endregion
 }

@@ -4,15 +4,16 @@ import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.Pieces.PieceData;
 
 public class ScanResult {
-    protected int pieceId;
+    protected short pieceId;
     protected int spaceId;
 
     public static final ScanResult OUT_OF_RANGE_SCAN_RESULT =
-            new ScanResult(0, ChessBoard.INVALID_SPACE_ID);
-    public static final ScanResult INVALID_SCAN_RESULT =
-            new ScanResult(PieceData.INVALID_PIECES, 0);
+            new ScanResult((short) (PieceData.INVALID_PIECES+1), ChessBoard.INVALID_SPACE_ID);
 
-    public ScanResult(int pieceId, int spaceId){
+    public static final ScanResult INVALID_SCAN_RESULT =
+            new ScanResult(PieceData.INVALID_PIECES, ChessBoard.INVALID_SPACE_ID-1);
+
+    public ScanResult(short pieceId, int spaceId){
         this.pieceId = pieceId;
         this.spaceId = spaceId;
     }

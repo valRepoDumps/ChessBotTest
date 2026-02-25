@@ -93,4 +93,11 @@ public class ChessSpaces {
         ans.moveIntersection(tmp);
         tmp.clear();
     }
+
+    @Override
+    public ChessSpaces clone(){
+        ChessSpaces clone = new ChessSpaces();
+        clone.copyChessSpaces(this);
+        return clone;
+    }
 }
