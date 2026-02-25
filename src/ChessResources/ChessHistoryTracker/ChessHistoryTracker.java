@@ -1,7 +1,8 @@
 package ChessResources.ChessHistoryTracker;
 
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
-import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
+import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsPossibleMovesChange;
+import ChessResources.GetMovesLogic.PossibleMoves;
 import ChessResources.Hasher.HashContainer;
 
 import java.util.ArrayList;
@@ -26,9 +27,9 @@ public class ChessHistoryTracker {
     }
     @SuppressWarnings("unused")
     public void pushTurn(BoardStateChange boardStateChange,
-                         boolean[] gameProperties, int[] gameStats)
+                         boolean[] gameProperties, int[] gameStats, PossibleMoves pm)
     {
-        history.add(new GameStateChanges(boardStateChange, gameProperties, gameStats));
+        history.add(new GameStateChanges(boardStateChange, gameProperties, gameStats, pm));
     }
 
     public void pushTurn()
@@ -88,26 +89,27 @@ public class ChessHistoryTracker {
 
     //region SETTERS
     @SuppressWarnings("unused")
-    public void setGamePropertiesStats(boolean[] gameProperties, int[] gameStats)
+    public void setGamePropertiesStatsPossibleMoves(boolean[] gameProperties, int[] gameStats, PossibleMoves pm)
     {
         if(currentGameState == null)
         {
-            currentGameState = new GameStateChanges(gameProperties, gameStats);
+            currentGameState = new GameStateChanges(gameProperties, gameStats, pm);
         }
         else
         {
-            currentGameState.setGamePropertiesStats(gameProperties, gameStats);
+            currentGameState.setGamePropertiesStats(gameProperties, gameStats, pm);
         }
     }
-    public void setGamePropertiesStats(PropertiesStatsChange propertiesStatsChange)
+
+    public void setGamePropertiesStatsPossibleMoves(PropertiesStatsPossibleMovesChange pm)
     {
         if(currentGameState == null)
         {
-            currentGameState = new GameStateChanges(propertiesStatsChange);
+            currentGameState = new GameStateChanges(pm);
         }
         else
         {
-            currentGameState.setGamePropertiesStats(propertiesStatsChange);
+            currentGameState.setGamePropertiesStats(pm);
         }
     }
 

@@ -55,23 +55,23 @@ public class BoardScan {
     }
 
     public static boolean rayScanFor(MinimalChessGame<?extends ChessBoard> game,
-                                 int[] targets, int range, int pieceId){
+                                 int[] targets, int range, short pieceId){
         return rayScan(game, targets, range, null).getPieceId() == pieceId;
     }
 
     public static boolean jumpScanFor(MinimalChessGame<?extends ChessBoard> game,
-                                 int[] targets, int pieceId){
+                                 int[] targets, short pieceId){
         return returnArrayContainsPieceId(jumpScan(game, targets, null), pieceId);
     }
 
     public static boolean rayScanFor(MinimalChessGame<?extends ChessBoard> game,
-                                     int[][] targets, int range, short[] dirs, int[] pieceIds){
+                                     int[][] targets, int range, short[] dirs, short[] pieceIds){
         ScanResult sr;
         for (short dir : dirs){
             sr = rayScan(game, targets[dir], range, null);
             if (!ScanResult.isValid(sr)) continue;
 
-            for (int pieceId : pieceIds){
+            for (short pieceId : pieceIds){
                 if (pieceId == sr.getPieceId()) return true;
             }
         }
@@ -79,7 +79,7 @@ public class BoardScan {
     }
 
     public static boolean rayScanFor(MinimalChessGame<?extends ChessBoard> game,
-                                     int[][] targets, int range, short[] dirs, int pieceId){
+                                     int[][] targets, int range, short[] dirs, short pieceId){
         for (short dir : dirs){
             ScanResult sr = rayScan(game, targets[dir], range, null);
             if (!ScanResult.isValid(sr)) continue;

@@ -3,7 +3,7 @@ package ChessGUI;
 import ChessLogic.ChessGame;
 import ChessLogic.Debug.Tests;
 import ChessResources.ChessBoard.ChessBoardUI;
-import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
+import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsPossibleMovesChange;
 import ChessResources.Pieces.PieceData;
 
 import javax.swing.*;
@@ -73,7 +73,10 @@ public class ChessGUI {
                 //System.out.println("ENTER pressed!");
                 try {
                     chessGame.undoTurn();
-                    System.out.println(new PropertiesStatsChange(chessGame.gameProperties, chessGame.gameStats));
+                    System.out.println(new PropertiesStatsPossibleMovesChange(
+                            chessGame.gameProperties,
+                            chessGame.gameStats,
+                            chessGame.getPossibleMoves()));
 
                 }
                 catch (Exception ex){

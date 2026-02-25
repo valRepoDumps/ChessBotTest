@@ -32,7 +32,7 @@ public class ChessGame extends MinimalChessGame<ChessBoardUI>{
     private void playerClick(int spaceId)
     {
         System.out.println("Click: " + spaceId);
-        short piece = (short) chessBoard.getPiece(spaceId);
+        short piece = chessBoard.getPiece(spaceId);
 
         //ensure valid choice before proceeding. Won't handle cases where sleected row exceed max and min
         // posisble, as it shouldt happen

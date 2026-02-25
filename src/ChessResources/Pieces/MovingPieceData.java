@@ -25,8 +25,11 @@ public class MovingPieceData extends PieceData {
     //region DIR_LIST
     public static final short[] BPAWN_DIR =
             new short[]{ChessBoard.SOUTH, ChessBoard.SOUTH_EAST, ChessBoard.SOUTH_WEST};
+    public static final short[] BPAWN_CAPTURE_DIR = new short[]{ChessBoard.SOUTH_WEST, ChessBoard.SOUTH_EAST};
+
     public static final short[] WPAWN_DIR =
             new short[]{ChessBoard.NORTH, ChessBoard.NORTH_EAST, ChessBoard.NORTH_WEST};
+    public static final short[] WPAWN_CAPTURE_DIR = new short[]{ChessBoard.NORTH_WEST, ChessBoard.NORTH_EAST};
 
     public static final short[] ROOK_DIR =
             new short[]{ChessBoard.NORTH, ChessBoard.SOUTH, ChessBoard.WEST, ChessBoard.EAST};

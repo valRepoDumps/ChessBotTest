@@ -14,23 +14,23 @@ public abstract class PieceData implements PieceConsts{
 
 
     //public static final short EMPTY_SPACE = 0;
-    public static final short BPAWN = 1;
-    public static final short BKNIGHT = 2;
-    public static final short BBISHOP = 3;
-    public static final short BROOK = 4;
-    public static final short BQUEEN = 5;
-    public static final short BKING = 6;
+    public static final short BPAWN = 0;
+    public static final short BKNIGHT = 1;
+    public static final short BBISHOP = 2;
+    public static final short BROOK = 3;
+    public static final short BQUEEN = 4;
+    public static final short BKING = 5;
 
-    public static final short WPAWN = 17;
-    public static final short WKNIGHT = 18;
-    public static final short WBISHOP = 19;
-    public static final short WROOK = 20;
-    public static final short WQUEEN = 21;
-    public static final short WKING = 22;
+    public static final short WPAWN = 6;
+    public static final short WKNIGHT = 7;
+    public static final short WBISHOP = 8;
+    public static final short WROOK = 9;
+    public static final short WQUEEN = 10;
+    public static final short WKING = 11;
 
-    public static final short INVALID_PIECES = 27;
-    public static final short MAX_PIECES = 27;
-    public final static int PIECES_DIFF = 16;
+    public static final short INVALID_PIECES = 12;
+    public static final short MAX_PIECES = 12;
+    public final static int PIECES_DIFF = 6;
 
     protected short pieceId;
     protected boolean color;
@@ -63,6 +63,10 @@ public abstract class PieceData implements PieceConsts{
         this(piece.getPieceId(),
                 piece.getColor(),
                 piece.getName(), piece.getGraphic());
+    }
+
+    public static short convertArrayIdxToPieceId(short i) {
+        return i;
     }
 
     private boolean getColor() {
@@ -107,15 +111,17 @@ public abstract class PieceData implements PieceConsts{
     public ImageIcon getGraphic() {
         return graphic;
     }
+
     public static ImageIcon getGraphic(int pieceId){
         return PreCalc.PIECE_ID_TO_PIECE_DATA_MAP[pieceId].getGraphic();
     }
+
     public static int getOppositeColor(int pieceId){
         if (getColor(pieceId) == BLACK) return pieceId | PIECES_DIFF;
         else return pieceId ^ PIECES_DIFF;
     }
     public static boolean getColor(int pieceId){
-        return (pieceId&PIECES_DIFF) == 0 ? BLACK:WHITE;
+        return (pieceId/PIECES_DIFF) == 0 ? BLACK:WHITE;
     }
     //endregion
 
@@ -158,13 +164,8 @@ public abstract class PieceData implements PieceConsts{
         };
     }
 
-    public static int convertPieceIdToArrayIdx(int pieceId){
-        if ((pieceId & 0b1000) == 0){
-            return ((pieceId & 0b111)-1);
-        }
-        else{
-            return ((TOTAL_PIECES/2 + pieceId&0b111)-1);
-        }
+    public static int convertPieceIdToArrayIdx(short pieceId){
+        return pieceId;
     }
 }
 

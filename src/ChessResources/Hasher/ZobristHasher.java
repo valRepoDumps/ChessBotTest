@@ -47,7 +47,7 @@ public final class ZobristHasher<Board extends ChessBoard> {
                     | (gp[MinimalChessGame.BLACK_CASTLE_QUEEN] ? 8 : 0);
     }
 
-    public long getHashWithSpaceIdAndPiece(int spaceId, int pieceId){
+    public long getHashWithSpaceIdAndPiece(int spaceId, short pieceId){
         return hashList[spaceId*PieceData.TOTAL_PIECES + PieceData.convertPieceIdToArrayIdx(pieceId)];}
 
     public long getGameHash(MinimalChessGame<Board> game) {

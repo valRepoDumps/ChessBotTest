@@ -67,4 +67,13 @@ public interface PieceConsts {
 
     public static final PieceData NO_PIECE = null;
     //endregion
+
+    //region MISC_CONST
+    public static final short[] INF_RANGE_DIAGONAL_MOVE_PIECE_WHITE = new short[]{PieceData.WBISHOP, PieceData.WQUEEN};
+    public static final short[] INF_RANGE_DIAGONAL_MOVE_PIECE_BLACK = new short[]{PieceData.BBISHOP, PieceData.BQUEEN};
+
+    public static final short[] INF_RANGE_STRAIGHT_MOVE_PIECE_WHITE = new short[]{PieceData.WROOK, PieceData.WQUEEN};
+    public static final short[] INF_RANGE_STRAIGHT_MOVE_PIECE_BLACK = new short[]{PieceData.BROOK, PieceData.BQUEEN};
+
+    //endregion
 }

@@ -36,7 +36,7 @@ public class ChessBoard implements Debuggable {
     public static final boolean BLACK = false;
     public static final boolean WHITE = true;
 
-    protected int[] boardSquares = new int[BOARD_SIZE*BOARD_SIZE];
+    protected long[] boardSquares = new long[PieceData.TOTAL_PIECES];
 
     public HashSet<Integer> currPieceLocationWhite = new HashSet<>();
     public HashSet<Integer> currPieceLocationBlack = new HashSet<>();
@@ -52,8 +52,8 @@ public class ChessBoard implements Debuggable {
                 int spaceId = boardStateChange.getSpaceId();
                 int spaceIdArriveAt = boardStateChange.getSpaceIdArriveAt();
 
-                int pieceData = boardStateChange.getPiece();
-                int pieceDataAtArrival = this.getPiece(spaceIdArriveAt);
+                short pieceData = boardStateChange.getPiece();
+                short pieceDataAtArrival = this.getPiece(spaceIdArriveAt);
 
                 if (ChessBoard.isValidSpaceId(boardStateChange.getSpaceIdArriveAt())){
                     if (!PieceData.isValidPieceId(pieceData)){
@@ -121,68 +121,20 @@ public class ChessBoard implements Debuggable {
 
     protected void clearBoard()
     {
-        boardSquares = new int[BOARD_SIZE*BOARD_SIZE];
+        Arrays.fill(boardSquares, 0L);
     }
 
     //endregion
-
-    //region GETTERS
-    public int[] getBoardSquares(){return boardSquares;}
-    //endregion
-
     //region IMMEDIATE_SPACE_FUNCS
-    public static boolean isImmediateNorth(int currSpaceId, int targetSpaceId)
-    {
-        return getRow(targetSpaceId) == getRow(currSpaceId) - 1;
-    }
-    public static int getNorthSpaceId(int currSpaceId, int offset)
-    { //user ensure valid input. should use isImmediateNorth check first.
-        return getDirSpaceId(currSpaceId, offset,NORTH);
-    }
 
-    public static boolean isImmediateSouth(int currSpaceId, int targetSpaceId)
-    {
-        return getRow(targetSpaceId) == getRow(currSpaceId) + 1;
-    }
-    public static int getSouthSpaceId(int currSpaceId, int offset)
-    { //user ensure valid input.
-        return getDirSpaceId(currSpaceId, offset,SOUTH);
-    }
-
-    public static boolean isImmediateEast(int currSpaceId, int targetSpaceId)
-    {
-        return getCol(targetSpaceId) == getCol(currSpaceId) + 1;
-    }
     public static int getEastSpaceId(int currSpaceId, int offset)
     { //user ensure good input
         return getDirSpaceId(currSpaceId, offset,EAST);
     }
 
-    public static boolean isImmediateWest(int currSpaceId, int targetSpaceId)
-    {
-        return getCol(targetSpaceId) == getCol(currSpaceId) - 1;
-    }
-
     public static int getWestSpaceId(int currSpaceId, int offset)
     { //user ensure good input
         return getDirSpaceId(currSpaceId, offset,WEST);
-    }
-
-    public static int getNorthEastSpaceId(int currSpaceId, int offset)
-    { //user ensure good input
-        return getDirSpaceId(currSpaceId, offset,NORTH_EAST);
-    }
-    public static int getNorthWestSpaceId(int currSpaceId, int offset)
-    { //user ensure good input
-        return getDirSpaceId(currSpaceId, offset,NORTH_WEST);
-    }
-    public static int getSouthEastSpaceId(int currSpaceId, int offset)
-    { //user ensure good input
-        return getDirSpaceId(currSpaceId, offset,SOUTH_EAST);
-    }
-    public static int getSouthWestSpaceId(int currSpaceId, int offset)
-    { //user ensure good input
-        return getDirSpaceId(currSpaceId, offset,SOUTH_WEST);
     }
 
     public static int getDirSpaceId(int spaceId, int offset, short dir){
@@ -205,14 +157,29 @@ public class ChessBoard implements Debuggable {
     //endregion
 
     //region PIECE_FUNCS
-    protected void setPieceAt(int spaceId, int piece)
+
+    public long getBitBoard(short pieceId){
+        if (!PieceData.isValidPieceId(pieceId))
+            throw new IllegalArgumentException("Invalid pieceId input at getBitBoard: " + pieceId);
+
+        return boardSquares[PieceData.convertPieceIdToArrayIdx(pieceId)];
+    }
+
+    protected void setPieceAt(int spaceId, short piece)
     {//protected to avoid uses messing with listener. used during initilization
         StateChangeListener.notifyListeners(this.stateChangeListeners,
                 new BoardStateChange(piece, ChessBoard.INVALID_SPACE_ID, spaceId));
-        if (isValidSpaceId(spaceId)) boardSquares[spaceId] = piece;
+
+        if (PieceData.isValidPieceId(piece) && isValidSpaceId(spaceId))
+            boardSquares[PieceData.convertPieceIdToArrayIdx(piece)] |= (1L << spaceId);
+        else if(!PieceData.isValidPieceId(piece)){
+            for (int i = 0; i < boardSquares.length; ++i) {
+                boardSquares[i] &= ~(1L << spaceId);
+            }
+        }
     }
 
-    public void spawnPieceAt(int spaceId, int piece)
+    public void spawnPieceAt(int spaceId, short piece)
     {
         setPieceAt(spaceId, PieceData.INVALID_PIECES);
         setPieceAt(spaceId, piece);
@@ -224,7 +191,7 @@ public class ChessBoard implements Debuggable {
     }
 
     protected void deSpawnPieceAt(int spaceId){
-        int disappearedPiece = getPiece(spaceId);
+        short disappearedPiece = getPiece(spaceId);
 
         if (PieceData.isValidPieceId(disappearedPiece)) //ensure proper reconstruction later.
         {
@@ -234,9 +201,9 @@ public class ChessBoard implements Debuggable {
         setPieceAt(spaceId, PieceData.INVALID_PIECES); //disappear piece.
     }
 
-    protected int movePiecePrimitive(int spaceIdToMove, int spaceIdArriveAt)
+    protected short movePiecePrimitive(int spaceIdToMove, int spaceIdArriveAt)
     {
-        int piece = getPiece(spaceIdToMove);
+        short piece = getPiece(spaceIdToMove);
 
         setPieceAt(spaceIdToMove, PieceData.INVALID_PIECES);
         setPieceAt(spaceIdArriveAt, piece);
@@ -251,7 +218,7 @@ public class ChessBoard implements Debuggable {
         //assume enemy piece disappear before allied piece lands. this function dont handle capture.
         //notifyMoveListener(new BoardStateChange(capturedPiece, spaceIdArriveAt, ChessBoard.INVALID_SPACE_ID));
 
-        int piece = movePiecePrimitive(spaceIdToMove, spaceIdArriveAt);
+        short piece = movePiecePrimitive(spaceIdToMove, spaceIdArriveAt);
         StateChangeListener.notifyListeners(this.boardMoveListeners,
                 new BoardStateChange(piece, spaceIdToMove, spaceIdArriveAt));
     }
@@ -262,9 +229,15 @@ public class ChessBoard implements Debuggable {
         movePiece(spaceIdToMove, spaceIdArriveAt); //piece land.
     }
 
-    public int getPiece(int spaceId)
+    public short getPiece(int spaceId)
     {
-        if (isValidSpaceId(spaceId)) return boardSquares[spaceId];
+        if (isValidSpaceId(spaceId)){
+            for (short i = 0; i < boardSquares.length; ++i){
+                if ((boardSquares[i] & (1L << spaceId)) != 0)
+                    return PieceData.convertArrayIdxToPieceId(i);
+            }
+            return PieceData.INVALID_PIECES;
+        }
         else {
             DebugMode.debugPrint(this, "Invalid spaceId at getPiece");
             return PieceData.INVALID_PIECES;
@@ -295,25 +268,12 @@ public class ChessBoard implements Debuggable {
     public short getPieceIdAt(int spaceId)
     {
         if (getPiece(spaceId) == PieceData.INVALID_PIECES) return PieceData.INVALID_PIECES;
-        else return (short) getPiece(spaceId);
+        else return getPiece(spaceId);
     }
 
-    public int findPiece(int pieceId){
-        HashSet<Integer> currPieceLocation = null;
-
-        if (PieceData.getColor(pieceId) == PieceData.WHITE) currPieceLocation = currPieceLocationWhite;
-        else currPieceLocation = currPieceLocationBlack;
-
-        for (int spc : currPieceLocation){
-            if (getPiece(spc) == pieceId)
-                return spc;
-        }
-        return INVALID_SPACE_ID;
-    }
     //endregion
 
     //region MISC_FUNCS
-
     public static boolean isValidSpaceId(int spaceId)
     {
         return spaceId >= 0 && spaceId < BOARD_SIZE*BOARD_SIZE;
@@ -383,32 +343,6 @@ public class ChessBoard implements Debuggable {
                 DebugMode.debugPrint(this, "Moving piece back");
                 setPieceAt(boardStateChange.getSpaceIdArriveAt(), PieceData.INVALID_PIECES);
                 setPieceAt(boardStateChange.getSpaceId(), boardStateChange.getPiece());
-            }
-        }
-    }
-
-    public void advanceBoardState(ArrayList<BoardStateChange> boardStateChanges)
-    {
-        if (boardStateChanges == null)
-        {
-            throw new NullPointerException("boardStateChange is null!");
-        }
-
-        for (BoardStateChange boardStateChange : boardStateChanges) {
-
-            // BoardStateChange boardStateChange = boardStateChanges.get(i);
-
-            assert (boardStateChange.getSpaceIdArriveAt() != INVALID_SPACE_ID ||
-                    boardStateChange.getSpaceId() != INVALID_SPACE_ID);
-
-            if (boardStateChange.getSpaceIdArriveAt() == INVALID_SPACE_ID) {
-                //Piece is capture, redo capture move.
-                deSpawnPieceAt(boardStateChange.getSpaceId());
-            } else if (boardStateChange.getSpaceId() == INVALID_SPACE_ID) {
-                spawnPieceAt(boardStateChange.getSpaceIdArriveAt(), boardStateChange.getPiece());
-                //piece is spawned
-            } else {
-                movePiece(boardStateChange.getSpaceId(), boardStateChange.getSpaceIdArriveAt()); //piece land.
             }
         }
     }

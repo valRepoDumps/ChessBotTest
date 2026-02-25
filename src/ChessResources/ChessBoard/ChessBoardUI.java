@@ -169,7 +169,7 @@ public class ChessBoardUI extends ChessBoard {
     }
 
     @Override
-    public void spawnPieceAt(int spaceId, int piece) {
+    public void spawnPieceAt(int spaceId, short piece) {
         super.spawnPieceAt(spaceId, piece);
         updateBoardGraphic();
     }

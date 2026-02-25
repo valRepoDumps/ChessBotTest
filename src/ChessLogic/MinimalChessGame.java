@@ -7,7 +7,7 @@ import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.ChessBoard.ChessBoardUI;
 import ChessResources.ChessErrors.OutOfOldTurns;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
-import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
+import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsPossibleMovesChange;
 import ChessResources.ChessHistoryTracker.ChessHistoryTracker;
 import ChessResources.ChessHistoryTracker.GameStateChanges;
 import ChessResources.ChessListener.StateChangeListener;
@@ -15,11 +15,13 @@ import ChessResources.GetMovesLogic.ChessSpaces;
 import ChessResources.Hasher.HashGenerator;
 import ChessResources.HelperFuncs.BoardScan.BoardScan;
 import ChessResources.HelperFuncs.BoardScan.ScanResult;
+import ChessResources.Pieces.PieceConsts;
 import ChessResources.Pieces.PieceData;
 import ChessResources.GetMovesLogic.PossibleMoves;
 import ChessResources.Pieces.MovingPieceData;
 import ChessResources.PreCalc;
 
+import javax.print.attribute.standard.DialogTypeSelection;
 import java.util.ArrayList;
 import java.util.function.BiFunction;
 
@@ -32,8 +34,6 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     BiFunction<Integer, Boolean, Short> choosePromotionPiece;
 
     protected PossibleMoves possibleMoves;
-    public static final int BLACK_PM = 0;
-    public static final int WHITE_PM = 1;
 
     public ChessHistoryTracker chessHistoryTracker = new ChessHistoryTracker();
 
@@ -66,7 +66,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     public static final int BLACK_KING_SPACEID = 4;
 
     public static final int INVALID_ENPASSANT_TARGET = -1;
-    private final ArrayList<StateChangeListener<PropertiesStatsChange>>
+    private final ArrayList<StateChangeListener<PropertiesStatsPossibleMovesChange>>
             propertiesStatsChangeListenerList = new ArrayList<>();
 
     private final ArrayList<StateChangeListener<GameStateChanges>>
@@ -115,9 +115,9 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                 }
             };
 
-    public final StateChangeListener<PropertiesStatsChange> PROPERTIES_STATS_LOGGER =
-            (PropertiesStatsChange propertiesStatsChange)->{
-        this.chessHistoryTracker.setGamePropertiesStats(propertiesStatsChange);
+    public final StateChangeListener<PropertiesStatsPossibleMovesChange> PROPERTIES_STATS_LOGGER =
+            (PropertiesStatsPossibleMovesChange propertiesStatsPossibleMovesChange)->{
+        this.chessHistoryTracker.setGamePropertiesStatsPossibleMoves(propertiesStatsPossibleMovesChange);
     };
 
     //endregion
@@ -240,26 +240,31 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     public boolean spaceNotUnderThreat(int spaceId, boolean alliedColor)
     {
         int[][] slidingMoves = PreCalc.SLIDING_MOVES[spaceId];
-        int[] ids = ((alliedColor == PieceData.WHITE) ? PreCalc.WHITE_THREAT_IDS : PreCalc.BLACK_THREAT_IDS);
+        short[] ids = ((alliedColor == PieceData.WHITE) ? PreCalc.WHITE_THREAT_IDS : PreCalc.BLACK_THREAT_IDS);
+
+        short[] DIAG_PIECE = ((alliedColor == PieceData.WHITE) ? MovingPieceData.INF_RANGE_DIAGONAL_MOVE_PIECE_BLACK :
+                MovingPieceData.INF_RANGE_DIAGONAL_MOVE_PIECE_WHITE);
+        short[] STRAIGHT_PIECE = ((alliedColor == PieceData.WHITE) ? MovingPieceData.INF_RANGE_STRAIGHT_MOVE_PIECE_BLACK :
+                MovingPieceData.INF_RANGE_STRAIGHT_MOVE_PIECE_WHITE);
 
         boolean metEnemiesFlag;
 
         if (ids[0] == PieceData.BPAWN)
             metEnemiesFlag = BoardScan.rayScanFor(this, slidingMoves, 1,
-                new short[]{ChessBoard.NORTH_EAST, ChessBoard.NORTH_WEST}, ids[0]);
+                    MovingPieceData.WPAWN_CAPTURE_DIR, ids[0]);
         else {
             metEnemiesFlag = BoardScan.rayScanFor(this, slidingMoves, 1,
-                    new short[]{ChessBoard.SOUTH_EAST, ChessBoard.SOUTH_WEST}, ids[0]);
+                    MovingPieceData.BPAWN_CAPTURE_DIR, ids[0]);
         }
 
         if (metEnemiesFlag) return false;
 
         metEnemiesFlag = BoardScan.rayScanFor(this, slidingMoves, MovingPieceData.NO_RANGE_LIMIT,
-            MovingPieceData.BISHOP_DIR, new int[]{ids[1], ids[2]});
+            MovingPieceData.BISHOP_DIR, DIAG_PIECE);
         if (metEnemiesFlag) return false;
 
         metEnemiesFlag = BoardScan.rayScanFor(this, slidingMoves, MovingPieceData.NO_RANGE_LIMIT,
-                MovingPieceData.ROOK_DIR, new int[]{ids[1], ids[3]});
+                MovingPieceData.ROOK_DIR, STRAIGHT_PIECE);
         if (metEnemiesFlag) return false;
 
        metEnemiesFlag = BoardScan.jumpScanFor(this,
@@ -267,7 +272,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         if (metEnemiesFlag) return false;
 
         boolean metKing = BoardScan.rayScanFor(this, slidingMoves, 1,
-                MovingPieceData.QUEEN_DIR, new int[]{ids[5]});
+                MovingPieceData.QUEEN_DIR, ids[5]);
 
         return !metKing;
     }
@@ -292,13 +297,12 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
             king   = PieceData.getOppositeColor(king);
         }
         //endregion
-
         short[] pawnDirs;
         ChessSpaces tmpSpaces = new ChessSpaces();
         if (pawn == PieceData.BPAWN)
-            pawnDirs = new short[]{ChessBoard.NORTH_EAST, ChessBoard.NORTH_WEST};
+            pawnDirs = MovingPieceData.WPAWN_CAPTURE_DIR;
         else {
-            pawnDirs = new short[]{ChessBoard.SOUTH_EAST, ChessBoard.SOUTH_WEST};
+            pawnDirs = MovingPieceData.BPAWN_CAPTURE_DIR;
         }
 
         ChessSpaces ans = ChessSpaces.getNewUniverseSet();
@@ -430,10 +434,10 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         if (!possibleMoves.canMoveToFrom(spaceIdToMove,spaceIdArriveAt)) return false;
 
         StateChangeListener.notifyListeners(propertiesStatsChangeListenerList,
-                new PropertiesStatsChange(gameProperties, gameStats)); //announce new rules added.
+                new PropertiesStatsPossibleMovesChange(gameProperties, gameStats, getPossibleMoves())); //announce new rules added.
 
         int opCode = NORMAL_MOVE;
-        short piece = (short) chessBoard.getPiece(spaceIdToMove);
+        short piece = chessBoard.getPiece(spaceIdToMove);
         final boolean isPawn = piece == PieceData.BPAWN || piece == PieceData.WPAWN;
         boolean currentColor = getCurrentColorToMove();
 
@@ -459,7 +463,6 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                     || ChessBoard.getRow(spaceIdArriveAt) == 0)
             //check pawn color, do not assume pawn dont go backward or start at like row 0 or 8.
             {
-                //promotionSpaceId = spaceIdArriveAt;
                 opCode = PROMOTION;
             }
             //endregion
@@ -559,24 +562,26 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         return true;
     }
 
-    private void aSideWon(){
-        //should only be called after everything in turn is updated.
-
-        if (getPossibleMoves().isEmpty()){
-            if (spaceNotUnderThreat(getKingToMoveSpaceId())){
-                endGameCode = DRAW;
+    private void aSideWon() {
+        if (!getPossibleMoves().isEmpty()) {
+            // No checkmate/stalemate possible — check cheaper draws first
+            if (gameStats[HALF_MOVES_SICE_CAPTURE_OR_PAWN_MOVES] >= 100) {
+                endGameCode = DRAW; return;
             }
-            else endGameCode = gameProperties[SIDE_TO_MOVE] == PieceData.BLACK ? WHITE_WON : BLACK_WON;
+            if (chessHistoryTracker.isThreeFoldRepitionFlag()) {
+                endGameCode = DRAW; return;
+            }
+            if (!ChessBoard.isValidSpaceId(getKingToMoveSpaceId()))        {
+                endGameCode = getCurrentColorToMove() == PieceData.WHITE ? WHITE_WON : BLACK_WON;
+                return;
+            }
+            endGameCode = INDETERMINATE;
+            return;
         }
-        else if(!ChessBoard.isValidSpaceId(getKingToMoveSpaceId())){
-            endGameCode = getCurrentColorToMove() == PieceData.WHITE ? WHITE_WON : BLACK_WON;
-        }
-        else if (gameStats[HALF_MOVES_SICE_CAPTURE_OR_PAWN_MOVES] == 50){
-            endGameCode = DRAW;
-        }
-        else if (chessHistoryTracker.isThreeFoldRepitionFlag()) endGameCode = DRAW;
-        else endGameCode = INDETERMINATE;
-        //endregion
+        // Only call spaceNotUnderThreat if moves are exhausted (expensive)
+        endGameCode = spaceNotUnderThreat(getKingToMoveSpaceId())
+                ? DRAW
+                : (gameProperties[SIDE_TO_MOVE] == PieceData.BLACK ? WHITE_WON : BLACK_WON);
     }
 
     private void finishTurn()
@@ -644,22 +649,11 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         //region GENERATE_POSSIBLE_MOVES
         //generate possible moves after changing side.
         // Doing it this way ensure when a new moves is generated, new piece location information is taken into account
-        generatePossibleMoves();
+        possibleMoves.setPossibleMoves(gameStateChanges.getPossibleMoves());
+        //generatePossibleMoves();
         //endregion
 
         StateChangeListener.notifyListeners(undoTurnListenerList, gameStateChanges);
-    }
-
-    public void advanceBoardState(GameStateChanges gameStateChanges){
-        this.gameStats = gameStateChanges.getGameStats();
-        this.gameProperties = gameStateChanges.getGameProperties();
-
-        StateChangeListener.notifyListeners(propertiesStatsChangeListenerList,
-                new PropertiesStatsChange(gameProperties, gameStats)); //announce new rules added.
-
-        chessBoard.advanceBoardState(gameStateChanges.getBoardStateChanges()); //throws nullpointerexcep
-
-        finishTurn();
     }
     //endregion
 
@@ -671,7 +665,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         chessBoard.addMoveListener(stateChangeListener);
     }
 
-    public void addPropertiesStatsChangeListener(StateChangeListener<PropertiesStatsChange> listener){
+    public void addPropertiesStatsChangeListener(StateChangeListener<PropertiesStatsPossibleMovesChange> listener){
         propertiesStatsChangeListenerList.add(listener);
     }
 

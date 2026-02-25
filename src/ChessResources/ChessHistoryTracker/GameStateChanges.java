@@ -1,7 +1,8 @@
 package ChessResources.ChessHistoryTracker;
 
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
-import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
+import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsPossibleMovesChange;
+import ChessResources.GetMovesLogic.PossibleMoves;
 import ChessResources.Hasher.HashContainer;
 
 import java.util.ArrayList;
@@ -9,33 +10,33 @@ import java.util.Arrays;
 
 public class GameStateChanges {
 
-    private PropertiesStatsChange currentPropertiesStats; //the properties and stats of the game BEFORE any moves
+    private PropertiesStatsPossibleMovesChange currentPropertiesStatsPossibleMoves; //the properties and stats of the game BEFORE any moves
     private ArrayList<BoardStateChange> boardStateChanges = new ArrayList<>();
     private HashContainer hs;
     //region CONSTRUCTOR
     public GameStateChanges(BoardStateChange boardStateChange, boolean[] gameProperties,
-                            int[] gameStats)
+                            int[] gameStats, PossibleMoves pm)
     {
         this.boardStateChanges = new ArrayList<>();
         this.boardStateChanges.add(boardStateChange);
-        currentPropertiesStats = new PropertiesStatsChange(gameProperties, gameStats);
+        currentPropertiesStatsPossibleMoves = new PropertiesStatsPossibleMovesChange(gameProperties, gameStats, pm);
     }
     @SuppressWarnings("unused")
     public GameStateChanges(ArrayList<BoardStateChange> boardStateChanges, boolean[] gameProperties,
-                            int[] gameStats)
+                            int[] gameStats, PossibleMoves pm)
     {
         this.boardStateChanges = boardStateChanges;
-        currentPropertiesStats = new PropertiesStatsChange(gameProperties, gameStats);
+        currentPropertiesStatsPossibleMoves = new PropertiesStatsPossibleMovesChange(gameProperties, gameStats, pm);
     }
     public GameStateChanges(boolean[] gameProperties,
-                            int[] gameStats)
+                            int[] gameStats, PossibleMoves pm)
     {
-        currentPropertiesStats = new PropertiesStatsChange(gameProperties, gameStats);
+        currentPropertiesStatsPossibleMoves = new PropertiesStatsPossibleMovesChange(gameProperties, gameStats, pm);
     }
 
-    public GameStateChanges(PropertiesStatsChange propertiesStatsChange)
+    public GameStateChanges(PropertiesStatsPossibleMovesChange propertiesStatsPossibleMovesChange)
     {
-        currentPropertiesStats = propertiesStatsChange;
+        currentPropertiesStatsPossibleMoves = propertiesStatsPossibleMovesChange;
     }
     public GameStateChanges() {}
 
@@ -47,13 +48,13 @@ public class GameStateChanges {
 
     //region SETTERS
     public void setGamePropertiesStats(boolean[] gameProperties,
-                                        int[] gameStats)
+                                        int[] gameStats, PossibleMoves pm)
     {
-        currentPropertiesStats.setPropertiesStats(gameProperties, gameStats);
+        currentPropertiesStatsPossibleMoves.setPropertiesStats(gameProperties, gameStats);
     }
-    public void setGamePropertiesStats(PropertiesStatsChange propertiesStatsChange)
+    public void setGamePropertiesStats(PropertiesStatsPossibleMovesChange propertiesStatsPossibleMovesChange)
     {
-        currentPropertiesStats = propertiesStatsChange;
+        currentPropertiesStatsPossibleMoves = propertiesStatsPossibleMovesChange;
     }
     @SuppressWarnings("unused")
     public BoardStateChange popBoardStateChanges()
@@ -69,12 +70,15 @@ public class GameStateChanges {
     //region GETTERS
     public int[] getGameStats()
     {
-        return Arrays.copyOf(currentPropertiesStats.getGameStats(), currentPropertiesStats.getGameStats().length);
+        return Arrays.copyOf(currentPropertiesStatsPossibleMoves.getGameStats(), currentPropertiesStatsPossibleMoves.getGameStats().length);
     }
     public boolean[] getGameProperties()
     {
-        return Arrays.copyOf(currentPropertiesStats.getGameProperties(),
-                currentPropertiesStats.getGameProperties().length);
+        return Arrays.copyOf(currentPropertiesStatsPossibleMoves.getGameProperties(),
+                currentPropertiesStatsPossibleMoves.getGameProperties().length);
+    }
+    public PossibleMoves getPossibleMoves(){
+        return currentPropertiesStatsPossibleMoves.getPossibleMoves();
     }
     public HashContainer getHashOfPosition(){
         return hs;
@@ -97,7 +101,7 @@ public class GameStateChanges {
         {
             str.append("NULL ");
         }
-        return str + " [" + Arrays.toString(currentPropertiesStats.getGameProperties())
-                + ", " + Arrays.toString(currentPropertiesStats.getGameStats())+"]";
+        return str + " [" + Arrays.toString(currentPropertiesStatsPossibleMoves.getGameProperties())
+                + ", " + Arrays.toString(currentPropertiesStatsPossibleMoves.getGameStats())+"]";
     }
 }

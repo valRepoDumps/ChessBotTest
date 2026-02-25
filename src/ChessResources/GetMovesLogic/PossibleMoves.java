@@ -21,7 +21,13 @@ public class PossibleMoves {
     {
         this.chessGame = chessGame;
     }
-
+    public PossibleMoves(MinimalChessGame<?> chessGame, HashMap<Integer, ChessSpaces> possibleMoves){
+        this(chessGame);
+        this.possibleMoves = (HashMap<Integer, ChessSpaces>) possibleMoves.clone();
+    }
+    public PossibleMoves(PossibleMoves pm){
+        this(pm.chessGame, pm.possibleMoves);
+    }
     //region MOVE_GEN
     public void generateMoves()
     {
@@ -46,7 +52,7 @@ public class PossibleMoves {
         for (int startSquare : currPieceLocation)
         {
             tmpSpc.clear();
-            short pieceId = (short) chessGame.getBoard().getPiece(startSquare);
+            short pieceId = chessGame.getBoard().getPiece(startSquare);
             assert(chessGame.getBoard().isPieceAt(startSquare));
 
             PieceData.getPossibleMoves(chessGame, pieceId, startSquare, tmpSpc);
@@ -87,6 +93,14 @@ public class PossibleMoves {
         possibleMoves.clear();
     }
 
+    public PossibleMoves getClone(){
+        return new PossibleMoves(this);
+    }
+
+    public void setPossibleMoves(PossibleMoves pm){
+        this.chessGame = pm.chessGame;
+        this.possibleMoves = (HashMap<Integer, ChessSpaces>) pm.possibleMoves.clone();
+    }
     public void highlightPossibleMoves(int spaceId, ChessBoardUI chessBoardUI)
     {
         if (possibleMoves.containsKey(spaceId)) {
