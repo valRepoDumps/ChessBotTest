@@ -9,12 +9,11 @@ import ChessResources.PreCalc;
 
 import java.util.*;
 
-import static ChessResources.Pieces.PieceData.getUniqueClone;
-
 public class ChessBoard implements Debuggable {
     //region PRE_CODE
     //region BOARD_SIZE
     public static final int BOARD_SIZE = 8;
+    public static final int TOTAL_SPACES = BOARD_SIZE*BOARD_SIZE;
     public  static final int SQUARE_PIXEL_SIZE = 100;
     //endregion
     public static final int INVALID_SPACE_ID = -1;
@@ -31,10 +30,25 @@ public class ChessBoard implements Debuggable {
     public static final short NORTH_EAST = 5;
     public static final short SOUTH_EAST = 6;
     public static final short NORTH_WEST = 7;
+
+    public static final int[] KNIGHT_OFFSETS = {2*directionOffsets[NORTH] + directionOffsets[EAST],
+            2*directionOffsets[NORTH] + directionOffsets[WEST],
+            2*directionOffsets[SOUTH] + directionOffsets[EAST], 2*directionOffsets[SOUTH] + directionOffsets[WEST],
+            2*directionOffsets[EAST] + directionOffsets[NORTH], 2*directionOffsets[EAST] + directionOffsets[SOUTH],
+            2*directionOffsets[WEST] + directionOffsets[NORTH], 2*directionOffsets[WEST] + directionOffsets[SOUTH]};
+    public static final short K_NE = 0;
+    public static final short K_NW = 1;
+    public static final short K_SE = 2;
+    public static final short K_SW = 3;
+    public static final short K_EN = 4;
+    public static final short K_ES = 5;
+    public static final short K_WN = 6;
+    public static final short K_WS = 7;
+
     //endregion
 
-    public static final boolean BLACK = false;
-    public static final boolean WHITE = true;
+    public static final boolean BLACK = PieceData.BLACK;
+    public static final boolean WHITE = PieceData.WHITE;
 
     protected long[] boardSquares = new long[PieceData.TOTAL_PIECES];
 
@@ -138,7 +152,22 @@ public class ChessBoard implements Debuggable {
     }
 
     public static int getDirSpaceId(int spaceId, int offset, short dir){
-        return spaceId + directionOffsets[dir]*offset;
+        return spaceId + getOffsets(offset, dir);
+    }
+
+    public static int getOffsets(int offset, short dir){
+        return directionOffsets[dir]*offset;
+    }
+    public static int getOffsets(short dir){
+        return getOffsets(1, dir);
+    }
+
+    public static int getNOffsets(short dir){
+        return KNIGHT_OFFSETS[dir];
+    }
+
+    public static int getNDirSpaceId(int spaceId, short dir){
+        return spaceId + getNOffsets(dir);
     }
     //endregion
 
@@ -154,10 +183,39 @@ public class ChessBoard implements Debuggable {
         assert spaceId >= 0 && spaceId < BOARD_SIZE*BOARD_SIZE;
         return spaceId / BOARD_SIZE;
     }
+
+    public static int getLRUpDiag(int spaceId){
+        return getRow(spaceId) + getCol(spaceId);
+    }
+
+    public static int getLRDownDiag(int spaceId){
+        return ChessBoard.BOARD_SIZE -1 - getRow(spaceId) + getCol(spaceId);
+    }
     //endregion
 
     //region PIECE_FUNCS
 
+    public long getBlackPieceBitBoard(){
+        return boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.BPAWN)]
+                | boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.BROOK)]
+                | boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.BKNIGHT)]
+                | boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.BBISHOP)]
+                | boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.BQUEEN)]
+                | boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.BKING)];
+    }
+
+    public long getWhitePieceBitBoard(){
+        return boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.WPAWN)]
+                | boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.WROOK)]
+                | boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.WKNIGHT)]
+                | boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.WBISHOP)]
+                | boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.WQUEEN)]
+                | boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.WKING)];
+    }
+
+    public long getEmptySpacesBitBoard(){
+        return ~(getWhitePieceBitBoard() | getBlackPieceBitBoard());
+    }
     public long getBitBoard(short pieceId){
         if (!PieceData.isValidPieceId(pieceId))
             throw new IllegalArgumentException("Invalid pieceId input at getBitBoard: " + pieceId);
@@ -257,7 +315,6 @@ public class ChessBoard implements Debuggable {
 
         return PieceData.getColor(getPiece(spaceId)) != pieceColor;
     }
-
 
     public boolean isAlliedPieceAt(int spaceId, boolean pieceColor)
     {

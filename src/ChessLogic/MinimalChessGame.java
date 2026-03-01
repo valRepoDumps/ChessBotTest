@@ -3,6 +3,7 @@ package ChessLogic;
 import ChessLogic.Configurations.Configurations;
 import ChessLogic.Debug.DebugMode;
 import ChessLogic.Debug.Debuggable;
+import ChessResources.BitMasks;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.ChessBoard.ChessBoardUI;
 import ChessResources.ChessErrors.OutOfOldTurns;
@@ -15,20 +16,19 @@ import ChessResources.GetMovesLogic.ChessSpaces;
 import ChessResources.Hasher.HashGenerator;
 import ChessResources.HelperFuncs.BoardScan.BoardScan;
 import ChessResources.HelperFuncs.BoardScan.ScanResult;
-import ChessResources.Pieces.PieceConsts;
+import ChessResources.Pieces.MovesGeneration;
 import ChessResources.Pieces.PieceData;
 import ChessResources.GetMovesLogic.PossibleMoves;
 import ChessResources.Pieces.MovingPieceData;
 import ChessResources.PreCalc;
 
-import javax.print.attribute.standard.DialogTypeSelection;
 import java.util.ArrayList;
 import java.util.function.BiFunction;
 
 public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     //region BEFORE_CONSTRUCTORS
     //region GAME_DATAS
-    public final Board chessBoard;
+    public Board chessBoard = null;
     public final HashGenerator<Board> hashGenerator = new HashGenerator<>( this);
 
     BiFunction<Integer, Boolean, Short> choosePromotionPiece;
@@ -91,6 +91,17 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     public static final int INDETERMINATE = 3;
     //endregion
 
+    //region GAME_BITMASKS
+    public long ANTI_TO_MOVE_PIECES;
+    public long ANTI_NOT_TO_MOVE_PIECES;
+    public long NOT_TO_MOVE_PIECES;
+    public long TO_MOVE_PIECES;
+    public long NOT_TO_MOVE_PIECES_AND_ENPASSANT;
+    public long TO_MOVE_PIECES_AND_ENPASSANT;
+    public long EMPTY;
+    public long OCCUPIED;
+    //endregion
+
     //region LAMBDAS
     public static final BiFunction<Integer, Boolean, Short> DEFAULT_PROMOTION_FUNC =
             (Integer _, Boolean color) -> {
@@ -151,7 +162,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         this.gameStats = gameStats;
 
         updateConfigurations();
-
+        generateBitMasks();
         generatePossibleMoves();
     }
     @SuppressWarnings("unused")
@@ -164,7 +175,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         updateConfigurations();
 
         fenTranslator(fen);
-
+        generateBitMasks();
         generatePossibleMoves();
 
     }
@@ -232,12 +243,11 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     }
 
     public void generatePossibleMoves(){
-
         possibleMoves.clearPossibleMoves();
-        possibleMoves.generateMoves();
+        MovesGeneration.generateMoves(this);
     }
 
-    public boolean spaceNotUnderThreat(int spaceId, boolean alliedColor)
+    public boolean spaceUnderThreat(int spaceId, boolean alliedColor)
     {
         int[][] slidingMoves = PreCalc.SLIDING_MOVES[spaceId];
         short[] ids = ((alliedColor == PieceData.WHITE) ? PreCalc.WHITE_THREAT_IDS : PreCalc.BLACK_THREAT_IDS);
@@ -247,34 +257,30 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         short[] STRAIGHT_PIECE = ((alliedColor == PieceData.WHITE) ? MovingPieceData.INF_RANGE_STRAIGHT_MOVE_PIECE_BLACK :
                 MovingPieceData.INF_RANGE_STRAIGHT_MOVE_PIECE_WHITE);
 
-        boolean metEnemiesFlag;
-
         if (ids[0] == PieceData.BPAWN)
-            metEnemiesFlag = BoardScan.rayScanFor(this, slidingMoves, 1,
-                    MovingPieceData.WPAWN_CAPTURE_DIR, ids[0]);
+            if ((BitMasks.PAWN_CAPTURE_MASKS[BitMasks.WIDX][spaceId] & chessBoard.getBitBoard(ids[0])) != 0)
+                return true;
         else {
-            metEnemiesFlag = BoardScan.rayScanFor(this, slidingMoves, 1,
-                    MovingPieceData.BPAWN_CAPTURE_DIR, ids[0]);
+            if ((BitMasks.PAWN_CAPTURE_MASKS[BitMasks.BIDX][spaceId] & chessBoard.getBitBoard(ids[0])) != 0)
+                return true;
         }
 
-        if (metEnemiesFlag) return false;
+        if ((BitMasks.KNIGHT_MOVE_MASKS[spaceId] & chessBoard.getBitBoard(ids[PieceData.KNIGHT])) != 0 )
+            return true;
 
-        metEnemiesFlag = BoardScan.rayScanFor(this, slidingMoves, MovingPieceData.NO_RANGE_LIMIT,
-            MovingPieceData.BISHOP_DIR, DIAG_PIECE);
-        if (metEnemiesFlag) return false;
+        if ((BitMasks.KING_MOVE_MASKS[spaceId] & chessBoard.getBitBoard(ids[PieceData.KING])) != 0)
+            return true;
 
-        metEnemiesFlag = BoardScan.rayScanFor(this, slidingMoves, MovingPieceData.NO_RANGE_LIMIT,
-                MovingPieceData.ROOK_DIR, STRAIGHT_PIECE);
-        if (metEnemiesFlag) return false;
+        if ((MovesGeneration.getRookMoves(OCCUPIED, spaceId) & chessBoard.getBitBoard(ids[PieceData.ROOK])) != 0)
+            return true;
 
-       metEnemiesFlag = BoardScan.jumpScanFor(this,
-                PreCalc.KNIGHT_MOVES[spaceId], ids[4]);
-        if (metEnemiesFlag) return false;
+        if ((MovesGeneration.getBishopMoves(OCCUPIED, spaceId) & chessBoard.getBitBoard(ids[PieceData.BISHOP])) != 0)
+            return true;
 
-        boolean metKing = BoardScan.rayScanFor(this, slidingMoves, 1,
-                MovingPieceData.QUEEN_DIR, ids[5]);
+        if ((MovesGeneration.getQueenMoves(OCCUPIED, spaceId) & chessBoard.getBitBoard(ids[PieceData.QUEEN])) != 0)
+            return true;
 
-        return !metKing;
+        return false;
     }
 
     public ChessSpaces getSpacesToMoveToStopThreats(int spaceId, boolean alliedColor)
@@ -297,6 +303,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
             king   = PieceData.getOppositeColor(king);
         }
         //endregion
+
         short[] pawnDirs;
         ChessSpaces tmpSpaces = new ChessSpaces();
         if (pawn == PieceData.BPAWN)
@@ -371,13 +378,13 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         return ans;
     }
 
-    public boolean spaceNotUnderThreat(int spaceId){
-        return spaceNotUnderThreat(spaceId, getCurrentColorToMove());
+    public boolean spaceUnderThreat(int spaceId){
+        return spaceUnderThreat(spaceId, getCurrentColorToMove());
     }
 
     public boolean spaceNotUnderThreatAndEmpty(int spaceId)
     {
-        return spaceNotUnderThreat(spaceId) && chessBoard.isEmptySpaceAt(spaceId);
+        return !spaceUnderThreat(spaceId) && chessBoard.isEmptySpaceAt(spaceId);
     }
 
     public boolean isAlliedPieceAt(int spaceId, boolean color){
@@ -579,7 +586,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
             return;
         }
         // Only call spaceNotUnderThreat if moves are exhausted (expensive)
-        endGameCode = spaceNotUnderThreat(getKingToMoveSpaceId())
+        endGameCode = spaceUnderThreat(getKingToMoveSpaceId())
                 ? DRAW
                 : (gameProperties[SIDE_TO_MOVE] == PieceData.BLACK ? WHITE_WON : BLACK_WON);
     }
@@ -600,6 +607,8 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         if (isDebuggable()) DebugMode.debugPrint(this, "Finish turn + side: " +
                 (gameProperties[SIDE_TO_MOVE] == ChessBoard.WHITE ?"white" : "black" ));
 
+        generateBitMasks();
+
         //region GENERATE_POSSIBLE_MOVES
         //generate possible moves after changing side.
         // Doing it this way ensure when a new moves is generated, new piece location information is taken into account
@@ -609,6 +618,30 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
 
         tryEndGame();
     }
+
+    public void generateBitMasks(){
+        if (chessBoard == null){
+            System.out.println("IMPOSSIBLE");
+            return;
+        }
+        if (getCurrentColorToMove() == PieceData.WHITE) {
+            TO_MOVE_PIECES = chessBoard.getWhitePieceBitBoard();
+            NOT_TO_MOVE_PIECES = chessBoard.getBlackPieceBitBoard();
+        }else{
+            TO_MOVE_PIECES = chessBoard.getBlackPieceBitBoard();
+            NOT_TO_MOVE_PIECES = chessBoard.getWhitePieceBitBoard();
+        }
+        ANTI_TO_MOVE_PIECES = ~TO_MOVE_PIECES;
+        ANTI_NOT_TO_MOVE_PIECES = ~NOT_TO_MOVE_PIECES;
+        OCCUPIED = TO_MOVE_PIECES|NOT_TO_MOVE_PIECES;
+        EMPTY = ~OCCUPIED;
+
+        TO_MOVE_PIECES_AND_ENPASSANT = TO_MOVE_PIECES |
+                BitMasks.getSingleSpaceBitBoard(getEnpassantTarget());
+
+        NOT_TO_MOVE_PIECES_AND_ENPASSANT = NOT_TO_MOVE_PIECES |
+                BitMasks.getSingleSpaceBitBoard(getEnpassantTarget());
+    };
 
     private void tryEndGame(){
         aSideWon();

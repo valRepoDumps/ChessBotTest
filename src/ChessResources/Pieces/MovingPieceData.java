@@ -170,7 +170,7 @@ public class MovingPieceData extends PieceData {
                     else if (game.spaceNotUnderThreatAndEmpty(moves[i])){
                         spaces.addMoves(moves[i]);
                     }
-                    else if (game.isEnemyPieceAt(moves[i]) && game.spaceNotUnderThreat(moves[i])){
+                    else if (game.isEnemyPieceAt(moves[i]) && !game.spaceUnderThreat(moves[i])){
 
                         spaces.addMoves(moves[i]);
                     }
@@ -218,7 +218,7 @@ public class MovingPieceData extends PieceData {
                     else if (game.spaceNotUnderThreatAndEmpty(moves[i])){
                         spaces.addMoves(moves[i]);
                     }
-                    else if (game.isEnemyPieceAt(moves[i]) && game.spaceNotUnderThreat(moves[i])){
+                    else if (game.isEnemyPieceAt(moves[i]) && !game.spaceUnderThreat(moves[i])){
 
                         spaces.addMoves(moves[i]);
                     }

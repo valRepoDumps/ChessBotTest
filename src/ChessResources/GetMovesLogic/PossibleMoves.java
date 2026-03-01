@@ -34,11 +34,11 @@ public class PossibleMoves {
         HashSet<Integer> currPieceLocation = chessGame.getCurrentColorToMove() == PieceData.WHITE?
                 chessGame.getBoard().currPieceLocationWhite : chessGame.getBoard().currPieceLocationBlack;
 
-        boolean kingSpaceNotUnderThreat = chessGame.spaceNotUnderThreat(chessGame.getKingToMoveSpaceId());
+        boolean kingSpaceUnderThreat = chessGame.spaceUnderThreat(chessGame.getKingToMoveSpaceId());
 
         ChessSpaces spacesToMoveToStopKingThreat = ChessSpaces.UNIVERSE_SET;
 
-        if (!kingSpaceNotUnderThreat) {
+        if (kingSpaceUnderThreat) {
             //perform deeper scan.
             spacesToMoveToStopKingThreat = chessGame.getSpacesToMoveToStopThreats(
                     chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()),
@@ -65,7 +65,7 @@ public class PossibleMoves {
                 possibleMoves.put(startSquare, tmpSpc.clone());
             }
 
-            if (!kingSpaceNotUnderThreat &&
+            if (kingSpaceUnderThreat &&
                     startSquare != chessGame.getKingSpaceId(chessGame.getCurrentColorToMove())){
                 tmpSpc.clear();
 
@@ -88,6 +88,12 @@ public class PossibleMoves {
     //endregion
 
     //region HELPERS
+    public void addMoves(int spaceId, int spaceIdToMoveTo){
+        if (!possibleMoves.containsKey(spaceId)){
+            possibleMoves.put(spaceId, new ChessSpaces());
+        }
+        possibleMoves.get(spaceId).addMoves(spaceIdToMoveTo);
+    }
     public void clearPossibleMoves()
     {
         possibleMoves.clear();
@@ -101,6 +107,7 @@ public class PossibleMoves {
         this.chessGame = pm.chessGame;
         this.possibleMoves = (HashMap<Integer, ChessSpaces>) pm.possibleMoves.clone();
     }
+
     public void highlightPossibleMoves(int spaceId, ChessBoardUI chessBoardUI)
     {
         if (possibleMoves.containsKey(spaceId)) {

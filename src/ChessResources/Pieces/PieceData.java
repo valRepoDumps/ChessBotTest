@@ -14,23 +14,31 @@ public abstract class PieceData implements PieceConsts{
 
 
     //public static final short EMPTY_SPACE = 0;
-    public static final short BPAWN = 0;
-    public static final short BKNIGHT = 1;
-    public static final short BBISHOP = 2;
-    public static final short BROOK = 3;
-    public static final short BQUEEN = 4;
-    public static final short BKING = 5;
+    public final static int PIECES_DIFF = 6;
 
-    public static final short WPAWN = 6;
-    public static final short WKNIGHT = 7;
-    public static final short WBISHOP = 8;
-    public static final short WROOK = 9;
-    public static final short WQUEEN = 10;
-    public static final short WKING = 11;
+    public static final short PAWN = 0;
+    public static final short KNIGHT = 1;
+    public static final short BISHOP = 2;
+    public static final short ROOK = 3;
+    public static final short QUEEN = 4;
+    public static final short KING = 5;
+
+    public static final short BPAWN = PAWN;
+    public static final short BKNIGHT = KNIGHT;
+    public static final short BBISHOP = BISHOP;
+    public static final short BROOK = ROOK;
+    public static final short BQUEEN = QUEEN;
+    public static final short BKING = KING;
+
+    public static final short WPAWN = PAWN + PIECES_DIFF;
+    public static final short WKNIGHT = KNIGHT + PIECES_DIFF;
+    public static final short WBISHOP = BISHOP + PIECES_DIFF;
+    public static final short WROOK = ROOK + PIECES_DIFF;
+    public static final short WQUEEN = QUEEN + PIECES_DIFF;
+    public static final short WKING = KING + PIECES_DIFF;
 
     public static final short INVALID_PIECES = 12;
     public static final short MAX_PIECES = 12;
-    public final static int PIECES_DIFF = 6;
 
     protected short pieceId;
     protected boolean color;

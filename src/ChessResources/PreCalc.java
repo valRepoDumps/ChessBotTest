@@ -2,6 +2,7 @@ package ChessResources;
 
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.GetMovesLogic.ChessSpaces;
+import ChessResources.Pieces.MovesGeneration;
 import ChessResources.Pieces.PieceConsts;
 import ChessResources.Pieces.PieceData;
 
@@ -23,15 +24,17 @@ public class PreCalc {
     public static int[][] KING_MOVES = new int[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE][];
 
     public static final short[] FEN_MAP = new short[128];
-    public static final short[] WHITE_THREAT_IDS = { PieceData.BPAWN, PieceData.BQUEEN, PieceData.BBISHOP,
-            PieceData.BROOK, PieceData.BKNIGHT, PieceData.BKING };
-    public static final short[] BLACK_THREAT_IDS = { PieceData.WPAWN, PieceData.WQUEEN, PieceData.WBISHOP,
-            PieceData.WROOK, PieceData.WKNIGHT, PieceData.WKING };
+    public static final short[] WHITE_PIECES = { PieceData.WPAWN, PieceData.WKNIGHT, PieceData.WBISHOP,
+            PieceData.WROOK, PieceData.WQUEEN, PieceData.WKING };
+    public static final short[] BLACK_PIECES = { PieceData.BPAWN, PieceData.BKNIGHT, PieceData.BBISHOP,
+            PieceData.BROOK, PieceData.BQUEEN, PieceData.BKING };
+
+    public static final short[] WHITE_THREAT_IDS = BLACK_PIECES;
+    public static final short[] BLACK_THREAT_IDS = WHITE_PIECES;
 
     public static final PieceData[] PIECE_ID_TO_PIECE_DATA_MAP = new PieceData[PieceData.MAX_PIECES];
 
     static {
-        preComputeAllMoves();
         assignFenMap();
         assignPieceIdToPieceDataMap();
     }
