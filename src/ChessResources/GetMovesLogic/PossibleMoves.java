@@ -1,102 +1,50 @@
 package ChessResources.GetMovesLogic;
 
-import ChessLogic.Debug.DebugMode;
 import ChessLogic.MinimalChessGame;
-import ChessResources.ChessBoard.ChessBoardUI;
-import ChessResources.Pieces.PieceData;
+import ChessResources.ChessBoard.ChessBoard;
+import ChessResources.ChessBoard.DrawBoard;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 
 public class PossibleMoves {
     //region PRE_CONSTRUCTOR
     //region DATAS
-    public HashMap<Integer, ChessSpaces> possibleMoves = new HashMap<>();
-    protected MinimalChessGame<?> chessGame;
+    public static int MAX_POSSIBLE_MOVES =  ChessBoard.TOTAL_SPACES;
+    private ChessMove[] possibleMoves = new ChessMove[MAX_POSSIBLE_MOVES];
+    public int currLen = 0;
+    protected MinimalChessGame chessGame;
     //endregion
     //endregion
 
-    public PossibleMoves(MinimalChessGame<?> chessGame)
+    public PossibleMoves(MinimalChessGame chessGame)
     {
         this.chessGame = chessGame;
     }
-    public PossibleMoves(MinimalChessGame<?> chessGame, HashMap<Integer, ChessSpaces> possibleMoves){
-        this(chessGame);
-        this.possibleMoves = (HashMap<Integer, ChessSpaces>) possibleMoves.clone();
-    }
+
     public PossibleMoves(PossibleMoves pm){
-        this(pm.chessGame, pm.possibleMoves);
+        this(pm.chessGame);
+        copyPossibleMoves(pm.possibleMoves, pm.currLen);
+        this.currLen = pm.currLen;
     }
-    //region MOVE_GEN
-    public void generateMoves()
-    {
-        HashSet<Integer> currPieceLocation = chessGame.getCurrentColorToMove() == PieceData.WHITE?
-                chessGame.getBoard().currPieceLocationWhite : chessGame.getBoard().currPieceLocationBlack;
-
-        boolean kingSpaceUnderThreat = chessGame.spaceUnderThreat(chessGame.getKingToMoveSpaceId());
-
-        ChessSpaces spacesToMoveToStopKingThreat = ChessSpaces.UNIVERSE_SET;
-
-        if (kingSpaceUnderThreat) {
-            //perform deeper scan.
-            spacesToMoveToStopKingThreat = chessGame.getSpacesToMoveToStopThreats(
-                    chessGame.getKingSpaceId(chessGame.getCurrentColorToMove()),
-                    chessGame.getCurrentColorToMove());
-        }
-
-        if (chessGame.isDebuggable()) DebugMode.debugPrint(chessGame, spacesToMoveToStopKingThreat);
-
-        //return if king can no longer be helped
-        ChessSpaces tmpSpc = new ChessSpaces();
-        for (int startSquare : currPieceLocation)
-        {
-            tmpSpc.clear();
-            short pieceId = chessGame.getBoard().getPiece(startSquare);
-            assert(chessGame.getBoard().isPieceAt(startSquare));
-
-            PieceData.getPossibleMoves(chessGame, pieceId, startSquare, tmpSpc);
-
-            if (tmpSpc.isEmpty()) {
-                //empty, immediately continue.
-                continue;
-            }
-            else{
-                possibleMoves.put(startSquare, tmpSpc.clone());
-            }
-
-            if (kingSpaceUnderThreat &&
-                    startSquare != chessGame.getKingSpaceId(chessGame.getCurrentColorToMove())){
-                tmpSpc.clear();
-
-                for (int spaceId : possibleMoves.get(startSquare).chessMoves){
-                    if (spacesToMoveToStopKingThreat.containSpace(spaceId)){
-                        tmpSpc.addMoves(spaceId);
-                    }
-                }
-                if (tmpSpc.isEmpty()) {
-                    possibleMoves.remove(startSquare);
-
-                }else{
-                    possibleMoves.put(startSquare, tmpSpc.clone());
-                }
-            }
-
-        }
-    }
-
-    //endregion
 
     //region HELPERS
-    public void addMoves(int spaceId, int spaceIdToMoveTo){
-        if (!possibleMoves.containsKey(spaceId)){
-            possibleMoves.put(spaceId, new ChessSpaces());
-        }
-        possibleMoves.get(spaceId).addMoves(spaceIdToMoveTo);
+
+    public void copyPossibleMoves(ChessMove[] copyFrom, int size){
+        if (size >= 0) System.arraycopy(copyFrom, 0, this.possibleMoves, 0, size);
     }
+
+    public void addMoves(int spaceId, int spaceIdToMoveTo, short pieceId){
+        addMoves(new ChessMove(spaceId, spaceIdToMoveTo, pieceId));
+    }
+
+    public void addMoves(ChessMove moves){
+        possibleMoves[currLen] = moves;
+        ++currLen;
+    }
+
     public void clearPossibleMoves()
     {
-        possibleMoves.clear();
+        currLen = 0;
     }
 
     public PossibleMoves getClone(){
@@ -105,52 +53,64 @@ public class PossibleMoves {
 
     public void setPossibleMoves(PossibleMoves pm){
         this.chessGame = pm.chessGame;
-        this.possibleMoves = (HashMap<Integer, ChessSpaces>) pm.possibleMoves.clone();
+        copyPossibleMoves(pm.possibleMoves, pm.currLen);
+        this.currLen = pm.currLen;
     }
 
-    public void highlightPossibleMoves(int spaceId, ChessBoardUI chessBoardUI)
+    public void highlightPossibleMoves(int spaceId, DrawBoard drawBoard)
     {
-        if (possibleMoves.containsKey(spaceId)) {
-            for (int space : possibleMoves.get(spaceId).chessMoves)
-            {
-                chessBoardUI.highlightSpace(space);
+        for (int i = 0; i < currLen; ++i){
+            ChessMove move = possibleMoves[i];
+            if (move.spaceIdToMove == spaceId){
+                drawBoard.highlightSpace(move.spaceIdArriveAt);
             }
         }
     }
 
-    public void unHighlightPossibleMoves(int spaceId, ChessBoardUI chessBoardUI)
+    public void unHighlightPossibleMoves(int spaceId, DrawBoard drawBoard)
     {
-        if (possibleMoves.containsKey(spaceId)) {
-            for (int space : possibleMoves.get(spaceId).chessMoves)
-            {
-                chessBoardUI.unHighlightSpace(space);
+        for (int i = 0; i < currLen; ++i){
+            ChessMove move = possibleMoves[i];
+            if (move.spaceIdToMove == spaceId){
+                drawBoard.unHighlightSpace(move.spaceIdArriveAt);
             }
         }
     }
 
     public boolean isEmpty(){
-        return possibleMoves.isEmpty();
+        return currLen == 0;
     }
 
     @SuppressWarnings("unused")
-    public HashMap<Integer, ChessSpaces> getMoves(){return possibleMoves;}
+    public ChessMove[] getMoves(){return possibleMoves;}
+
     public boolean canMoveToFrom(int spaceId, int spaceIdArriveAt) {
-        ChessSpaces s = possibleMoves.get(spaceId);
-        return s != null && s.containSpace(spaceIdArriveAt);
+        return getMove(spaceId, spaceIdArriveAt) != null;
+    }
+
+    public ChessMove getMove(int spaceId, int spaceIdArriveAt){
+        for (int i = 0; i < currLen; ++i){
+            ChessMove move = possibleMoves[i];
+            if (move.spaceIdToMove == spaceId && move.spaceIdArriveAt == spaceIdArriveAt){
+                return move;
+            }
+        }
+        return null;
     }
     //endregion
 
     @Override
     public String toString() {
-        if (possibleMoves == null || possibleMoves.isEmpty()) {
+        if (possibleMoves == null) {
             return "possibleMoves: <empty>";
         }
         StringBuilder sb = new StringBuilder("possibleMoves:\n");
-        for (Map.Entry<Integer, ChessSpaces> entry : possibleMoves.entrySet()) {
+        for (int i = 0; i < currLen ; ++i) {
+
             sb.append("  ")
-                    .append(entry.getKey())
+                    .append(i)
                     .append(" -> ")
-                    .append(entry.getValue())
+                    .append(possibleMoves[i])
                     .append('\n');
         }
         return sb.toString();

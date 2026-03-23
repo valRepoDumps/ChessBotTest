@@ -11,7 +11,7 @@ public class HashContainer {
     }
 
     public HashContainer(long[] hash){
-        this.hash = hash.clone();
+        System.arraycopy(hash, 0, this.hash, 0, hash.length);
     }
 
     //region GETTERS
@@ -36,13 +36,14 @@ public class HashContainer {
         return h1 ^ h2;
     }
 
-    @Override
-    public HashContainer clone() {
-        return new HashContainer(hash); //long[] is clone in constructor already.
-    }
+//    @Override
+//    public HashContainer clone() {
+//        return new HashContainer(hash); //long[] is clone in constructor already.
+//    }
 
     @Override
     public String toString(){
         return Arrays.toString(hash);
     }
+
 }

@@ -1,42 +1,45 @@
 package ChessResources.GetMovesLogic;
 
+import ChessResources.BitMasks;
 import ChessResources.ChessBoard.ChessBoard;
+import ChessResources.Pieces.PieceData;
 
 import java.util.*;
 
 public class ChessSpaces {
-    public static final ChessSpaces UNIVERSE_SET = new ChessSpaces(true);
-    public static final ChessSpaces EMPTY_SET = new ChessSpaces();
+    public static final ChessSpaces UNIVERSE_SET = new ChessSpaces(Long.MAX_VALUE, PieceData.INVALID_PIECES);
+    public static final ChessSpaces EMPTY_SET = new ChessSpaces(0L, PieceData.INVALID_PIECES);
 
-    protected Set<Integer> chessMoves = new HashSet<>();
-    protected boolean containsAll = false;
+    protected long chessMoves = 0L;
+    short pieceId;
+    boolean promoted;
+    boolean capture;
+    boolean doublePawnPush;
+    boolean enPassant;
+    boolean castling;
     public ChessSpaces()
     {}
 
-    public ChessSpaces(int spaceId)
+    public ChessSpaces(long moveMask, short PieceId)
     {
         this();
-        chessMoves.add(spaceId);
+        chessMoves |= moveMask;
     }
 
-    public ChessSpaces(boolean containsAll)
-    {
-        this();
-        this.containsAll = containsAll;
-    }
 
-    public void addMoves(int spaceId)
+    public void addMoves(long spaceId)
     {
-        chessMoves.add(spaceId);
+        chessMoves |= spaceId;
     }
 
     public boolean isEmpty(){
-        return !containsAll && chessMoves.isEmpty();
+        return chessMoves == 0L;
+    }
+    public boolean containsSpace(int spaceId){
+        return (BitMasks.getSingleSpaceBitBoard(spaceId) & chessMoves) != 0;
     }
 
-    public boolean containSpace(int spaceId) {return containsAll || chessMoves.contains(spaceId);}
-
-    public Set<Integer> getChessMoves(){return chessMoves;}
+    public long getChessMoves(){return chessMoves;}
 
     public void moveIntersection(ChessSpaces cp) {
         if (cp.isUniverse()) {
@@ -49,27 +52,17 @@ public class ChessSpaces {
             return;
         }
         // A ∩ B
-        chessMoves.retainAll(cp.getChessMoves());
+        chessMoves &= cp.getChessMoves();
     }
 
     public void moveUnion(ChessSpaces cp){
-        if (this.containsAll || cp.containsAll) {
-            this.containsAll = true;
-            chessMoves.clear();
-            return;
-        }
-        chessMoves.addAll(cp.chessMoves);
+        chessMoves |= cp.chessMoves;
     }
 
-    public boolean isUniverse(){return containsAll;}
-
-    public void setContainsAll(boolean containsAll){
-        this.containsAll = containsAll;
-    }
+    public boolean isUniverse(){return chessMoves == Long.MAX_VALUE;}
 
     public void copyChessSpaces(ChessSpaces cp){
-        this.chessMoves = new HashSet<>(cp.getChessMoves());
-        this.containsAll = cp.isUniverse();
+        this.chessMoves = cp.chessMoves;
     }
 
     public static ChessSpaces getNewUniverseSet(){
@@ -80,12 +73,11 @@ public class ChessSpaces {
 
     @Override
     public String toString(){
-        return containsAll + " " + Arrays.toString(chessMoves.toArray());
+        return Long.toString(chessMoves);
     }
 
     public void clear(){
-        this.containsAll = false;
-        this.chessMoves.clear();
+        this.chessMoves = 0;
     }
 
     public static void fastIntersection(ChessSpaces ans, ChessSpaces tmp, int spaceId){

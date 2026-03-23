@@ -1,79 +1,72 @@
 package ChessLogic;
 
 import ChessLogic.Configurations.Configurations;
+import ChessLogic.Configurations.PropertiesStats;
 import ChessLogic.Debug.DebugMode;
 import ChessLogic.Debug.Debuggable;
 import ChessResources.BitMasks;
 import ChessResources.ChessBoard.ChessBoard;
-import ChessResources.ChessBoard.ChessBoardUI;
+
 import ChessResources.ChessErrors.OutOfOldTurns;
+
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
-import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsPossibleMovesChange;
 import ChessResources.ChessHistoryTracker.ChessHistoryTracker;
-import ChessResources.ChessHistoryTracker.GameStateChanges;
 import ChessResources.ChessListener.StateChangeListener;
-import ChessResources.GetMovesLogic.ChessSpaces;
+import ChessResources.GetMovesLogic.ChessMove;
+import ChessResources.Hasher.HashContainer;
 import ChessResources.Hasher.HashGenerator;
-import ChessResources.HelperFuncs.BoardScan.BoardScan;
-import ChessResources.HelperFuncs.BoardScan.ScanResult;
 import ChessResources.Pieces.MovesGeneration;
 import ChessResources.Pieces.PieceData;
 import ChessResources.GetMovesLogic.PossibleMoves;
-import ChessResources.Pieces.MovingPieceData;
 import ChessResources.PreCalc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.function.BiFunction;
 
-public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
+public class MinimalChessGame implements Debuggable {
     //region BEFORE_CONSTRUCTORS
     //region GAME_DATAS
-    public Board chessBoard = null;
-    public final HashGenerator<Board> hashGenerator = new HashGenerator<>( this);
-
+    public ChessBoard chessBoard;
+    protected HashGenerator hashGenerator;
+    HashContainer hs;
     BiFunction<Integer, Boolean, Short> choosePromotionPiece;
 
     protected PossibleMoves possibleMoves;
 
-    public ChessHistoryTracker chessHistoryTracker = new ChessHistoryTracker();
+    public ChessHistoryTracker<MinimalChessGame> chessHistoryTracker = new ChessHistoryTracker<>();
 
     Configurations configurations;
     //endregion
 
     //region GAME_PROPERTIES
-    public static final int GAME_PROPERTIES_LEN = 5;
-    public boolean[] gameProperties = new boolean[GAME_PROPERTIES_LEN];
-
-    public static int BLACK_CASTLE_QUEEN = 0;
-    public static int BLACK_CASTLE_KING = 1;
-
-    public static int WHITE_CASTLE_QUEEN = 2;
-    public static int WHITE_CASTLE_KING = 3;
-
-    public static int SIDE_TO_MOVE = 4;
+    PropertiesStats gameProperties = new PropertiesStats();
+//    public static final int GAME_PROPERTIES_LEN = 5;
+//    public boolean[] gameProperties = new boolean[GAME_PROPERTIES_LEN];
+//
+//    public static int BLACK_CASTLE_QUEEN = 0;
+//    public static int BLACK_CASTLE_KING = 1;
+//
+//    public static int WHITE_CASTLE_QUEEN = 2;
+//    public static int WHITE_CASTLE_KING = 3;
+//
+//    public static int SIDE_TO_MOVE = 4;
     //endregion
     
     //region GAME_STATS
-    public static final int GAME_STATS_LEN = 5;
-    public int[] gameStats = new int[GAME_STATS_LEN];
+//    public static final int GAME_STATS_LEN = 5;
+//    public int[] gameStats = new int[GAME_STATS_LEN];
 
     private int currEnPassantTarget = INVALID_ENPASSANT_TARGET;
 
-    public static int ENPASSANT_TARGET = 0; //spaceId format.
-    public static final int HALF_MOVES_SICE_CAPTURE_OR_PAWN_MOVES = 1;
-    public static final int TOTAL_MOVES_ELAPSED = 2;
-    public static final int WHITE_KING_SPACEID = 3;
-    public static final int BLACK_KING_SPACEID = 4;
+//    public static int ENPASSANT_TARGET = 0; //spaceId format.
+//    public static final int HALF_MOVES_SICE_CAPTURE_OR_PAWN_MOVES = 1;
+//    public static final int TOTAL_MOVES_ELAPSED = 2;
+//    public static final int WHITE_KING_SPACEID = 3;
+//    public static final int BLACK_KING_SPACEID = 4;
 
     public static final int INVALID_ENPASSANT_TARGET = -1;
-    private final ArrayList<StateChangeListener<PropertiesStatsPossibleMovesChange>>
-            propertiesStatsChangeListenerList = new ArrayList<>();
 
-    private final ArrayList<StateChangeListener<GameStateChanges>>
-            turnEndListenerList = new ArrayList<>();
-
-    private final ArrayList<StateChangeListener<GameStateChanges>>
-            undoTurnListenerList = new ArrayList<>();
     //endregion
 
     //region SAVE_GAME_OPCODE
@@ -91,15 +84,21 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     public static final int INDETERMINATE = 3;
     //endregion
 
+    //region CASTLING STATICS
+    public static final int BLACK_CASTLE_QUEEN_ROOK_ID = 0;
+    public static final int BLACK_CASTLE_QUEEN_ROOK_ARRIVE = 3;
+
+    public static final int WHITE_CASTLE_QUEEN_ROOK_ID = 56;
+    public static final int WHITE_CASTLE_QUEEN_ROOK_ARRIVE = 59;
+
+    public static final int BLACK_CASTLE_KING_ROOK_ID = 7;
+    public static final int BLACK_CASTLE_KING_ROOK_ARRIVE = 5;
+
+    public static final int WHITE_CASTLE_KING_ROOK_ID = 63;
+    public static final int WHITE_CASTLE_KING_ROOK_ARRIVE = 61;
+    //endregion
+
     //region GAME_BITMASKS
-    public long ANTI_TO_MOVE_PIECES;
-    public long ANTI_NOT_TO_MOVE_PIECES;
-    public long NOT_TO_MOVE_PIECES;
-    public long TO_MOVE_PIECES;
-    public long NOT_TO_MOVE_PIECES_AND_ENPASSANT;
-    public long TO_MOVE_PIECES_AND_ENPASSANT;
-    public long EMPTY;
-    public long OCCUPIED;
     //endregion
 
     //region LAMBDAS
@@ -109,64 +108,77 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
                 else return PieceData.WQUEEN;
             };
 
-    public final StateChangeListener<BoardStateChange> BOARD_STATE_LOGGER =
-            (BoardStateChange boardStateChange)->{
-        this.chessHistoryTracker.pushBoardStateChange(boardStateChange);
-    };
-
-    public final StateChangeListener<BoardStateChange> KING_SPACEID_LOGGER =
-            (BoardStateChange boardStateChange)->{
-                if (boardStateChange == null || !PieceData.isValidPieceId(boardStateChange.getPiece())) return;
-
-                if (boardStateChange.getPiece() == PieceData.WKING){
-                    gameStats[WHITE_KING_SPACEID] = boardStateChange.getSpaceIdArriveAt();
-                }
-                else if (boardStateChange.getPiece() == PieceData.BKING){
-                    gameStats[BLACK_KING_SPACEID] = boardStateChange.getSpaceIdArriveAt();
-                }
-            };
-
-    public final StateChangeListener<PropertiesStatsPossibleMovesChange> PROPERTIES_STATS_LOGGER =
-            (PropertiesStatsPossibleMovesChange propertiesStatsPossibleMovesChange)->{
-        this.chessHistoryTracker.setGamePropertiesStatsPossibleMoves(propertiesStatsPossibleMovesChange);
-    };
+//
+//    public final StateChangeListener<BoardStateChange> KING_SPACEID_LOGGER =
+//            (BoardStateChange boardStateChange)->{
+//                if (boardStateChange == null || !PieceData.isValidPieceId(boardStateChange.getPiece())) return;
+//
+//                if (boardStateChange.getPiece() == PieceData.WKING){
+//                    gameStats[WHITE_KING_SPACEID] = boardStateChange.getSpaceIdArriveAt();
+//                }
+//                else if (boardStateChange.getPiece() == PieceData.BKING){
+//                    gameStats[BLACK_KING_SPACEID] = boardStateChange.getSpaceIdArriveAt();
+//                }
+//            };
 
     //endregion
 
     //endregion
 
     //region Constructor
+    public MinimalChessGame(){}
+    public MinimalChessGame(MinimalChessGame src) {
+        this.configurations = src.configurations;
+        this.choosePromotionPiece = src.choosePromotionPiece;
+        this.hashGenerator = src.hashGenerator;
+        this.hs = new HashContainer(src.hs.getHash());
+        // Deep copies
+        this.gameProperties = new PropertiesStats(src.gameProperties);
 
-    public MinimalChessGame(Board chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
+        this.currEnPassantTarget = src.currEnPassantTarget;
+        this.endGameCode = src.endGameCode;
+
+        // ChessBoard must define its own clone / copy
+        this.chessBoard = src.chessBoard.cloneBoard();
+
+        // Possible moves snapshot
+        this.possibleMoves = new PossibleMoves(src.possibleMoves);
+
+    }
+
+
+    public MinimalChessGame(ChessBoard chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
                             Configurations configurations)
     {
+        this.hashGenerator = new HashGenerator( this);
+
         this.configurations = configurations;
 
         this.chessBoard = chessBoard;
         this.choosePromotionPiece = choosePromotionPiece;
-
-        this.addMoveListener(BOARD_STATE_LOGGER);
-        this.addPropertiesStatsChangeListener(PROPERTIES_STATS_LOGGER);
-        this.chessBoard.addStateChangeListener(KING_SPACEID_LOGGER);
+//
+//        this.chessBoard.addStateChangeListener(KING_SPACEID_LOGGER);
 
         possibleMoves = new PossibleMoves(this);
-
+        calculateHash();
+        chessHistoryTracker.pushTurn(this);
     }
 
-    public MinimalChessGame(Board chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
-                            boolean[] gameProperties, int[] gameStats, Configurations configurations)
+    public MinimalChessGame(ChessBoard chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
+                            PropertiesStats gameProperties, Configurations configurations)
     {
         this(chessBoard, choosePromotionPiece, configurations);
 
         this.gameProperties = gameProperties;
-        this.gameStats = gameStats;
 
         updateConfigurations();
         generateBitMasks();
         generatePossibleMoves();
+        calculateHash();
+        chessHistoryTracker.pushTurn(this);
     }
     @SuppressWarnings("unused")
-    public MinimalChessGame(String fen, Board chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
+    public MinimalChessGame(String fen, ChessBoard chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
                             Configurations configurations)
     {
 
@@ -177,7 +189,8 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         fenTranslator(fen);
         generateBitMasks();
         generatePossibleMoves();
-
+        calculateHash();
+        chessHistoryTracker.pushTurn(this);
     }
     //endregion
 
@@ -186,11 +199,7 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         return chessBoard;
     }
 
-    public int[] getGameStats() {
-        return gameStats;
-    }
-
-    public boolean[] getGameProperties() {
+    public PropertiesStats getGameProperties() {
         return gameProperties;
     }
 
@@ -199,13 +208,46 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     }
 
     public boolean getCurrentColorToMove(){
-        return gameProperties[SIDE_TO_MOVE];
+        return gameProperties.getSideToMove();
     }
     //endregion
 
     //region HELPERS
 
     //region MISC_FUNCS
+
+    public boolean canBlackCastleKing(){
+        return gameProperties.canBlackCastleKing();
+    }
+
+    public boolean canWhiteCastleKing(){
+        return gameProperties.canWhiteCastleKing();
+    }
+
+    public boolean canBlackCastleQueen(){
+        return gameProperties.canBlackCastleQueen();
+    }
+
+    public boolean canWhiteCastleQueen(){
+        return gameProperties.canWhiteCastleQueen();
+    }
+
+    public boolean canToMoveCastleKing(){
+        if (getCurrentColorToMove() == PieceData.WHITE){
+            return canWhiteCastleKing();
+        }else{
+            return canBlackCastleKing();
+        }
+    }
+
+    public boolean canToMoveCastleQueen(){
+        if (getCurrentColorToMove() == PieceData.WHITE){
+            return canWhiteCastleQueen();
+        }else{
+            return canBlackCastleQueen();
+        }
+    }
+
     public void fenTranslator(String fen){
         String[] args = fen.trim().split(" ");
         chessBoard.setUpPieces(args[0]);
@@ -213,33 +255,36 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
             throw new IllegalArgumentException("Invalid FEN: Must include 6 arguments.");
         }
         //region ASSIGN_SIDE_TO_MOVE
-        if (args[1].equals("w")) gameProperties[SIDE_TO_MOVE] = PieceData.WHITE;
-        else if (args[1].equals("b")) gameProperties[SIDE_TO_MOVE] = PieceData.BLACK;
+        if (args[1].equals("w")) {
+            if(gameProperties.getSideToMove() != PieceData.WHITE) gameProperties.flipSideToMove();
+        }
+        else if (args[1].equals("b")) {
+            if(gameProperties.getSideToMove() != PieceData.BLACK) gameProperties.flipSideToMove();
+        }
         else
             throw new IllegalArgumentException("Invalid FEN: Side to Move is invalid (" + args[1] + ").");
         //endregion
         //region ASSIGN_CASTLING_RIGHTS
-        gameProperties[BLACK_CASTLE_KING]  = args[2].contains("k");
-        gameProperties[BLACK_CASTLE_QUEEN] = args[2].contains("q");
-        gameProperties[WHITE_CASTLE_KING]  = args[2].contains("K");
-        gameProperties[WHITE_CASTLE_QUEEN] = args[2].contains("Q");
+        long castlingRight = 0L;
+        if (args[2].contains("k")) castlingRight |= PropertiesStats.BLACK_CASTLE_KING_SIDE;
+        if (args[2].contains("q")) castlingRight |= PropertiesStats.BLACK_CASTLE_QUEEN_SIDE;
+        if (args[2].contains("K")) castlingRight |= PropertiesStats.WHITE_CASTLE_KING_SIDE;
+        if (args[2].contains("Q")) castlingRight |= PropertiesStats.WHITE_CASTLE_QUEEN_SIDE;
+
+        gameProperties.setCastlingRight(castlingRight);
         //endregion
         //region ASSIGN_EN_PASSANT_TARGET
         if (args[3].length() == 1 && args[3].equals("-")) {
-            gameStats[ENPASSANT_TARGET] = -1;
+            gameProperties.clearEnPassantTarget();
         } else if (args[3].length() == 2 && Character.isAlphabetic(args[3].charAt(0))
                 && Character.isDigit(args[3].charAt(1))) {
-            gameStats[ENPASSANT_TARGET] = ChessBoardUI.convertSquareNotationToSpaceId(
-                    args[3].charAt(0), args[3].charAt(1));
+            gameProperties.setEnPassantTarget(ChessBoard.convertSquareNotationToSpaceId(
+                    args[3].charAt(0), args[3].charAt(1)));
         } else
             throw new IllegalArgumentException("Invalid files and ranks input (" + args[3] + ").");
         //endregion
-        gameStats[HALF_MOVES_SICE_CAPTURE_OR_PAWN_MOVES] = Integer.parseInt(args[4]);
-        gameStats[TOTAL_MOVES_ELAPSED] = Integer.parseInt(args[5]);
-        //region ASSIGN_KINGS_LOCATION
-//        gameStats[WHITE_KING_SPACEID] = chessBoard.findPiece(shorts.WKING_DATA.getPieceId());
-//        gameStats[BLACK_KING_SPACEID] = chessBoard.findPiece(shorts.BKING_DATA.getPieceId());
-        //endregion
+        gameProperties.setHalfMoves(Integer.parseInt(args[4]));
+        gameProperties.setTotalMovesElapsed(Integer.parseInt(args[5]));
     }
 
     public void generatePossibleMoves(){
@@ -247,144 +292,53 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         MovesGeneration.generateMoves(this);
     }
 
-    public boolean spaceUnderThreat(int spaceId, boolean alliedColor)
+    public boolean spaceUnderThreat(int spaceId, short[] ids, long OCCUPIED, long setMoves)
     {
-        int[][] slidingMoves = PreCalc.SLIDING_MOVES[spaceId];
-        short[] ids = ((alliedColor == PieceData.WHITE) ? PreCalc.WHITE_THREAT_IDS : PreCalc.BLACK_THREAT_IDS);
-
-        short[] DIAG_PIECE = ((alliedColor == PieceData.WHITE) ? MovingPieceData.INF_RANGE_DIAGONAL_MOVE_PIECE_BLACK :
-                MovingPieceData.INF_RANGE_DIAGONAL_MOVE_PIECE_WHITE);
-        short[] STRAIGHT_PIECE = ((alliedColor == PieceData.WHITE) ? MovingPieceData.INF_RANGE_STRAIGHT_MOVE_PIECE_BLACK :
-                MovingPieceData.INF_RANGE_STRAIGHT_MOVE_PIECE_WHITE);
-
-        if (ids[0] == PieceData.BPAWN)
-            if ((BitMasks.PAWN_CAPTURE_MASKS[BitMasks.WIDX][spaceId] & chessBoard.getBitBoard(ids[0])) != 0)
+        //technically dont apply to all spaces. treat king as if it doesnt exist.
+        if (ids[0] == PieceData.BPAWN) {
+            if ((BitMasks.PAWN_CAPTURE_MASKS[BitMasks.WIDX][spaceId]
+                    & chessBoard.getBitBoard(ids[0])) != 0) {
                 return true;
+            }
+        }
         else {
-            if ((BitMasks.PAWN_CAPTURE_MASKS[BitMasks.BIDX][spaceId] & chessBoard.getBitBoard(ids[0])) != 0)
+            if ((BitMasks.PAWN_CAPTURE_MASKS[BitMasks.BIDX][spaceId]
+                    & chessBoard.getBitBoard(ids[0]) & setMoves) != 0) {
                 return true;
+            }
         }
 
-        if ((BitMasks.KNIGHT_MOVE_MASKS[spaceId] & chessBoard.getBitBoard(ids[PieceData.KNIGHT])) != 0 )
+        if ((BitMasks.KNIGHT_MOVE_MASKS[spaceId]
+                & chessBoard.getBitBoard(ids[PieceData.KNIGHT]) & setMoves) != 0 )
             return true;
 
-        if ((BitMasks.KING_MOVE_MASKS[spaceId] & chessBoard.getBitBoard(ids[PieceData.KING])) != 0)
+        if ((BitMasks.KING_MOVE_MASKS[spaceId]
+                & chessBoard.getBitBoard(ids[PieceData.KING]) & setMoves) != 0)
             return true;
 
-        if ((MovesGeneration.getRookMoves(OCCUPIED, spaceId) & chessBoard.getBitBoard(ids[PieceData.ROOK])) != 0)
-            return true;
-
-        if ((MovesGeneration.getBishopMoves(OCCUPIED, spaceId) & chessBoard.getBitBoard(ids[PieceData.BISHOP])) != 0)
-            return true;
-
-        if ((MovesGeneration.getQueenMoves(OCCUPIED, spaceId) & chessBoard.getBitBoard(ids[PieceData.QUEEN])) != 0)
-            return true;
-
-        return false;
+        return spaceUnderThreatSlidingPiece(spaceId, OCCUPIED, ids, setMoves);
     }
 
-    public ChessSpaces getSpacesToMoveToStopThreats(int spaceId, boolean alliedColor)
+    public boolean spaceUnderThreatSlidingPiece(int spaceId, long OCCUPIED, short[] ids,
+                                                long setMoves)
     {
-        //region ASSIGNMENT
-        int[][] slidingMoves = PreCalc.SLIDING_MOVES[spaceId];
-        int pawn   = PieceData.WPAWN;
-        int queen = PieceData.WQUEEN;
-        int bishop= PieceData.WBISHOP;
-        int rook  = PieceData.WROOK;
-        int knight= PieceData.WKNIGHT;
-        int king  = PieceData.WKING;
+        //technically dont apply to all spaces. treat king as if it doesnt exist.
+        //short[] ids = ((alliedColor == PieceData.WHITE) ? PreCalc.WHITE_THREAT_IDS : PreCalc.BLACK_THREAT_IDS);
 
-        if (alliedColor == PieceData.WHITE){
-            pawn   = PieceData.getOppositeColor(pawn);
-            queen  = PieceData.getOppositeColor(queen);
-            bishop = PieceData.getOppositeColor(bishop);
-            rook   = PieceData.getOppositeColor(rook);
-            knight = PieceData.getOppositeColor(knight);
-            king   = PieceData.getOppositeColor(king);
-        }
-        //endregion
+        if ((MovesGeneration.getRookMoves(OCCUPIED, spaceId)
+                & chessBoard.getBitBoard(ids[PieceData.ROOK]) & setMoves) != 0)
+            return true;
 
-        short[] pawnDirs;
-        ChessSpaces tmpSpaces = new ChessSpaces();
-        if (pawn == PieceData.BPAWN)
-            pawnDirs = MovingPieceData.WPAWN_CAPTURE_DIR;
-        else {
-            pawnDirs = MovingPieceData.BPAWN_CAPTURE_DIR;
-        }
+        if (((MovesGeneration.getBishopMoves(OCCUPIED, spaceId)
+                & chessBoard.getBitBoard(ids[PieceData.BISHOP])) & setMoves) != 0)
+            return true;
 
-        ChessSpaces ans = ChessSpaces.getNewUniverseSet();
-        //scanning for pawn
-        for (short dir : pawnDirs) {
-            ScanResult sr = BoardScan.rayScan(this, slidingMoves[dir], 1, null);
-            if (sr.getPieceId() == pawn){
-                ChessSpaces.fastIntersection(ans, tmpSpaces, sr.getSpaceId());
-            }
-        }
-
-        if (ans.isEmpty()) return ans;
-        ans.moveIntersection(getSpacesToMoveToStopThreats(MovingPieceData.BISHOP_DIR, spaceId, bishop));
-        if (ans.isEmpty()) return ans;
-        ans.moveIntersection(getSpacesToMoveToStopThreats(MovingPieceData.ROOK_DIR, spaceId, rook));
-        if (ans.isEmpty()) return ans;
-        ans.moveIntersection(getSpacesToMoveToStopThreats(MovingPieceData.QUEEN_DIR, spaceId, queen));
-        if (ans.isEmpty()) return ans;
-        //for king moves
-        for (short dir : MovingPieceData.QUEEN_DIR) {
-            ScanResult sr = BoardScan.rayScan(this,
-                    slidingMoves[dir],
-                    1,
-                    null);
-
-            if (sr.getPieceId() == king){
-                ChessSpaces.fastIntersection(ans, tmpSpaces, sr.getSpaceId());
-            }
-        }
-        if (ans.isEmpty()) return ans;
-
-        ScanResult[] srs = BoardScan.jumpScan(this, PreCalc.KNIGHT_MOVES[spaceId], null);
-
-        for (ScanResult sr : srs){
-            if (!ScanResult.isValid(sr)) break;
-
-            if (sr.getPieceId() == knight){
-                ChessSpaces.fastIntersection(ans, tmpSpaces, sr.getSpaceId());
-            }
-            if (ans.isEmpty()) return ans;
-        }
-
-        return ans;
+        return ((MovesGeneration.getQueenMoves(OCCUPIED, spaceId)
+                & chessBoard.getBitBoard(ids[PieceData.QUEEN]) & setMoves) != 0);
     }
 
-    private ChessSpaces getSpacesToMoveToStopThreats(short[] dirs, int spaceId, int pieceId){
-
-        int[][] slidingMoves = PreCalc.SLIDING_MOVES[spaceId];
-        ChessSpaces ans = ChessSpaces.getNewUniverseSet();
-        ChessSpaces tmp = new ChessSpaces();
-        for (short dir : dirs) {
-            tmp.clear();
-            ScanResult sr = BoardScan.rayScan(this,
-                    slidingMoves[dir],
-                    MovingPieceData.NO_RANGE_LIMIT,
-                    tmp);
-
-            if (sr.getPieceId() == pieceId){
-                //scan the pieceId needed to detect.
-                tmp.addMoves(sr.getSpaceId());
-                ans.moveIntersection(tmp);
-            }
-
-            if (ans.isEmpty()) return ans;
-        }
-        return ans;
-    }
-
-    public boolean spaceUnderThreat(int spaceId){
-        return spaceUnderThreat(spaceId, getCurrentColorToMove());
-    }
-
-    public boolean spaceNotUnderThreatAndEmpty(int spaceId)
-    {
-        return !spaceUnderThreat(spaceId) && chessBoard.isEmptySpaceAt(spaceId);
+    public boolean spaceUnderThreat(int spaceId, long OCCUPIED, long setMoves){
+        return spaceUnderThreat(spaceId, getBoard().TO_MOVE_THREATS_PIECE_ID, OCCUPIED, setMoves);
     }
 
     public boolean isAlliedPieceAt(int spaceId, boolean color){
@@ -404,7 +358,8 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     public int getKingSpaceId(boolean color){
 
         return color == PieceData.WHITE ?
-                gameStats[WHITE_KING_SPACEID] : gameStats[BLACK_KING_SPACEID];
+                Long.numberOfTrailingZeros(getBoard().getBitBoard(PieceData.WKING)) :
+                Long.numberOfTrailingZeros(getBoard().getBitBoard(PieceData.BKING));
     }
 
     public int getKingToMoveSpaceId(){
@@ -412,22 +367,22 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     }
 
     public int getEnpassantTarget(){
-        return getGameStats()[ENPASSANT_TARGET];
+        return gameProperties.getEnPassantTarget();
     }
 
     public void pushCurrEnPassantTarget(){
-        getGameStats()[ENPASSANT_TARGET] = currEnPassantTarget;
+        gameProperties.setEnPassantTarget(currEnPassantTarget);
         currEnPassantTarget = INVALID_ENPASSANT_TARGET;
     }
 
     private void promotionHandler(int spaceId, short piece)
     {
         //chessBoard.movePieceCapture(ChessBoard.INVALID_SPACE_ID, spaceId, spaceId);
-        chessBoard.spawnPieceAt(spaceId, piece);
+        chessBoard.spawnPieceAt(spaceId, piece, getBoard().getPiece(spaceId));
     }
 
     private void resetHalfMoves(){
-        gameStats[HALF_MOVES_SICE_CAPTURE_OR_PAWN_MOVES] = 0;
+        gameProperties.resetHalfMoves();
     }
 
     public PossibleMoves getCurrentPossibleMoves(){
@@ -436,131 +391,90 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
     //endregion
 
     //region TURN_HANDLING
-    public boolean movePiece(int spaceIdToMove, int spaceIdArriveAt)
-    {
-        if (!possibleMoves.canMoveToFrom(spaceIdToMove,spaceIdArriveAt)) return false;
 
-        StateChangeListener.notifyListeners(propertiesStatsChangeListenerList,
-                new PropertiesStatsPossibleMovesChange(gameProperties, gameStats, getPossibleMoves())); //announce new rules added.
+    public boolean movePiece(ChessMove move){
+        if (move == null) return false;
 
-        int opCode = NORMAL_MOVE;
-        short piece = chessBoard.getPiece(spaceIdToMove);
-        final boolean isPawn = piece == PieceData.BPAWN || piece == PieceData.WPAWN;
-        boolean currentColor = getCurrentColorToMove();
-
-        int spaceIdCaptureAt = spaceIdArriveAt;
-
-        if (isPawn)
-        {
-            short dir = (currentColor == PieceData.WHITE ? ChessBoard.SOUTH : ChessBoard.NORTH);
-            //region EN_PASSANT_LOGIC
-            if (spaceIdArriveAt == getEnpassantTarget())
-            {
-                spaceIdCaptureAt = spaceIdArriveAt + ChessBoard.directionOffsets[dir];
-            }
-            //en passant logic
-            else if (Math.abs(ChessBoard.getRow(spaceIdToMove) - ChessBoard.getRow(spaceIdArriveAt)) == 2) //pawn moved 2 space
-            {
-                currEnPassantTarget = spaceIdArriveAt + ChessBoard.directionOffsets[dir];
-            }
-            //endregion
-
-            //region PROMOTION_LOGIC
-            if (ChessBoard.getRow(spaceIdArriveAt) == ChessBoard.BOARD_SIZE-1
-                    || ChessBoard.getRow(spaceIdArriveAt) == 0)
-            //check pawn color, do not assume pawn dont go backward or start at like row 0 or 8.
-            {
-                opCode = PROMOTION;
-            }
-            //endregion
-        }
+        DebugMode.debugPrint(this, move);
 
         //region CASTLING_LOGIC
-        else if (piece== PieceData.WKING)
-        {
-            if (ChessBoard.getCol(spaceIdToMove) - ChessBoard.getCol(spaceIdArriveAt) > 1)
-            {
-                int rookSpaceId = ChessBoard.BOARD_SIZE*(ChessBoard.BOARD_SIZE-1);
-                int rookMoveId = ChessBoard.getEastSpaceId(spaceIdArriveAt, 1); //rook should be to the east of new king.
-                assert(gameProperties[WHITE_CASTLE_QUEEN]); //should be true
-                chessBoard.movePieceCapture(rookSpaceId, rookMoveId, rookMoveId);
-            }
-            else if (ChessBoard.getCol(spaceIdToMove) - ChessBoard.getCol(spaceIdArriveAt) < -1)
-            {
-                int rookSpaceId = ChessBoard.BOARD_SIZE* ChessBoard.BOARD_SIZE-1;
-                int rookMoveId = ChessBoard.getWestSpaceId(spaceIdArriveAt, 1); //rook should be to the west of new king.
-                assert(gameProperties[WHITE_CASTLE_KING]); //should be true
-                chessBoard.movePieceCapture(rookSpaceId, rookMoveId, rookMoveId);
-            }
-
-            gameProperties[WHITE_CASTLE_QUEEN] = false;
-            gameProperties[WHITE_CASTLE_KING] = false;
-        }
-        else if (piece == PieceData.BKING)
-        {
-            if (ChessBoard.getCol(spaceIdToMove) - ChessBoard.getCol(spaceIdArriveAt) > 1)
-            {
-                int rookSpaceId = 0;
-                int rookMoveId = ChessBoard.getEastSpaceId(spaceIdArriveAt, 1); //rook should be to the east of new king.
-                assert(gameProperties[BLACK_CASTLE_QUEEN]); //should be true
-                chessBoard.movePieceCapture(rookSpaceId, rookMoveId, rookMoveId);
-            }
-            else if (ChessBoard.getCol(spaceIdToMove) - ChessBoard.getCol(spaceIdArriveAt) < -1)
-            {
-                int rookSpaceId = ChessBoard.BOARD_SIZE-1;
-                int rookMoveId = ChessBoard.getWestSpaceId(spaceIdArriveAt, 1); //rook should be to the west of new king.
-                assert(gameProperties[BLACK_CASTLE_KING]); //should be true
-
-                chessBoard.movePieceCapture(rookSpaceId, rookMoveId, rookMoveId);
-            }
-            gameProperties[BLACK_CASTLE_QUEEN] = false;
-            gameProperties[BLACK_CASTLE_KING] = false;
-        }
-        else if (piece == PieceData.WROOK) //these rook funcs wont work if i ever want to implement chess960.
-        {
-            if (gameProperties[WHITE_CASTLE_KING] && ChessBoard.getCol(spaceIdToMove) == 7)
-            {
-                gameProperties[WHITE_CASTLE_KING] = false;
-            }
-            else if (gameProperties[WHITE_CASTLE_QUEEN] && ChessBoard.getCol(spaceIdToMove) == 0)
-            {
-                gameProperties[WHITE_CASTLE_QUEEN] = false;
-            }
-        }
-        else if (piece == PieceData.BROOK)
-        {
-            if (gameProperties[BLACK_CASTLE_KING] && ChessBoard.getCol(spaceIdToMove) == 7)
-            {
-                gameProperties[BLACK_CASTLE_KING] = false;
-            }
-            else if (gameProperties[BLACK_CASTLE_QUEEN] && ChessBoard.getCol(spaceIdToMove) == 0)
-            {
-                gameProperties[BLACK_CASTLE_QUEEN] = false;
-            }
-        }
+        short piece = move.getPieceId();
         //endregion
 
         //region ACTUALLY_MOVING_THE_PIECE
-        if (isPawn){
+        if (piece == PieceData.WPAWN || piece == PieceData.BPAWN){
             resetHalfMoves();
         }
-        else if (chessBoard.isPieceAt(spaceIdCaptureAt)){
+        else if (move.isCapture()){
             resetHalfMoves();
         }
 
-        chessBoard.movePieceCapture(spaceIdToMove, spaceIdArriveAt, spaceIdCaptureAt);
+        if (gameProperties.canWhiteCastle()) {
+            if (piece == PieceData.WKING) {
+                gameProperties.revokeCastlingRight(PropertiesStats.WHITE_CASTLE_QUEEN_SIDE
+                        |PropertiesStats.WHITE_CASTLE_KING_SIDE);
+            }else if (piece == PieceData.WROOK){
+                if (ChessBoard.getCol(move.getSpaceIdToMove()) < ChessBoard.getCol(getKingToMoveSpaceId())){
+                    gameProperties.revokeCastlingRight(PropertiesStats.WHITE_CASTLE_QUEEN_SIDE);
+                }else{
+                    gameProperties.revokeCastlingRight(PropertiesStats.WHITE_CASTLE_KING_SIDE);
+                }
+            }
+        }
 
-        if (opCode == PROMOTION) //make no further checks, shouldnt be invalid.
+        if (gameProperties.canBlackCastle()){
+            if (piece == PieceData.BKING) {
+                gameProperties.revokeCastlingRight(PropertiesStats.BLACK_CASTLE_QUEEN_SIDE
+                        |PropertiesStats.BLACK_CASTLE_KING_SIDE);
+            }else if (piece == PieceData.BROOK){
+                if (ChessBoard.getCol(move.getSpaceIdToMove()) < ChessBoard.getCol(getKingToMoveSpaceId())){
+                    gameProperties.revokeCastlingRight(PropertiesStats.BLACK_CASTLE_QUEEN_SIDE);
+                }else{
+                    gameProperties.revokeCastlingRight(PropertiesStats.BLACK_CASTLE_KING_SIDE);
+                }
+            }
+        }
+
+        if (move.isCastling()){
+            if (move.isBlackCastleQueen()){
+                chessBoard.movePieceCapture(BLACK_CASTLE_QUEEN_ROOK_ID,
+                        BLACK_CASTLE_QUEEN_ROOK_ARRIVE,
+                        BLACK_CASTLE_QUEEN_ROOK_ARRIVE);
+            }else if (move.isBlackCastleKing()){
+                chessBoard.movePieceCapture(BLACK_CASTLE_KING_ROOK_ID,
+                        BLACK_CASTLE_KING_ROOK_ARRIVE,
+                        BLACK_CASTLE_KING_ROOK_ARRIVE);
+            }else if (move.isWhiteCastleQueen()){
+                chessBoard.movePieceCapture(WHITE_CASTLE_QUEEN_ROOK_ID,
+                        WHITE_CASTLE_QUEEN_ROOK_ARRIVE,
+                        WHITE_CASTLE_QUEEN_ROOK_ARRIVE);
+            }else if (move.isWhiteCastleKing()){
+                chessBoard.movePieceCapture(WHITE_CASTLE_KING_ROOK_ID,
+                        WHITE_CASTLE_KING_ROOK_ARRIVE,
+                        WHITE_CASTLE_KING_ROOK_ARRIVE);
+            }
+        }
+
+        chessBoard.movePieceCapture(move.getSpaceIdToMove(),
+                move.getSpaceIdArriveAt(),
+                move.getSpaceIdCaptureAt());
+
+        if (move.isPromotion()) //make no further checks, shouldnt be invalid.
         {
             try{
-            promotionHandler(spaceIdArriveAt,
-                    choosePromotionPiece.apply(spaceIdArriveAt, PieceData.getColor(piece)));
+                promotionHandler(move.getSpaceIdArriveAt(),
+                        choosePromotionPiece.apply(move.getSpaceIdArriveAt(), PieceData.getColor(piece)));
             }
             catch(NullPointerException e){
-                promotionHandler(spaceIdArriveAt,
-                        DEFAULT_PROMOTION_FUNC.apply(spaceIdArriveAt, PieceData.getColor(piece)));
+                promotionHandler(move.getSpaceIdArriveAt(),
+                        DEFAULT_PROMOTION_FUNC.apply(move.getSpaceIdArriveAt(), PieceData.getColor(piece)));
             }
         }
+
+        if (move.isDoublePawnPush()){
+            currEnPassantTarget = move.getDoublePawnPushId();
+        }
+
         //endregion
 
         //region SAVE_GAME_P&P
@@ -568,17 +482,17 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         //endregion
         return true;
     }
-
     private void aSideWon() {
         if (!getPossibleMoves().isEmpty()) {
+
             // No checkmate/stalemate possible — check cheaper draws first
-            if (gameStats[HALF_MOVES_SICE_CAPTURE_OR_PAWN_MOVES] >= 100) {
+            if (gameProperties.getHalfMovesSinceCaptureOrPawnMove() >= 100) {
                 endGameCode = DRAW; return;
             }
             if (chessHistoryTracker.isThreeFoldRepitionFlag()) {
                 endGameCode = DRAW; return;
             }
-            if (!ChessBoard.isValidSpaceId(getKingToMoveSpaceId()))        {
+            if (!ChessBoard.isValidSpaceId(getKingToMoveSpaceId())) {
                 endGameCode = getCurrentColorToMove() == PieceData.WHITE ? WHITE_WON : BLACK_WON;
                 return;
             }
@@ -586,26 +500,23 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
             return;
         }
         // Only call spaceNotUnderThreat if moves are exhausted (expensive)
-        endGameCode = spaceUnderThreat(getKingToMoveSpaceId())
-                ? DRAW
-                : (gameProperties[SIDE_TO_MOVE] == PieceData.BLACK ? WHITE_WON : BLACK_WON);
+        endGameCode = spaceUnderThreat(getKingToMoveSpaceId(), getBoard().OCCUPIED, BitMasks.ALL_ONES)
+                ? (gameProperties.getSideToMove() == PieceData.BLACK ? WHITE_WON : BLACK_WON)
+                : DRAW;
     }
 
     private void finishTurn()
     {
-        chessHistoryTracker.setHash(hashGenerator.getCurrentHash());
-        chessHistoryTracker.pushTurn();
-
-        StateChangeListener.notifyListeners(turnEndListenerList, chessHistoryTracker.peekTurn());
+        DebugMode.debugPrint(this, gameProperties);
         //peek the turn just pushed.
 
         //region UPDATING_GAME_PROPERTIES_AND STATS
-        gameStats[HALF_MOVES_SICE_CAPTURE_OR_PAWN_MOVES]++;
-        gameProperties[SIDE_TO_MOVE] = !gameProperties[SIDE_TO_MOVE];//change move sid
+        gameProperties.incrementHalfMoves();
+        gameProperties.flipSideToMove();
         pushCurrEnPassantTarget();
         //endregion
         if (isDebuggable()) DebugMode.debugPrint(this, "Finish turn + side: " +
-                (gameProperties[SIDE_TO_MOVE] == ChessBoard.WHITE ?"white" : "black" ));
+                (gameProperties.getSideToMove() == ChessBoard.WHITE ?"white" : "black" ));
 
         generateBitMasks();
 
@@ -615,34 +526,18 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         generatePossibleMoves();
         //endregion
 //        StateChangeListener.<PropertiesStatsChange>notifyListeners(propertiesStatsChangeListenerList,         new PropertiesStatsChange(gameProperties, gameStats));
+        calculateHash();
+        chessHistoryTracker.pushTurn(this);
 
         tryEndGame();
+
+//        long tm = getThreatMap(getKingSpaceId(getCurrentColorToMove()), getCurrentColorToMove());
+//        BitMasks.printBitBoard(tm);
     }
 
     public void generateBitMasks(){
-        if (chessBoard == null){
-            System.out.println("IMPOSSIBLE");
-            return;
-        }
-        if (getCurrentColorToMove() == PieceData.WHITE) {
-            TO_MOVE_PIECES = chessBoard.getWhitePieceBitBoard();
-            NOT_TO_MOVE_PIECES = chessBoard.getBlackPieceBitBoard();
-        }else{
-            TO_MOVE_PIECES = chessBoard.getBlackPieceBitBoard();
-            NOT_TO_MOVE_PIECES = chessBoard.getWhitePieceBitBoard();
-        }
-        ANTI_TO_MOVE_PIECES = ~TO_MOVE_PIECES;
-        ANTI_NOT_TO_MOVE_PIECES = ~NOT_TO_MOVE_PIECES;
-        OCCUPIED = TO_MOVE_PIECES|NOT_TO_MOVE_PIECES;
-        EMPTY = ~OCCUPIED;
-
-        TO_MOVE_PIECES_AND_ENPASSANT = TO_MOVE_PIECES |
-                BitMasks.getSingleSpaceBitBoard(getEnpassantTarget());
-
-        NOT_TO_MOVE_PIECES_AND_ENPASSANT = NOT_TO_MOVE_PIECES |
-                BitMasks.getSingleSpaceBitBoard(getEnpassantTarget());
-    };
-
+        getBoard().generateBitMasks(getCurrentColorToMove(), getEnpassantTarget());
+    }
     private void tryEndGame(){
         aSideWon();
         if (endGameCode != INDETERMINATE)
@@ -651,17 +546,17 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
 
     private void endGame() {
         if (!configurations.isAllowGameEnd()) return; //game cant end. assume is a simulation.
-
-        if (endGameCode == WHITE_WON) {
-            System.out.println("WHITE WON");
-        } else if (endGameCode == BLACK_WON) {
-            System.out.println("BLACK WON");
-        } else if (endGameCode == DRAW) {
-            System.out.println("DRAW");
-        } else {
-            System.out.println("NO REASON. ");
-        }
-        if (isDebuggable()) DebugMode.debugPrint(this, chessHistoryTracker);
+//
+//        if (endGameCode == WHITE_WON) {
+//            System.out.println("WHITE WON");
+//        } else if (endGameCode == BLACK_WON) {
+//            System.out.println("BLACK WON");
+//        } else if (endGameCode == DRAW) {
+//            System.out.println("DRAW");
+//        } else {
+//            System.out.println("NO REASON. ");
+//        }
+//        if (isDebuggable()) DebugMode.debugPrint(this, chessHistoryTracker);
         //System.exit(0);
     }
 
@@ -671,22 +566,45 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
 
         if(chessHistoryTracker.isEmpty()) throw new OutOfOldTurns("");
 
-        GameStateChanges gameStateChanges = chessHistoryTracker.popTurn();
-        chessHistoryTracker.clearCurrentTurn();
+        MinimalChessGame gameStateChanges = chessHistoryTracker.popTurn();
 
-        this.gameStats = gameStateChanges.getGameStats();
-        this.gameProperties = gameStateChanges.getGameProperties();
+        setGame(gameStateChanges);
 
-        chessBoard.undoBoardState(gameStateChanges.getBoardStateChanges()); //throws nullpointerexcep
+    }
 
-        //region GENERATE_POSSIBLE_MOVES
-        //generate possible moves after changing side.
-        // Doing it this way ensure when a new moves is generated, new piece location information is taken into account
-        possibleMoves.setPossibleMoves(gameStateChanges.getPossibleMoves());
-        //generatePossibleMoves();
-        //endregion
+    protected void setGame(MinimalChessGame src){
+//        this.chessHistoryTracker; //dont copy this
+        this.configurations = src.configurations;
+        this.choosePromotionPiece = src.choosePromotionPiece;
+        this.hashGenerator = src.hashGenerator;
+        this.hs = new HashContainer(src.hs.getHash());
+        // Deep copies
+        this.gameProperties = src.gameProperties.getCopy();
+        this.currEnPassantTarget = src.currEnPassantTarget;
+        this.endGameCode = src.endGameCode;
 
-        StateChangeListener.notifyListeners(undoTurnListenerList, gameStateChanges);
+        // ChessBoard must define its own clone / copy
+        this.chessBoard = src.chessBoard.cloneBoard();
+
+        // Possible moves snapshot
+        this.possibleMoves = new PossibleMoves(src.possibleMoves);
+
+    }
+
+    protected void setGameNonCopy(MinimalChessGame src){
+        this.configurations = src.configurations;
+        this.choosePromotionPiece = src.choosePromotionPiece;
+        this.hashGenerator = src.hashGenerator;
+        this.hs = src.hs;
+        this.gameProperties = src.gameProperties.getCopy();
+
+        this.currEnPassantTarget = src.currEnPassantTarget;
+        this.endGameCode = src.endGameCode;
+
+        this.chessBoard = src.chessBoard;
+
+        // Possible moves snapshot
+        this.possibleMoves = src.possibleMoves;
     }
     //endregion
 
@@ -698,27 +616,10 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         chessBoard.addMoveListener(stateChangeListener);
     }
 
-    public void addPropertiesStatsChangeListener(StateChangeListener<PropertiesStatsPossibleMovesChange> listener){
-        propertiesStatsChangeListenerList.add(listener);
-    }
-
-    public void addTurnEndListener(StateChangeListener<GameStateChanges> listener){
-        turnEndListenerList.add(listener);
-    }
-
-    public void addUndoTurnListener(StateChangeListener<GameStateChanges> listener){
-        undoTurnListenerList.add(listener);
-    }
     //endregion
 
     //region CONFIGS+DEBUG
     public void updateConfigurations(){
-        if (chessBoard instanceof  ChessBoardUI){
-            if (configurations.isEnableBoardGraphic())
-                ((ChessBoardUI) chessBoard).enableGraphic();
-            else
-                ((ChessBoardUI) chessBoard).disableGraphic();
-        }
 
         if (configurations.isDebugMode()){
             chessBoard.enableDebugMode();
@@ -736,5 +637,19 @@ public class MinimalChessGame<Board extends ChessBoard> implements Debuggable {
         return configurations.isDebugMode();
     }
     //endregion
+
+    public HashContainer getHashOfPosition(){
+        return hs;
+    }
+
+    public void calculateHash(){
+        hs = hashGenerator.getCurrentHash();
+    }
+
+    public MinimalChessGame cloneGame(){
+        MinimalChessGame game = new MinimalChessGame();
+        game.setGame(this);
+        return game;
+    }
 }
 
