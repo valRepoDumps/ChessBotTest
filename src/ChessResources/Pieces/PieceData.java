@@ -7,14 +7,14 @@ import ChessResources.PreCalc;
 
 import javax.swing.*;
 
-public abstract class PieceData implements PieceConsts{
+public class PieceData implements PieceConsts{
 
     public static final boolean BLACK = false;
     public static final boolean WHITE = true;
 
 
     //public static final short EMPTY_SPACE = 0;
-    public final static int PIECES_DIFF = 6;
+    public final static short PIECES_DIFF = 6;
 
     public static final short PAWN = 0;
     public static final short KNIGHT = 1;
@@ -103,10 +103,12 @@ public abstract class PieceData implements PieceConsts{
         this.graphic = new ImageIcon("resources/ChessBoard/ChessPieces/" + this.name + ".png");
     }
 
-    public abstract PieceData clone();
-    public abstract PieceData getUniqueClone();
-    public abstract void getPossibleMoves(MinimalChessGame<? extends ChessBoard>game,
-                                 int spaceId, ChessSpaces spaces);
+    public PieceData clone(){
+        return new PieceData(this);
+    }
+    public PieceData getUniqueClone(){
+        return new PieceData(this);
+    }
 
     public short getPieceId() {
         return pieceId;
@@ -135,24 +137,13 @@ public abstract class PieceData implements PieceConsts{
 
     public static boolean isValidPieceId(int pieceId){
 
-        return pieceId < PieceData.MAX_PIECES &&  PreCalc.PIECE_ID_TO_PIECE_DATA_MAP[pieceId] != PieceConsts.NO_PIECE;
+        return pieceId < PieceData.MAX_PIECES && PreCalc.PIECE_ID_TO_PIECE_DATA_MAP[pieceId] != PieceConsts.NO_PIECE;
     }
 
     public static String getName(int pieceId){
         return PreCalc.PIECE_ID_TO_PIECE_DATA_MAP[pieceId].getName();
     }
 
-    public static void getPossibleMoves(MinimalChessGame<? extends ChessBoard> game,
-                                        int pieceId, int spaceId,
-                                        ChessSpaces spaces){
-        PreCalc.PIECE_ID_TO_PIECE_DATA_MAP[pieceId].getPossibleMoves(game, spaceId, spaces);
-    }
-
-    public static ChessSpaces getPossibleMoves(MinimalChessGame<? extends ChessBoard> game, int pieceId, int spaceId){
-        ChessSpaces spaces = new ChessSpaces();
-        getPossibleMoves(game, pieceId, spaceId, spaces);
-        return spaces;
-    }
     public static PieceData makePiece(int pieceId)
     {
         return switch (pieceId) {
@@ -174,6 +165,11 @@ public abstract class PieceData implements PieceConsts{
 
     public static int convertPieceIdToArrayIdx(short pieceId){
         return pieceId;
+    }
+
+    public static short getType(short pieceId){
+        if (pieceId < PIECES_DIFF) return pieceId;
+        else return (short) (pieceId - PIECES_DIFF);
     }
 }
 
