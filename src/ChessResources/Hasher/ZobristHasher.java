@@ -1,15 +1,15 @@
 package ChessResources.Hasher;
 
+import ChessLogic.Configurations.PropertiesStats;
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.Pieces.PieceData;
-import ChessResources.Pieces.PieceDatas;
+import ChessResources.PreCalc;
 
-import java.util.Map;
 import java.util.Random;
 
-public final class ZobristHasher<Board extends ChessBoard> {
-    long[] hashList = new long[Board.BOARD_SIZE*Board.BOARD_SIZE*PieceDatas.TOTAL_PIECES];
+public final class ZobristHasher {
+    long[] hashList = new long[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE*PieceData.TOTAL_PIECES];
 
     long[] castlingRights = new long[16];
     long sideToMoveIsBlack;
@@ -41,41 +41,29 @@ public final class ZobristHasher<Board extends ChessBoard> {
         }
     }
 
-    private int translateGameCastlingRights(boolean[] gp){
-            return (gp[MinimalChessGame.WHITE_CASTLE_KING]  ? 1 : 0)
-                    | (gp[MinimalChessGame.WHITE_CASTLE_QUEEN] ? 2 : 0)
-                    | (gp[MinimalChessGame.BLACK_CASTLE_KING]  ? 4 : 0)
-                    | (gp[MinimalChessGame.BLACK_CASTLE_QUEEN] ? 8 : 0);
+    private int translateGameCastlingRights(PropertiesStats ps){
+            return ps.getCastlingFlag();
     }
 
-    public long getHashWithSpaceIdAndPiece(int spaceId, int pieceId){
-        return hashList[spaceId*PieceDatas.TOTAL_PIECES + PieceDatas.convertPieceIdToArrayIdx(pieceId)];}
+    public long getHashWithSpaceIdAndPiece(int spaceId, short pieceId){
+        return hashList[spaceId*PieceData.TOTAL_PIECES + PieceData.convertPieceIdToArrayIdx(pieceId)];}
 
-    public long getGameHash(MinimalChessGame<Board> game) {
+    public long getGameHash(MinimalChessGame game){
         long key = 0L;
 
-        for (Map.Entry<PieceData, Integer> entry : game.chessBoard.currPieceLocationWhite.entrySet())
-        {
-            int startSquare = entry.getValue();
-            PieceData piece = entry.getKey();
-
-            key^=getHashWithSpaceIdAndPiece(startSquare, piece.getPieceId());
+        for (short pieceId : PreCalc.ALL_PIECES){
+            for (long move = game.getBoard().getBitBoard(PieceData.convertArrayIdxToPieceId(pieceId));
+                 move != 0; move&=move-1){
+                key^=getHashWithSpaceIdAndPiece(Long.numberOfTrailingZeros(move), pieceId);
+            }
         }
 
-        for (Map.Entry<PieceData, Integer> entry : game.chessBoard.currPieceLocationBlack.entrySet())
-        {
-            int startSquare = entry.getValue();
-            PieceData piece = entry.getKey();
-
-            key^=getHashWithSpaceIdAndPiece(startSquare, piece.getPieceId());
-        }
-
-        if (game.getGameProperties()[MinimalChessGame.SIDE_TO_MOVE] == Board.BLACK){
+        if (game.getGameProperties().getSideToMove() == ChessBoard.BLACK){
             key ^= sideToMoveIsBlack;
         }
 
-        if(game.getGameStats()[MinimalChessGame.ENPASSANT_TARGET] != MinimalChessGame.INVALID_ENPASSANT_TARGET){
-            key^=fileOfValidEnPassant[Board.getRow(game.getGameStats()[MinimalChessGame.ENPASSANT_TARGET])];
+        if(game.getGameProperties().canEnPassant()){
+            key^=fileOfValidEnPassant[ChessBoard.getRow(game.getGameProperties().getEnPassantTarget())];
         }
 
         key^=castlingRights[translateGameCastlingRights(game.getGameProperties())];

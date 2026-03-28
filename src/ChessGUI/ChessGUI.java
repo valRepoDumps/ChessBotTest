@@ -2,8 +2,8 @@ package ChessGUI;
 
 import ChessLogic.ChessGame;
 import ChessLogic.Debug.Tests;
-import ChessResources.ChessBoard.ChessBoardUI;
-import ChessResources.ChessHistoryTracker.BoardStateChanges.PropertiesStatsChange;
+import ChessResources.ChessBoard.ChessBoard;
+import ChessResources.ChessBoard.DrawBoard;
 import ChessResources.Pieces.PieceData;
 
 import javax.swing.*;
@@ -13,7 +13,7 @@ import java.awt.event.KeyEvent;
 import java.util.function.BiFunction;
 
 public class ChessGUI {
-    protected static ChessGame chessGame;
+    public ChessGame chessGame;
     public final int BOARD_PIXEL_SIZE;
     JPanel boardGraphic;
 
@@ -73,8 +73,6 @@ public class ChessGUI {
                 //System.out.println("ENTER pressed!");
                 try {
                     chessGame.undoTurn();
-                    System.out.println(new PropertiesStatsChange(chessGame.gameProperties, chessGame.gameStats));
-
                 }
                 catch (Exception ex){
                     System.out.println(ex.getMessage());
@@ -85,8 +83,8 @@ public class ChessGUI {
         //region CHESS_GAME_GRAPHICS
         chessGame = new ChessGame(this, choosePiecePromotionUI);
 
-        boardGraphic = chessGame.chessBoard.boardGraphic;
-        BOARD_PIXEL_SIZE = ChessBoardUI.BOARD_SIZE * ChessBoardUI.SQUARE_PIXEL_SIZE;
+        boardGraphic = chessGame.drawBoard.boardGraphic;
+        BOARD_PIXEL_SIZE = ChessBoard.BOARD_SIZE * DrawBoard.SQUARE_PIXEL_SIZE;
 
         boardGraphic.setPreferredSize(new Dimension(BOARD_PIXEL_SIZE, BOARD_PIXEL_SIZE));
         boardGraphic.setMaximumSize(boardGraphic.getPreferredSize());
@@ -106,7 +104,4 @@ public class ChessGUI {
         frame.setVisible(true);
     }
 
-    public int test(int depth){
-        return Tests.moveGenerationTest(depth, chessGame);
-    }
 }

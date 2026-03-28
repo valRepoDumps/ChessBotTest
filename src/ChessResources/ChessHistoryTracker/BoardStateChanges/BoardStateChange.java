@@ -1,29 +1,32 @@
 package ChessResources.ChessHistoryTracker.BoardStateChanges;
 
 import ChessResources.Pieces.PieceData;
-import ChessResources.Pieces.PieceDatas;
 
 public class BoardStateChange{
-    private PieceData piece;
+    private short piece;
     private int spaceIdArriveAt;
     private int spaceId;
+    private short pieceCaptured;
 
-    public BoardStateChange(PieceData piece, int spaceId, int spaceIdArriveAt)
+    public BoardStateChange(short piece, int spaceId,
+                            int spaceIdArriveAt, short pieceCaptured)
     {
-        this.piece = PieceDatas.getClone(piece); //should always be a copy.
+        this.piece = piece; //should always be a copy.
         this.spaceId = spaceId;
         this.spaceIdArriveAt = spaceIdArriveAt;
+        this.pieceCaptured = pieceCaptured;
     }
 
-    public PieceData getPiece(){return piece;}
+    public short getPiece(){return piece;}
     public int getSpaceIdArriveAt(){return spaceIdArriveAt;}
     public int getSpaceId(){return spaceId;}
+    public short getPieceCaptured(){return pieceCaptured;}
     @Override
     public String toString()
     {
-        if (piece == null){
+        if (!PieceData.isValidPieceId(piece)){
             return "null : " + spaceId +"->" + spaceIdArriveAt;
         }
-        return piece.getName() + ": " + spaceId + "->" + spaceIdArriveAt;
+        return PieceData.getName(piece) + ": " + spaceId + "->" + spaceIdArriveAt;
     }
 }
