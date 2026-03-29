@@ -30,7 +30,6 @@ public class MinimalChessGame implements Debuggable {
     public ChessBoard chessBoard;
     protected HashGenerator hashGenerator;
     HashContainer hs;
-    BiFunction<Integer, Boolean, Short> choosePromotionPiece;
 
     protected PossibleMoves possibleMoves;
 
@@ -41,40 +40,12 @@ public class MinimalChessGame implements Debuggable {
 
     //region GAME_PROPERTIES
     PropertiesStats gameProperties = new PropertiesStats();
-//    public static final int GAME_PROPERTIES_LEN = 5;
-//    public boolean[] gameProperties = new boolean[GAME_PROPERTIES_LEN];
-//
-//    public static int BLACK_CASTLE_QUEEN = 0;
-//    public static int BLACK_CASTLE_KING = 1;
-//
-//    public static int WHITE_CASTLE_QUEEN = 2;
-//    public static int WHITE_CASTLE_KING = 3;
-//
-//    public static int SIDE_TO_MOVE = 4;
-    //endregion
-    
-    //region GAME_STATS
-//    public static final int GAME_STATS_LEN = 5;
-//    public int[] gameStats = new int[GAME_STATS_LEN];
 
     private int currEnPassantTarget = INVALID_ENPASSANT_TARGET;
-
-//    public static int ENPASSANT_TARGET = 0; //spaceId format.
-//    public static final int HALF_MOVES_SICE_CAPTURE_OR_PAWN_MOVES = 1;
-//    public static final int TOTAL_MOVES_ELAPSED = 2;
-//    public static final int WHITE_KING_SPACEID = 3;
-//    public static final int BLACK_KING_SPACEID = 4;
 
     public static final int INVALID_ENPASSANT_TARGET = -1;
 
     //endregion
-
-    //region SAVE_GAME_OPCODE
-    public static final int NORMAL_MOVE = 0;
-    public static final int PROMOTION = 1;
-    public static final int ENPASSANT = 2;
-    //endregion
-
     //region ENDGAME_OPCODE
     private int endGameCode = INDETERMINATE;
     public static final int WHITE_WON = 0;
@@ -102,25 +73,6 @@ public class MinimalChessGame implements Debuggable {
     //endregion
 
     //region LAMBDAS
-    public static final BiFunction<Integer, Boolean, Short> DEFAULT_PROMOTION_FUNC =
-            (Integer _, Boolean color) -> {
-                if (color == PieceData.BLACK) return PieceData.BQUEEN;
-                else return PieceData.WQUEEN;
-            };
-
-//
-//    public final StateChangeListener<BoardStateChange> KING_SPACEID_LOGGER =
-//            (BoardStateChange boardStateChange)->{
-//                if (boardStateChange == null || !PieceData.isValidPieceId(boardStateChange.getPiece())) return;
-//
-//                if (boardStateChange.getPiece() == PieceData.WKING){
-//                    gameStats[WHITE_KING_SPACEID] = boardStateChange.getSpaceIdArriveAt();
-//                }
-//                else if (boardStateChange.getPiece() == PieceData.BKING){
-//                    gameStats[BLACK_KING_SPACEID] = boardStateChange.getSpaceIdArriveAt();
-//                }
-//            };
-
     //endregion
 
     //endregion
@@ -129,7 +81,6 @@ public class MinimalChessGame implements Debuggable {
     public MinimalChessGame(){}
     public MinimalChessGame(MinimalChessGame src) {
         this.configurations = src.configurations;
-        this.choosePromotionPiece = src.choosePromotionPiece;
         this.hashGenerator = src.hashGenerator;
         this.hs = new HashContainer(src.hs.getHash());
         // Deep copies
@@ -147,7 +98,7 @@ public class MinimalChessGame implements Debuggable {
     }
 
 
-    public MinimalChessGame(ChessBoard chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
+    public MinimalChessGame(ChessBoard chessBoard,
                             Configurations configurations)
     {
         this.hashGenerator = new HashGenerator( this);
@@ -155,7 +106,6 @@ public class MinimalChessGame implements Debuggable {
         this.configurations = configurations;
 
         this.chessBoard = chessBoard;
-        this.choosePromotionPiece = choosePromotionPiece;
 //
 //        this.chessBoard.addStateChangeListener(KING_SPACEID_LOGGER);
 
@@ -164,10 +114,10 @@ public class MinimalChessGame implements Debuggable {
         chessHistoryTracker.pushTurn(this);
     }
 
-    public MinimalChessGame(ChessBoard chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
+    public MinimalChessGame(ChessBoard chessBoard,
                             PropertiesStats gameProperties, Configurations configurations)
     {
-        this(chessBoard, choosePromotionPiece, configurations);
+        this(chessBoard, configurations);
 
         this.gameProperties = gameProperties;
 
@@ -178,11 +128,11 @@ public class MinimalChessGame implements Debuggable {
         chessHistoryTracker.pushTurn(this);
     }
     @SuppressWarnings("unused")
-    public MinimalChessGame(String fen, ChessBoard chessBoard, BiFunction<Integer, Boolean, Short> choosePromotionPiece,
+    public MinimalChessGame(String fen, ChessBoard chessBoard,
                             Configurations configurations)
     {
 
-        this(chessBoard, choosePromotionPiece, configurations);
+        this(chessBoard, configurations);
 
         updateConfigurations();
 
@@ -377,7 +327,6 @@ public class MinimalChessGame implements Debuggable {
 
     private void promotionHandler(int spaceId, short piece)
     {
-        //chessBoard.movePieceCapture(ChessBoard.INVALID_SPACE_ID, spaceId, spaceId);
         chessBoard.spawnPieceAt(spaceId, piece, getBoard().getPiece(spaceId));
     }
 
@@ -461,14 +410,7 @@ public class MinimalChessGame implements Debuggable {
 
         if (move.isPromotion()) //make no further checks, shouldnt be invalid.
         {
-            try{
-                promotionHandler(move.getSpaceIdArriveAt(),
-                        choosePromotionPiece.apply(move.getSpaceIdArriveAt(), PieceData.getColor(piece)));
-            }
-            catch(NullPointerException e){
-                promotionHandler(move.getSpaceIdArriveAt(),
-                        DEFAULT_PROMOTION_FUNC.apply(move.getSpaceIdArriveAt(), PieceData.getColor(piece)));
-            }
+            promotionHandler(move.getSpaceIdArriveAt(), move.getPromotionPieceId());
         }
 
         if (move.isDoublePawnPush()){
@@ -575,7 +517,6 @@ public class MinimalChessGame implements Debuggable {
     protected void setGame(MinimalChessGame src){
 //        this.chessHistoryTracker; //dont copy this
         this.configurations = src.configurations;
-        this.choosePromotionPiece = src.choosePromotionPiece;
         this.hashGenerator = src.hashGenerator;
         this.hs = new HashContainer(src.hs.getHash());
         // Deep copies
@@ -593,7 +534,6 @@ public class MinimalChessGame implements Debuggable {
 
     protected void setGameNonCopy(MinimalChessGame src){
         this.configurations = src.configurations;
-        this.choosePromotionPiece = src.choosePromotionPiece;
         this.hashGenerator = src.hashGenerator;
         this.hs = src.hs;
         this.gameProperties = src.gameProperties.getCopy();

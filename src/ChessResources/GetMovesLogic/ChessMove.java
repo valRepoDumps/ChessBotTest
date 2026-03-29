@@ -8,20 +8,28 @@ import java.util.Objects;
 public class ChessMove {
 
     public static final int PROMOTION_SHIFT = 7;
-    public static final int CAPTURE_SHIFT = 8;
-    public static final int ENPASSANT_SHIFT = 9;
-    public static final int CASTLING_SHIFT = 10;
+    public static final int CAPTURE_SHIFT = 14;
+    public static final int ENPASSANT_SHIFT = 15;
+    public static final int CASTLING_SHIFT = 16;
     public static final int BLACK_CASTLE_QUEEN_SIDE_SHIFT = CASTLING_SHIFT;
     public static final int WHITE_CASTLE_QUEEN_SIDE_SHIFT = CASTLING_SHIFT + 1;
     public static final int BLACK_CASTLE_KING_SIDE_SHIFT = CASTLING_SHIFT + 2;
     public static final int WHITE_CASTLE_KING_SIDE_SHIFT = CASTLING_SHIFT + 3;
 
     public static final long DOUBLE_PAWN_PUSH = 0b111111L;
-    public static final long PROMOTION = 1L<<PROMOTION_SHIFT;
+    public static final long PROMOTION = 0b11111L<<PROMOTION_SHIFT;
     public static final long CAPTURE = 1L<<CAPTURE_SHIFT;
     public static final long EN_PASSANT = 1L<<ENPASSANT_SHIFT;
 
-//    public static final long DOUBLE_PAWNPUS
+    public static final long PROMOTION_WROOK = PieceData.WROOK<<PROMOTION_SHIFT;
+    public static final long PROMOTION_WBISHOP = PieceData.WBISHOP<<PROMOTION_SHIFT;
+    public static final long PROMOTION_WKNIGHT = PieceData.WKNIGHT<<PROMOTION_SHIFT;
+    public static final long PROMOTION_WQUEEN = PieceData.WQUEEN<<PROMOTION_SHIFT;
+
+    public static final long PROMOTION_BROOK = PieceData.BROOK<<PROMOTION_SHIFT;
+    public static final long PROMOTION_BBISHOP = PieceData.BBISHOP<<PROMOTION_SHIFT;
+    public static final long PROMOTION_BKNIGHT = PieceData.BKNIGHT<<PROMOTION_SHIFT;
+    public static final long PROMOTION_BQUEEN = PieceData.BQUEEN<<PROMOTION_SHIFT;
 
     public static final long CASTLING = 0b1111L << CASTLING_SHIFT;
     public static final long BLACK_CASTLE_QUEEN_SIDE = 1L<<BLACK_CASTLE_QUEEN_SIDE_SHIFT;
@@ -122,7 +130,7 @@ public class ChessMove {
     public boolean isPromotion() {
         return (flags & PROMOTION) != 0;
     }
-
+    public short getPromotionPieceId(){return (short) ((flags & PROMOTION)>>PROMOTION_SHIFT);}
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -130,8 +138,8 @@ public class ChessMove {
         return spaceIdToMove == chessMove.spaceIdToMove
                 && spaceIdArriveAt == chessMove.spaceIdArriveAt
                 && spaceIdCaptureAt == chessMove.spaceIdCaptureAt
-                && pieceId == chessMove.pieceId;
-                //&& flags == chessMove.flags;
+                && pieceId == chessMove.pieceId
+                && flags == chessMove.flags;
     }
 
     @Override
@@ -153,6 +161,9 @@ public class ChessMove {
         }
         if (isDoublePawnPush()){
             str.append(" Double Pawn Push");
+        }
+        if (isPromotion()){
+            str.append(" Promotion");
         }
         return str.toString();
     }

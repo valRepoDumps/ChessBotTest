@@ -272,8 +272,8 @@ public class BitMasks {
         long P = getSingleSpaceBitBoard(spaceId);
         long pawnMoves;
         if (color == PieceData.WHITE) {
-            pawnMoves = (P >> (-ChessBoard.getOffsets(ChessBoard.NORTH_WEST))) & NOT_COL_MASKS[7];
-            pawnMoves |= (P >> (-ChessBoard.getOffsets(ChessBoard.NORTH_EAST))) & NOT_COL_MASKS[0];
+            pawnMoves = (P >>> (-ChessBoard.getOffsets(ChessBoard.NORTH_WEST))) & NOT_COL_MASKS[7];
+            pawnMoves |= (P >>> (-ChessBoard.getOffsets(ChessBoard.NORTH_EAST))) & NOT_COL_MASKS[0];
         }else{
             pawnMoves = (P << (ChessBoard.getOffsets(ChessBoard.SOUTH_WEST))) & NOT_COL_MASKS[7];
             pawnMoves |= (P << (ChessBoard.getOffsets(ChessBoard.SOUTH_EAST))) & NOT_COL_MASKS[0];
@@ -288,9 +288,9 @@ public class BitMasks {
 
         if (color == PieceData.WHITE){
             if (row == 0) return 0L;
-            pawnMoves = p >> (-ChessBoard.getOffsets(ChessBoard.NORTH));
+            pawnMoves = p >>> (-ChessBoard.getOffsets(ChessBoard.NORTH));
 //            if (row == 6){
-//                pawnMoves |= p >> (-ChessBoard.getOffsets(2, ChessBoard.NORTH));
+//                pawnMoves |= p >>> (-ChessBoard.getOffsets(2, ChessBoard.NORTH));
 //            }
         }else{
             if (row == 7) return 0L;
@@ -310,9 +310,9 @@ public class BitMasks {
 
     public static long preCalcKingMasks(int spaceId){
         long K = getSingleSpaceBitBoard(spaceId);
-        long kingMoves = (K >> (-ChessBoard.getOffsets(ChessBoard.NORTH_EAST))) & NOT_COL_MASKS[0];
+        long kingMoves = (K >>> (-ChessBoard.getOffsets(ChessBoard.NORTH_EAST))) & NOT_COL_MASKS[0];
 
-        kingMoves |= (K >> (-ChessBoard.getOffsets(ChessBoard.NORTH_WEST))) & NOT_COL_MASKS[7];
+        kingMoves |= (K >>> (-ChessBoard.getOffsets(ChessBoard.NORTH_WEST))) & NOT_COL_MASKS[7];
 
         kingMoves |= (K << (ChessBoard.getOffsets(ChessBoard.SOUTH_EAST))) & NOT_COL_MASKS[0];
 
@@ -320,11 +320,12 @@ public class BitMasks {
 
         kingMoves |= (K << (ChessBoard.getOffsets(ChessBoard.EAST))) & NOT_COL_MASKS[0];
 
-        kingMoves |= (K >> (-ChessBoard.getOffsets(ChessBoard.WEST))) &  NOT_COL_MASKS[7];
+        kingMoves |= (K >>> (-ChessBoard.getOffsets(ChessBoard.WEST))) &  NOT_COL_MASKS[7];
 
         kingMoves |= (K << ChessBoard.getOffsets(ChessBoard.SOUTH));
 
-        kingMoves |= (K >> (-ChessBoard.getOffsets(ChessBoard.NORTH)));
+        kingMoves |= (K >>> (-ChessBoard.getOffsets(ChessBoard.NORTH)));
+
         return kingMoves;
     }
 
@@ -337,17 +338,17 @@ public class BitMasks {
     public static long preCalcKnightMasks(int spaceId){
         long N = getSingleSpaceBitBoard(spaceId);
 
-        long knightMoves = (N >> (-ChessBoard.getNOffsets(ChessBoard.K_NE))) & NOT_COL_MASKS[0];
+        long knightMoves = (N >>> (-ChessBoard.getNOffsets(ChessBoard.K_NE))) & NOT_COL_MASKS[0];
 
-        knightMoves |= (N >> (-ChessBoard.getNOffsets(ChessBoard.K_NW))) & NOT_COL_MASKS[7];
+        knightMoves |= (N >>> (-ChessBoard.getNOffsets(ChessBoard.K_NW))) & NOT_COL_MASKS[7];
 
         knightMoves |= (N << (ChessBoard.getNOffsets(ChessBoard.K_SE))) & NOT_COL_MASKS[0];
 
         knightMoves |= (N << (ChessBoard.getNOffsets(ChessBoard.K_SW))) & NOT_COL_MASKS[7];
 
-        knightMoves |= (N >> (-ChessBoard.getNOffsets(ChessBoard.K_EN))) & NOT_01_COL;
+        knightMoves |= (N >>> (-ChessBoard.getNOffsets(ChessBoard.K_EN))) & NOT_01_COL;
 
-        knightMoves |= (N >> (-ChessBoard.getNOffsets(ChessBoard.K_WN))) &  NOT_67_COL;
+        knightMoves |= (N >>> (-ChessBoard.getNOffsets(ChessBoard.K_WN))) &  NOT_67_COL;
 
         knightMoves |= (N << ChessBoard.getNOffsets(ChessBoard.K_ES)) & NOT_01_COL;
 

@@ -165,6 +165,7 @@ public class ChessBoard implements Debuggable {
     public static int getOffsets(int offset, short dir){
         return directionOffsets[dir]*offset;
     }
+
     public static int getOffsets(short dir){
         return getOffsets(1, dir);
     }

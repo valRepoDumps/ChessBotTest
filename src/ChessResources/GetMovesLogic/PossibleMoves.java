@@ -9,7 +9,7 @@ import java.util.*;
 public class PossibleMoves {
     //region PRE_CONSTRUCTOR
     //region DATAS
-    public static int MAX_POSSIBLE_MOVES =  ChessBoard.TOTAL_SPACES;
+    public static int MAX_POSSIBLE_MOVES =  2*ChessBoard.TOTAL_SPACES;
     private ChessMove[] possibleMoves = new ChessMove[MAX_POSSIBLE_MOVES];
     public int currLen = 0;
     protected MinimalChessGame chessGame;
@@ -92,6 +92,18 @@ public class PossibleMoves {
         for (int i = 0; i < currLen; ++i){
             ChessMove move = possibleMoves[i];
             if (move.spaceIdToMove == spaceId && move.spaceIdArriveAt == spaceIdArriveAt){
+                return move;
+            }
+        }
+        return null;
+    }
+
+    public ChessMove getMovePromotion(int spaceId, int spaceIdArriveAt, short pieceIdPromotion){
+        for (int i = 0; i < currLen; ++i){
+            ChessMove move = possibleMoves[i];
+            if (move.spaceIdToMove == spaceId
+                    && move.spaceIdArriveAt == spaceIdArriveAt
+                    && move.getPromotionPieceId() == pieceIdPromotion){
                 return move;
             }
         }

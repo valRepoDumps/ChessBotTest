@@ -11,14 +11,15 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class ChessGUI {
     public ChessGame chessGame;
     public final int BOARD_PIXEL_SIZE;
     JPanel boardGraphic;
 
-    BiFunction<Integer, Boolean, Short> choosePiecePromotionUI =
-            (Integer _, Boolean color) ->    {
+    Function<Boolean, Short> choosePiecePromotionUI =
+            (Boolean color) ->    {
                 String[] options = {"Queen", "Rook", "Bishop", "Knight"};
 
                 int choice = JOptionPane.showOptionDialog(

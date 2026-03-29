@@ -11,12 +11,11 @@ public class MovesGeneration {
 
     public static void generateMoves(MinimalChessGame game){
         getKingMoves(game);
-        long getKingThreats = -1L;
-            getQueenMovesLog(game, getKingThreats);
-            getKnightMovesLog(game, getKingThreats);
-            getBishopMovesLog(game, getKingThreats);
-            getPawnMovesLog(game, getKingThreats);
-            getRookMovesLog(game, getKingThreats);
+        getQueenMovesLog(game);
+        getKnightMovesLog(game);
+        getBishopMovesLog(game);
+        getPawnMovesLog(game);
+        getRookMovesLog(game);
     }
 
     public static void getKingMoves(MinimalChessGame game){
@@ -39,8 +38,6 @@ public class MovesGeneration {
         for (long i = kBoard; i != 0; i &= (i-1)){
             spaceId = Long.numberOfTrailingZeros(i);
             long moves = getKingMoves(game.getBoard().ANTI_TO_MOVE_PIECES, spaceId);
-
-//            printBitBoard(moves);
             for (long move = moves&game.getBoard().EMPTY; move != 0; move &= move-1){
                 //check non-capture moves
                 int spcId = Long.numberOfTrailingZeros(move);
@@ -88,7 +85,7 @@ public class MovesGeneration {
 
     }
 
-    public static void getQueenMovesLog(MinimalChessGame game, long setMoves){
+    public static void getQueenMovesLog(MinimalChessGame game){
         short pieceId;
         if (game.getCurrentColorToMove() == PieceData.WHITE){
             pieceId = PieceData.WQUEEN;
@@ -100,11 +97,11 @@ public class MovesGeneration {
         int spaceId;
         for (long i = qBoard; i != 0; i &= (i-1)){
             spaceId = Long.numberOfTrailingZeros(i);
-            getQueenMovesLog(game, spaceId, pieceId, setMoves);
+            getQueenMovesLog(game, spaceId, pieceId);
         }
     }
 
-    public static void getKnightMovesLog(MinimalChessGame game, long setMoves){
+    public static void getKnightMovesLog(MinimalChessGame game){
         short pieceId;
         if (game.getCurrentColorToMove() == PieceData.WHITE){
             pieceId = PieceData.WKNIGHT;
@@ -116,7 +113,7 @@ public class MovesGeneration {
         int spaceId;
         for (long i = kBoard; i != 0; i &= (i-1)){
             spaceId = Long.numberOfTrailingZeros(i);
-            long moves = getKnightMoves(game.getBoard().ANTI_TO_MOVE_PIECES, spaceId) & setMoves;
+            long moves = getKnightMoves(game.getBoard().ANTI_TO_MOVE_PIECES, spaceId);
 
             //adding non capture moves
             addBitBoardToPossibleMoves(game, spaceId, moves&game.getBoard().EMPTY, pieceId);
@@ -128,7 +125,7 @@ public class MovesGeneration {
         }
     }
 
-    public static void getBishopMovesLog(MinimalChessGame game, long setMoves){
+    public static void getBishopMovesLog(MinimalChessGame game){
         short pieceId;
         if (game.getCurrentColorToMove() == PieceData.WHITE){
             pieceId = PieceData.WBISHOP;
@@ -140,11 +137,11 @@ public class MovesGeneration {
         int spaceId;
         for (long i = bBoard; i != 0; i &= (i-1)){
             spaceId = Long.numberOfTrailingZeros(i);
-            getBishopMovesLog(game, spaceId, pieceId, setMoves);
+            getBishopMovesLog(game, spaceId, pieceId);
         }
     }
 
-    public static void getRookMovesLog(MinimalChessGame game, long setMoves){
+    public static void getRookMovesLog(MinimalChessGame game){
         short pieceId;
         if (game.getCurrentColorToMove() == PieceData.WHITE){
             pieceId = PieceData.WROOK;
@@ -156,11 +153,11 @@ public class MovesGeneration {
         int spaceId;
         for (long i = rBoard; i != 0; i &= (i-1)){
             spaceId = Long.numberOfTrailingZeros(i);
-            getRookMovesLog(game, spaceId, pieceId, setMoves);
+            getRookMovesLog(game, spaceId, pieceId);
         }
     }
 
-    public static void getPawnMovesLog(MinimalChessGame game, long setMoves){
+    public static void getPawnMovesLog(MinimalChessGame game){
         short pieceId;
         int idx;
         int beginRow;
@@ -178,12 +175,12 @@ public class MovesGeneration {
         int spaceId;
         for (long occ = pBoard; occ != 0 ; occ &= (occ - 1)) {
             spaceId = Long.numberOfTrailingZeros(occ);
-            getPawnMovesLog(game, idx, beginRow, spaceId, pieceId, setMoves);
+            getPawnMovesLog(game, idx, beginRow, spaceId, pieceId);
         }
     }
 
     private static void getPawnMovesLog(MinimalChessGame game,
-                                        int idx, int beginRow, int spaceId, short pieceId, long setMoves){
+                                        int idx, int beginRow, int spaceId, short pieceId){
         int promotionRow;
         int enpassantDir;
 
@@ -191,41 +188,63 @@ public class MovesGeneration {
             promotionRow = 1;
             enpassantDir = ChessBoard.directionOffsets[ChessBoard.SOUTH];
         }else{
-            promotionRow = ChessBoard.BOARD_SIZE-1;
+            promotionRow = ChessBoard.BOARD_SIZE-2;
             enpassantDir = ChessBoard.directionOffsets[ChessBoard.NORTH];
         }
 
-        long promotion = ChessBoard.getRow(spaceId) == promotionRow ? ChessMove.PROMOTION : 0;
+        boolean promotion = ChessBoard.getRow(spaceId) == promotionRow;
         long moves = BitMasks.PAWN_CAPTURE_MASKS[idx][spaceId] &
-                game.getBoard().NOT_TO_MOVE_PIECES & setMoves;
+                game.getBoard().NOT_TO_MOVE_PIECES;
         int spaceIdCaptureAt;
 
         for (long move = moves; move != 0; move &= move-1) {
-            addMove(game, spaceId,
-                    Long.numberOfTrailingZeros(move),
-                    pieceId,
-                    promotion|ChessMove.CAPTURE);
+            spaceIdCaptureAt = Long.numberOfTrailingZeros(move);
+            if (!promotion) {
+                addMove(game, spaceId,
+                        spaceIdCaptureAt,
+                        pieceId,
+                        ChessMove.CAPTURE);
+            }else{
+                addPromotionMoves(game,
+                        spaceId,
+                        spaceIdCaptureAt,
+                        spaceIdCaptureAt,
+                        pieceId,
+                        ChessMove.CAPTURE);
+            }
         }
 
         moves = BitMasks.PAWN_CAPTURE_MASKS[idx][spaceId] &
-                game.getBoard().ENPASSANT & setMoves;
+                game.getBoard().ENPASSANT;
 
         for (long move = moves; move != 0; move &= move-1) {
             spaceIdCaptureAt = Long.numberOfTrailingZeros(move);
-            addMove(game, spaceId,                 // ← fixed: pawn's actual current square
-                    spaceIdCaptureAt,
-                    spaceIdCaptureAt + enpassantDir,              // captured pawn's square
-                    pieceId,
-                    promotion | ChessMove.CAPTURE | ChessMove.EN_PASSANT);
+            if (!promotion) {
+                addMove(game, spaceId,                 // ← fixed: pawn's actual current square
+                        spaceIdCaptureAt,
+                        spaceIdCaptureAt + enpassantDir,              // captured pawn's square
+                        pieceId,
+                        ChessMove.CAPTURE | ChessMove.EN_PASSANT);
+            }else{
+                addPromotionMoves(game, spaceId,                 // ← fixed: pawn's actual current square
+                        spaceIdCaptureAt,
+                        spaceIdCaptureAt + enpassantDir,              // captured pawn's square
+                        pieceId,
+                        ChessMove.CAPTURE | ChessMove.EN_PASSANT);
+            }
         }
 
         long forward = BitMasks.PAWN_MOVEMENT_MASKS[idx][spaceId]
-                & game.getBoard().EMPTY
-                & setMoves;
+                & game.getBoard().EMPTY;
         moves = forward;
 
         for (long move = moves; move != 0; move &= move-1) {
-            addMove(game, spaceId, Long.numberOfTrailingZeros(move), pieceId, promotion);
+            spaceIdCaptureAt = Long.numberOfTrailingZeros(move);
+            if (!promotion) {
+                addMove(game, spaceId, spaceIdCaptureAt, pieceId);
+            }else{
+                addPromotionMoves(game, spaceId, spaceIdCaptureAt, spaceIdCaptureAt, pieceId, 0L);
+            }
         }
 
         long spaceIdBoard = BitMasks.getSingleSpaceBitBoard(spaceId);
@@ -241,20 +260,35 @@ public class MovesGeneration {
                         (ChessBoard.getOffsets(2, ChessBoard.SOUTH)) &
                         game.getBoard().EMPTY);
 
-            moves&=setMoves;
-
             for (long move = moves; move != 0; move &= move-1) {
                 int spaceIdArriveAt = Long.numberOfTrailingZeros(move);
                 addMove(game, spaceId, spaceIdArriveAt, pieceId,
-                        promotion | (spaceIdArriveAt + enpassantDir));
+                        (spaceIdArriveAt + enpassantDir));
+                //no need for promotion check, cause never promoting
             }
         }
     }
 
+    private static void addPromotionMoves(MinimalChessGame game,
+                                          int spaceId, int spaceIdArriveAt,
+                                          int spaceIdCaptureAt,
+                                          short pieceId, long flag){
+        if (PieceData.getColor(pieceId) == PieceData.WHITE) {
+            addMove(game, spaceId, spaceIdArriveAt, spaceIdCaptureAt, pieceId, flag | ChessMove.PROMOTION_WBISHOP);
+            addMove(game, spaceId, spaceIdArriveAt, spaceIdCaptureAt,pieceId, flag | ChessMove.PROMOTION_WROOK);
+            addMove(game, spaceId, spaceIdArriveAt, spaceIdCaptureAt,pieceId, flag | ChessMove.PROMOTION_WKNIGHT);
+            addMove(game, spaceId, spaceIdArriveAt, spaceIdCaptureAt,pieceId, flag | ChessMove.PROMOTION_WQUEEN);
+        }else{
+            addMove(game, spaceId, spaceIdArriveAt, spaceIdCaptureAt,pieceId, flag | ChessMove.PROMOTION_BBISHOP);
+            addMove(game, spaceId, spaceIdArriveAt, spaceIdCaptureAt,pieceId, flag | ChessMove.PROMOTION_BROOK);
+            addMove(game, spaceId, spaceIdArriveAt, spaceIdCaptureAt,pieceId, flag | ChessMove.PROMOTION_BKNIGHT);
+            addMove(game, spaceId, spaceIdArriveAt, spaceIdCaptureAt,pieceId, flag | ChessMove.PROMOTION_BQUEEN);
+        }
+    }
+
     public static void getRookMovesLog(MinimalChessGame game,
-                                       int spaceId, short pieceId, long setMoves){
-        long unRefinedMoves = getRookMoves(game.getBoard().OCCUPIED, spaceId)
-                &setMoves;
+                                       int spaceId, short pieceId){
+        long unRefinedMoves = getRookMoves(game.getBoard().OCCUPIED, spaceId);
 
         addBitBoardToPossibleMoves(game, spaceId,
                 unRefinedMoves & game.getBoard().EMPTY,
@@ -272,8 +306,8 @@ public class MovesGeneration {
     }
 
     public static void getBishopMovesLog(MinimalChessGame game,
-                                         int spaceId, short pieceId, long setMoves){
-        long unRefinedMoves = getBishopMoves(game.getBoard().OCCUPIED,spaceId) & setMoves;
+                                         int spaceId, short pieceId){
+        long unRefinedMoves = getBishopMoves(game.getBoard().OCCUPIED,spaceId);
         addBitBoardToPossibleMoves(game, spaceId,
                 unRefinedMoves & game.getBoard().EMPTY,
                 pieceId);
@@ -294,8 +328,8 @@ public class MovesGeneration {
     }
 
     public static void getQueenMovesLog(MinimalChessGame game,
-                                        int spaceId, short pieceId, long setMoves){
-        long unRefinedMoves = getQueenMoves(game.getBoard().OCCUPIED, spaceId) & setMoves;
+                                        int spaceId, short pieceId){
+        long unRefinedMoves = getQueenMoves(game.getBoard().OCCUPIED, spaceId);
 
 
         addBitBoardToPossibleMoves(game, spaceId,

@@ -32,7 +32,7 @@ public class Tests {
         int numPos = 0;
 
         PossibleMoves currPossibleMoves = game.getCurrentPossibleMoves().getClone();
-
+        assertNoMoveDuplicates(game, currPossibleMoves);
         for (int i = 0; i < currPossibleMoves.currLen; ++i){
             ChessMove move = currPossibleMoves.getMoves()[i];
             game.movePiece(move);
@@ -73,7 +73,8 @@ public class Tests {
     public static boolean assertNoMoveDuplicates(MinimalChessGame game,
                                                  PossibleMoves pm){
         HashMap<ChessMove, ChessMove> map = new HashMap<>();
-        for (ChessMove moves : pm.getMoves()){
+        for (int i = 0; i < pm.currLen; ++i){
+            ChessMove moves = pm.getMoves()[i];
             if (map.getOrDefault(moves, null) == null){
                 map.put(moves, moves);
             }else{
