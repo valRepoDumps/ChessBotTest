@@ -8,6 +8,8 @@ import ChessResources.Hasher.HashContainer;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+import static java.lang.System.exit;
+
 public class ChessHistoryTracker <ChessGame extends MinimalChessGame>{
     //region PRE_CONSTRUCTOR
     protected ArrayList<ChessGame> history = new ArrayList<>();
@@ -21,17 +23,19 @@ public class ChessHistoryTracker <ChessGame extends MinimalChessGame>{
 
     //region HELPERS
     public void pushTurn(ChessGame game) {
-        history.add((ChessGame) game.cloneGame());
+        //System.out.println("PUSHED GAME: " + game.toString());
+        history.add(game);
+        if (this.peekTurn() == null){
+            Thread.dumpStack();
+            exit(0);
+        }
     }
-
-
 
     @SuppressWarnings("unused")
     public int totalTurns(){
         return history.size();
     }
     public boolean isEmpty(){return history.isEmpty();}
-
 
     //region SETTERS
     public ChessGame peekTurn()

@@ -378,7 +378,6 @@ public class ChessBoard implements Debuggable {
     }
     //endregion
 
-
     //region UNDO_MOVE
     public void undoBoardState(ArrayList<BoardStateChange> boardStateChanges)
     {
@@ -495,6 +494,11 @@ public class ChessBoard implements Debuggable {
 
         CAN_CASTLE_QUEEN = board.CAN_CASTLE_QUEEN;
         CAN_CASTLE_KING = board.CAN_CASTLE_KING;
+
+        OCCUPIED_NO_KING = board.OCCUPIED_NO_KING;
+        TO_MOVE_THREATS_PIECE_ID = board.TO_MOVE_THREATS_PIECE_ID;
+
+        debugMode = board.debugMode;
     }
 
     public ChessBoard cloneBoard(){
@@ -505,6 +509,10 @@ public class ChessBoard implements Debuggable {
     }
 
     public void printBoard() {
+        System.out.print(this);
+    }
+
+    public String toString(){
         StringBuilder sb = new StringBuilder();
 
         for (int row = 0; row < BOARD_SIZE; row++) {
@@ -515,10 +523,8 @@ public class ChessBoard implements Debuggable {
             }
             sb.append('\n');
         }
-
-        System.out.print(sb.toString());
+        return sb.toString();
     }
-
     private static char pieceToUnicode(short piece) {
         return switch (piece) {
             case PieceData.WKING   -> '♔';
@@ -538,5 +544,4 @@ public class ChessBoard implements Debuggable {
             default -> '　'; // empty square
         };
     }
-
 }

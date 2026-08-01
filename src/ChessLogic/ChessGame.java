@@ -2,6 +2,7 @@ package ChessLogic;
 
 import ChessGUI.ChessGUI;
 import ChessLogic.Configurations.Configurations;
+import ChessLogic.Debug.DebugMode;
 import ChessResources.BitMasks;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.ChessBoard.DrawBoard;
@@ -9,6 +10,7 @@ import ChessResources.ChessErrors.OutOfOldTurns;
 import ChessResources.GetMovesLogic.ChessMove;
 import ChessResources.GetMovesLogic.PossibleMoves;
 import ChessResources.Pieces.PieceData;
+import Evaluation.Evaluation;
 
 import java.util.Arrays;
 import java.util.function.BiFunction;
@@ -42,13 +44,18 @@ public class ChessGame extends MinimalChessGame{
     }
 
     public ChessGame(ChessGUI chessGUI, Function<Boolean, Short> choosePromotionPiece) {
-        this("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", chessGUI,
+        this("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", chessGUI,
                 choosePromotionPiece, new Configurations(true, true, true));
+    }
+
+    public ChessGame() {
+
     }
 
     private void playerClick(int spaceId)
     {
-        System.out.println("Click: " + spaceId);
+        System.out.println("Clicked: " + spaceId);
+        //DebugMode.debugPrint(this, "Click: " + spaceId);
         short piece = chessBoard.getPiece(spaceId);
 
         //ensure valid choice before proceeding. Won't handle cases where sleected row exceed max and min
@@ -69,16 +76,15 @@ public class ChessGame extends MinimalChessGame{
 
             ChessMove move = possibleMoves.getMove(selectedSpaceId, spaceId);
             for (int i = 0; i < possibleMoves.currLen; ++i){
-                System.out.println(possibleMoves.getMoves()[i]);
+                DebugMode.debugPrint(this, possibleMoves.getMoves()[i]);
             }
             if (move != null) {
                 if (move.isPromotion()) {
-                    System.out.println(move.getPromotionPieceId());
+                    DebugMode.debugPrint(this, move.getPromotionPieceId());
                     short pieceId = promotionFunc.apply(this.getCurrentColorToMove());
-                    System.out.println(pieceId);
+                    DebugMode.debugPrint(this, pieceId);
                     move = possibleMoves.getMovePromotion(selectedSpaceId, spaceId, pieceId);
                 }
-                System.out.println(move);
                 movePiece(move);
                 selectedSpaceId = INVALID_SPACE_ID;
             }
@@ -107,6 +113,7 @@ public class ChessGame extends MinimalChessGame{
     @Override
     public boolean movePiece(ChessMove move){
         boolean a = super.movePiece(move);
+        //DebugMode.debugPrint(this, "Best Move: " + eval.bestMove.toString());
         drawBoard.updateBoardGraphic();
         return a;
     }
@@ -114,14 +121,16 @@ public class ChessGame extends MinimalChessGame{
     @Override
     protected void setGame(MinimalChessGame src){
         super.setGame(src);
-        drawBoard.setBoard(chessBoard);
-        drawBoard.updateBoardGraphic();
+        if (drawBoard != null) {
+            drawBoard.setBoard(chessBoard);
+            drawBoard.updateBoardGraphic();
+        }
     }
 
     @Override
-    protected void setGameNonCopy(MinimalChessGame src){
-        super.setGame(src);
-        drawBoard.setBoard(chessBoard);
-        drawBoard.updateBoardGraphic();
+    public ChessGame cloneGame(){
+        ChessGame game = new ChessGame();
+        game.setGame(this);
+        return game;
     }
 }
