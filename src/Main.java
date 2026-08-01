@@ -7,32 +7,13 @@ import ChessLogic.MinimalChessGame;
 import ChessResources.BitMasks;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.Pieces.PieceData;
+import Evaluation.Evaluation;
 
 
 void main() {
-//    ChessGUI gui = new ChessGUI();
-//    int num = Tests.moveGenerationTest(3, gui.chessGame);
-//    System.out.println(num);
-//    3-1034 ms
-//    2-460 ms
-
-    MinimalChessGame game = new MinimalChessGame(
-     "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
-            new ChessBoard(),
-            new Configurations(true, false, true));
-
-    long start = System.nanoTime();
-    int[] returnVals = Tests.moveGenerationTest(3, game);
-    long end = System.nanoTime();
-    double durationMs = (end-start) / 1_000_000.0;
-    System.out.println("Num Pos: " + returnVals[Tests.TOTAL_MOVES]);
-    System.out.println("Num Capture: " + returnVals[Tests.TOTAL_CAPTURE_MOVES]);
-    System.out.println("Num EnPassant: " + returnVals[Tests.TOTAL_ENPASSANT_MOVES]);
-    System.out.println("Num Castles: " + returnVals[Tests.TOTAL_CASTLING_MOVES]);
-    System.out.println("Num Promotions: " + returnVals[Tests.TOTAL_PROMOTION_MOVES]);
-    System.out.println(" Time: "+ durationMs + " ms");
-
-//    System.out.println(game.getBoard().getBitBoard(PieceData.WPAWN));
+    ChessGUI gui = new ChessGUI("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    Evaluation evaluator = new Evaluation(3);
+    evaluator.registerBlackEvaluator(gui.chessGame);
 
     //3-8902/ 377 -300 - 191 - 130 - 65 - 46 - 39
     //4-197281/ 2798 - 1600 - 2500 - 1500 - 700 - 470

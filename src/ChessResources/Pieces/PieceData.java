@@ -122,29 +122,29 @@ public class PieceData implements PieceConsts{
         return graphic;
     }
 
-    public static ImageIcon getGraphic(int pieceId){
+    public static ImageIcon getGraphic(short pieceId){
         return PreCalc.PIECE_ID_TO_PIECE_DATA_MAP[pieceId].getGraphic();
     }
 
-    public static int getOppositeColor(int pieceId){
+    public static int getOppositeColor(short pieceId){
         if (getColor(pieceId) == BLACK) return pieceId | PIECES_DIFF;
         else return pieceId ^ PIECES_DIFF;
     }
-    public static boolean getColor(int pieceId){
+    public static boolean getColor(short pieceId){
         return (pieceId/PIECES_DIFF) == 0 ? BLACK:WHITE;
     }
     //endregion
 
-    public static boolean isValidPieceId(int pieceId){
+    public static boolean isValidPieceId(short pieceId){
 
         return pieceId < PieceData.MAX_PIECES && PreCalc.PIECE_ID_TO_PIECE_DATA_MAP[pieceId] != PieceConsts.NO_PIECE;
     }
 
-    public static String getName(int pieceId){
+    public static String getName(short pieceId){
         return PreCalc.PIECE_ID_TO_PIECE_DATA_MAP[pieceId].getName();
     }
 
-    public static PieceData makePiece(int pieceId)
+    public static PieceData makePiece(short pieceId)
     {
         return switch (pieceId) {
             case PieceData.BPAWN -> getUniqueClone(BPAWN_DATA);

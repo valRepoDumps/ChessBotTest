@@ -4,7 +4,6 @@ public class Configurations {
     private boolean enableBoardGraphic;
     private boolean debugMode;
     private boolean allowGameEnd;
-
     public Configurations(){
         this(true,true,true);
     }
