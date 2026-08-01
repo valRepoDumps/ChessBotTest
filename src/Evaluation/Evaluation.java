@@ -168,7 +168,7 @@ public class Evaluation {
                 //System.out.println(currScore + " " + PieceData.getName(piece) + " " + sqr + " " + game.getGameProperties().getSideToMove());
             }
         }
-//        System.out.println("End evaluation");
+        //System.out.println("End evaluation");
         return currScore;
     }
 
@@ -181,8 +181,13 @@ public class Evaluation {
     }
 
     private void blackMoveEvaluator(MinimalChessGame game){
+        System.out.println("Black Eval: " + evaluateGame(game));
         negaMaxSearch(game);
         game.movePiece(bestMove);
+        if (game.getCurrentColorToMove() == PieceData.BLACK){
+            System.out.println("NO MOVES FOUND??");
+        }
+        System.out.println("White Eval: " + evaluateGame(game));
     }
 
     private void negaMaxSearch(MinimalChessGame game){
@@ -191,6 +196,7 @@ public class Evaluation {
             System.out.println("GAME IS NULL\n");
         }
         assert game != null;
+        System.out.println("starting new eval rounds");
         MinimalChessGame testGame = game.cloneMinimalGame();
         testGame.changeConfigurations(new Configurations(false, false, false));
         negaMaxSearch(testGame, depth, NEG_INF_SCORE, -NEG_INF_SCORE, true);
@@ -203,7 +209,13 @@ public class Evaluation {
     }
 
     int negaMaxSearch(MinimalChessGame game, int depth, int alpha, int beta, boolean isRootCall){
-        System.out.println(depth + " " + alpha +" " + beta + " " + isRootCall);
+        //System.out.println(depth + " " + alpha +" " + beta + " " + isRootCall);
+        if (game.sideWon() != MinimalChessGame.INDETERMINATE){
+            if (game.sideWon() == MinimalChessGame.DRAW) return 0;
+            return NEG_INF_SCORE/2 - depth; // side to move has been checkmated
+        }
+
+
         if (depth == 0) {
             return evaluateGame(game);
         }
@@ -215,8 +227,12 @@ public class Evaluation {
         PossibleMoves currPossibleMoves = game.getCurrentPossibleMoves().getClone();
         for (int i = 0; i < currPossibleMoves.currLen; ++i){
             ChessMove move = currPossibleMoves.getMoves()[i];
+            System.out.println("Evaluating: " + move);
+            System.out.println(game.getBoard().toString());
             String beforeMoves2 = game.getBoard().toString();
             game.movePiece(move);
+            System.out.println("Moved.");
+            System.out.println(game.getBoard().toString());
             String afterMove = game.getBoard().toString();
             int score = -negaMaxSearch(game, depth-1, -beta, -alpha, false);
             try {

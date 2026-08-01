@@ -418,14 +418,16 @@ public class MinimalChessGame implements Debuggable {
     private void endGame() {
         if (!configurations.isAllowGameEnd()) return;
 
-        if (endGameCode == WHITE_WON) {
-            System.out.println("WHITE WON");
-        } else if (endGameCode == BLACK_WON) {
-            System.out.println("BLACK WON");
-        } else if (endGameCode == DRAW) {
-            System.out.println("DRAW");
-        } else {
-            System.out.println("NO REASON. ");
+        if (configurations.isAllowGameEnd()) {
+            if (endGameCode == WHITE_WON) {
+                System.out.println("WHITE WON");
+            } else if (endGameCode == BLACK_WON) {
+                System.out.println("BLACK WON");
+            } else if (endGameCode == DRAW) {
+                System.out.println("DRAW");
+            } else {
+                System.out.println("NO REASON. ");
+            }
         }
         if (isDebuggable()) DebugMode.debugPrint(this, chessHistoryTracker);
     }
