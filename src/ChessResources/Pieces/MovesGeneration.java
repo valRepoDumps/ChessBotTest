@@ -364,16 +364,22 @@ public class MovesGeneration {
 
         long setMoves = BitMasks.getSingleSpaceBitBoardZero(spaceIdCaptureAt);
         int kingSpc;
+        short pieceCaptured = PieceData.INVALID_PIECES;
+
         if (pieceId == PieceData.WKING || pieceId == PieceData.BKING){
             kingSpc = spaceIdArriveAt;
         }else{
             kingSpc = game.getKingToMoveSpaceId();
         }
 
+        if (ChessMove.isCaptureFlag(flags)){
+            pieceCaptured = game.getBoard().getPiece(spaceIdCaptureAt);
+        }
+
         if (!game.spaceUnderThreat(kingSpc, OCCUPIED, setMoves)){
             game.getPossibleMoves().addMoves(new ChessMove(currSpaceId,
                     spaceIdArriveAt, spaceIdCaptureAt,
-                    pieceId, flags));
+                    pieceId, pieceCaptured, flags));
         }
     }
 

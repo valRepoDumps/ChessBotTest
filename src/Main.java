@@ -9,14 +9,15 @@ import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.Pieces.PieceData;
 import Evaluation.Evaluation;
 
+String empty_board = "8/8/8/8/8/8/8/8 b - - ";
+String start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 ";
+String tricky_position = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ";
+String killer_position = "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq e6 0 1";
+String cmk_position = "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 ";
 
 void main() {
-    ChessGUI gui = new ChessGUI("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    Evaluation evaluator = new Evaluation(3);
-    evaluator.registerBlackEvaluator(gui.chessGame);
+    ChessGUI gui = new ChessGUI(start_position);
+    Evaluation evaluator = new Evaluation(6);
+    evaluator.registerWhiteEvaluator(gui.chessGame);
 
-    //3-8902/ 377 -300 - 191 - 130 - 65 - 46 - 39
-    //4-197281/ 2798 - 1600 - 2500 - 1500 - 700 - 470
-    //5-4865609/ 60000 - 33000 - 30000 - 21300 - 8000 - 7600 - 5600 - 4950
-    //6-119060324/862469ms -129270
 }

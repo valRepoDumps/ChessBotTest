@@ -22,7 +22,7 @@ import ChessResources.GetMovesLogic.PossibleMoves;
 import Evaluation.Evaluation;
 
 import java.util.ArrayList;
-
+import java.util.List;
 
 
 public class MinimalChessGame implements Debuggable {
@@ -63,33 +63,39 @@ public class MinimalChessGame implements Debuggable {
 
     public MinimalChessGame(){}
 
-    public MinimalChessGame(ChessBoard chessBoard, Configurations configurations) {
+//    public MinimalChessGame(ChessBoard chessBoard, Configurations configurations) {
+//        this.hashGenerator = new HashGenerator(this);
+//        this.configurations = configurations;
+//        this.chessBoard = chessBoard;
+//        possibleMoves = new PossibleMoves(this);
+//        calculateHash();
+//    }
+
+//    public MinimalChessGame(ChessBoard chessBoard, PropertiesStats gameProperties, Configurations configurations) {
+//        this(chessBoard, configurations);
+//        this.gameProperties = gameProperties;
+//        updateConfigurations();
+//        generateBitMasks();
+//        generatePossibleMoves();
+//        calculateHash();
+//        chessHistoryTracker.pushTurn(cloneMinimalGame());
+//    }
+
+    public MinimalChessGame(String fen, ChessBoard chessBoard, Configurations configurations) {
         this.hashGenerator = new HashGenerator(this);
         this.configurations = configurations;
         this.chessBoard = chessBoard;
         possibleMoves = new PossibleMoves(this);
         calculateHash();
-        chessHistoryTracker.pushTurn(cloneMinimalGame());
-    }
 
-    public MinimalChessGame(ChessBoard chessBoard, PropertiesStats gameProperties, Configurations configurations) {
-        this(chessBoard, configurations);
-        this.gameProperties = gameProperties;
-        updateConfigurations();
-        generateBitMasks();
-        generatePossibleMoves();
-        calculateHash();
-        chessHistoryTracker.pushTurn(cloneMinimalGame());
-    }
-
-    public MinimalChessGame(String fen, ChessBoard chessBoard, Configurations configurations) {
-        this(chessBoard, configurations);
         updateConfigurations();
         fenTranslator(fen);
         generateBitMasks();
         generatePossibleMoves();
         calculateHash();
         chessHistoryTracker.pushTurn(cloneMinimalGame());
+        StateChangeListener.notifyListeners(endTurnListeners, this);
+
     }
 
     public ChessBoard getBoard(){
@@ -386,8 +392,9 @@ public class MinimalChessGame implements Debuggable {
     }
 
     private void finishTurn() {
-        DebugMode.debugPrint(this, gameProperties);
-
+        if (gameProperties.getSideToMove() == PieceData.BLACK){
+            gameProperties.incrementTotalMoves();
+        }
         gameProperties.incrementHalfMoves();
         gameProperties.flipSideToMove();
         pushCurrEnPassantTarget();
@@ -403,6 +410,7 @@ public class MinimalChessGame implements Debuggable {
         tryEndGame();
 
         StateChangeListener.notifyListeners(endTurnListeners, this);
+        DebugMode.debugPrint(this, "Current game properties: " + gameProperties);
     }
 
     public void generateBitMasks(){
@@ -418,16 +426,15 @@ public class MinimalChessGame implements Debuggable {
     private void endGame() {
         if (!configurations.isAllowGameEnd()) return;
 
-        if (configurations.isAllowGameEnd()) {
-            if (endGameCode == WHITE_WON) {
-                System.out.println("WHITE WON");
-            } else if (endGameCode == BLACK_WON) {
-                System.out.println("BLACK WON");
-            } else if (endGameCode == DRAW) {
-                System.out.println("DRAW");
-            } else {
-                System.out.println("NO REASON. ");
-            }
+        System.out.println(this);
+        if (endGameCode == WHITE_WON) {
+            System.out.println("WHITE WON");
+        } else if (endGameCode == BLACK_WON) {
+            System.out.println("BLACK WON");
+        } else if (endGameCode == DRAW) {
+            System.out.println("DRAW");
+        } else {
+            System.out.println("NO REASON. ");
         }
         if (isDebuggable()) DebugMode.debugPrint(this, chessHistoryTracker);
     }
@@ -445,7 +452,7 @@ public class MinimalChessGame implements Debuggable {
             throw new IllegalArgumentException("Source MinimalChessGame cannot be null");
         }
 
-        this.configurations = src.configurations;
+        this.configurations = new Configurations(src.configurations);
         this.hashGenerator = src.hashGenerator;
         this.hs = new HashContainer(src.hs.getHash());
         this.gameProperties = src.gameProperties.getCopy();
@@ -502,6 +509,11 @@ public class MinimalChessGame implements Debuggable {
     }
 
     public void addTurnEndListener(StateChangeListener<MinimalChessGame> listener){
-        endTurnListeners.add(listener);
+        endTurnListeners.add(listener);//immediately notify listener of latest news.
+        StateChangeListener.notifyListeners(listener, this);
+    }
+
+    public Configurations getConfigurations(){
+        return configurations;
     }
 }

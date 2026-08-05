@@ -47,6 +47,7 @@ public class PropertiesStats {
     public boolean canCastle(){
         return (properties&CASTLING) != 0;
     }
+
     public boolean canBlackCastleQueen(){
         return (properties&BLACK_CASTLE_QUEEN_SIDE) != 0;
     }
@@ -88,7 +89,7 @@ public class PropertiesStats {
     }
 
     public int getHalfMovesSinceCaptureOrPawnMove(){
-        return (int)((properties& HALF_MOVES_SINCE_CAPTURE_OR_PAWN_MOVE)>>>11);
+        return (int)((properties& HALF_MOVES_SINCE_CAPTURE_OR_PAWN_MOVE)>>>HALF_MOVES_SHIFT);
     }
 
     public int getTotalMovesElapsed(){
@@ -121,14 +122,13 @@ public class PropertiesStats {
     }
 
     public void incrementHalfMoves() {
-        int current = getHalfMovesSinceCaptureOrPawnMove();
-        resetHalfMoves();
-        properties |= ((long)(current + 1) << HALF_MOVES_SHIFT);
+        setHalfMoves(getHalfMovesSinceCaptureOrPawnMove() + 1);
     }
 
     public void resetHalfMoves() {
         properties &= ~HALF_MOVES_SINCE_CAPTURE_OR_PAWN_MOVE;
     }
+
 
     public void setHalfMoves(int count){
         resetHalfMoves();
@@ -145,17 +145,16 @@ public class PropertiesStats {
     }
 
     public void incrementTotalMoves() {
+        setTotalMovesElapsed(getTotalMovesElapsed()+1);
         int current = getTotalMovesElapsed();
-        properties &= ~TOTAL_MOVES_ELAPSED;
-        properties |= ((long)(current + 1) << 17);
     }
 
     @Override
     public String toString(){
-        return getEnPassantTarget() + " " +
-                getSideToMove() + " " +
-                getCastlingFlag() + " " +
-                getHalfMovesSinceCaptureOrPawnMove() + " " +
+        return  "Enpassant Target: " + getEnPassantTarget() + ", Side to move: " +
+                getSideToMove() + ", Castling flag " +
+                getCastlingFlag() + ", half moves " +
+                getHalfMovesSinceCaptureOrPawnMove() + ", totalMoves " +
                 getTotalMovesElapsed();
     }
 }

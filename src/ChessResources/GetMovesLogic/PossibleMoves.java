@@ -10,7 +10,7 @@ public class PossibleMoves {
     //region PRE_CONSTRUCTOR
     //region DATAS
     public static int MAX_POSSIBLE_MOVES =  2*ChessBoard.TOTAL_SPACES;
-    private ChessMove[] possibleMoves = new ChessMove[MAX_POSSIBLE_MOVES];
+    private final ChessMove[] possibleMoves = new ChessMove[MAX_POSSIBLE_MOVES];
     public int currLen = 0;
     protected MinimalChessGame chessGame;
     //endregion
@@ -29,12 +29,12 @@ public class PossibleMoves {
 
     //region HELPERS
 
-    public void copyPossibleMoves(ChessMove[] copyFrom, int size){
-        if (size >= 0) System.arraycopy(copyFrom, 0, this.possibleMoves, 0, size);
+    public void sortMoves(Comparator<ChessMove> cmp){
+        Arrays.sort(possibleMoves, 0, currLen, cmp);
     }
 
-    public void addMoves(int spaceId, int spaceIdToMoveTo, short pieceId){
-        addMoves(new ChessMove(spaceId, spaceIdToMoveTo, pieceId));
+    public void copyPossibleMoves(ChessMove[] copyFrom, int size){
+        if (size >= 0) System.arraycopy(copyFrom, 0, this.possibleMoves, 0, size);
     }
 
     public void addMoves(ChessMove moves){
@@ -113,9 +113,9 @@ public class PossibleMoves {
 
     @Override
     public String toString() {
-        if (possibleMoves == null) {
-            return "possibleMoves: <empty>";
-        }
+//        if (possibleMoves == null) {
+//            return "possibleMoves: <empty>";
+//        }
         StringBuilder sb = new StringBuilder("possibleMoves:\n");
         for (int i = 0; i < currLen ; ++i) {
 
