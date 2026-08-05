@@ -7,10 +7,10 @@ import java.util.Objects;
 
 public class ChessMove {
 
-    public static final int PROMOTION_SHIFT = 7;
-    public static final int CAPTURE_SHIFT = 14;
-    public static final int ENPASSANT_SHIFT = 15;
-    public static final int CASTLING_SHIFT = 16;
+    public static final int PROMOTION_SHIFT = 6;
+    public static final int CAPTURE_SHIFT = 11;
+    public static final int ENPASSANT_SHIFT = 12;
+    public static final int CASTLING_SHIFT = 13;
     public static final int BLACK_CASTLE_QUEEN_SIDE_SHIFT = CASTLING_SHIFT;
     public static final int WHITE_CASTLE_QUEEN_SIDE_SHIFT = CASTLING_SHIFT + 1;
     public static final int BLACK_CASTLE_KING_SIDE_SHIFT = CASTLING_SHIFT + 2;
@@ -42,30 +42,19 @@ public class ChessMove {
     int spaceIdCaptureAt;
 
     short pieceId;
+    short pieceIdCapture;
 
     long flags = 0L;
     public ChessMove(int spaceIdToMove, int spaceIdArriveAt,
-                     int spaceIdCaptureAt, short pieceId,
+                     int spaceIdCaptureAt, short pieceId, short pieceIdCapture,
                      long flags){
         this.spaceIdToMove = spaceIdToMove;
         this.spaceIdArriveAt =spaceIdArriveAt;
         this.spaceIdCaptureAt = spaceIdCaptureAt;
         this.pieceId = pieceId;
 
+        this.pieceIdCapture = pieceIdCapture;
         this.flags = flags;
-    }
-
-    public ChessMove(int spaceIdToMove, int spaceIdArriveAt,
-                     int spaceIdCaptureAt, short pieceId){
-        this(spaceIdToMove, spaceIdArriveAt, spaceIdCaptureAt, pieceId, 0L);
-    }
-
-    public ChessMove(int spaceIdToMove, int spaceIdArriveAt, short pieceId, long flags){
-        this(spaceIdToMove, spaceIdArriveAt, spaceIdArriveAt, pieceId, flags);
-    }
-
-    public ChessMove(int spaceIdToMove, int spaceIdArriveAt, short pieceId){
-        this(spaceIdToMove, spaceIdArriveAt, spaceIdArriveAt, pieceId, 0L);
     }
 
     //region SETTERS
@@ -82,6 +71,9 @@ public class ChessMove {
         return pieceId;
     }
 
+    public short getCapturedPieceId(){
+        return pieceIdCapture;
+    }
     public int getSpaceIdArriveAt() {
         return spaceIdArriveAt;
     }
@@ -142,6 +134,15 @@ public class ChessMove {
                 && flags == chessMove.flags;
     }
 
+    public boolean equals(ChessMove move){
+        return move.flags == this.flags &&
+                move.spaceIdToMove == this.spaceIdToMove &&
+                move.spaceIdArriveAt == this.spaceIdArriveAt &&
+                move.spaceIdCaptureAt == this.spaceIdCaptureAt &&
+                move.pieceId == this.pieceId &&
+                move.pieceIdCapture == this.pieceIdCapture;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(spaceIdToMove, spaceIdArriveAt, spaceIdCaptureAt, pieceId);
@@ -167,5 +168,16 @@ public class ChessMove {
         }
         return str.toString();
     }
+    //endregion
+
+    //region FLAG INTERPRETER
+    public static boolean isCaptureFlag(long flags){
+        return (flags & CAPTURE) != 0;
+    }
+
+    public static boolean isCastlingFlag(long flags){
+        return (flags & CASTLING) != 0;
+    }
+
     //endregion
 }

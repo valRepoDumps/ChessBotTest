@@ -5,7 +5,7 @@ public class Configurations {
     private boolean debugMode;
     private boolean allowGameEnd;
     public Configurations(){
-        this(true,true,true);
+        this(false,false,false);
     }
 
     public Configurations(boolean enableBoardGraphic,
@@ -15,6 +15,11 @@ public class Configurations {
         this.allowGameEnd = allowGameEnd;
     }
 
+    public Configurations (Configurations config){
+        this.enableBoardGraphic = config.isEnableBoardGraphic();
+        this.debugMode = config.isDebugMode();
+        this.allowGameEnd = config.isAllowGameEnd();
+    }
     //region SETTERS/GETTERS
     //region TUNING_GRAPHIC
     @SuppressWarnings("unused")
