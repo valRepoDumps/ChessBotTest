@@ -520,18 +520,22 @@ public class BitMasks {
         return HV_TO_ATK_MASKS[square][(int) index];
     }
 
-    /** Bishop attacks from {@code square} given the full board occupancy. */
+    /** Bishop attacks*/
     public static long bishopAttacks(int square, long occupancy) {
         long index = ((occupancy & BitMasks.BISHOP_MASKS[square]) * BISHOP_MAGICS[square])
                 >>> BISHOP_SHIFTS[square];
         return D_TO_ATK_MASKS[square][(int) index];
     }
 
-    /** Queen attacks (rook | bishop) from {@code square}. */
+    /** Queen attacks (rook | bishop) */
     public static long queenAttacks(int square, long occupancy) {
         return rookAttacks(square, occupancy) | bishopAttacks(square, occupancy);
     }
 
+    public static long pawnAttacks(int square, short pieceId){
+        int idx = (pieceId == PieceData.WPAWN ? WIDX : BIDX);
+        return BitMasks.PAWN_CAPTURE_MASKS[idx][square];
+    }
     //endregion
 
     //region HELPE

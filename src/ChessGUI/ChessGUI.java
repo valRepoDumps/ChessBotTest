@@ -55,7 +55,11 @@ public class ChessGUI {
                 }
             };
 
-    public ChessGUI(String fen)
+    public ChessGUI(String fen){
+        this(fen, new Configurations(true, true, true));
+    }
+
+    public ChessGUI(String fen, Configurations configurations)
     {
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -86,7 +90,7 @@ public class ChessGUI {
         chessGame = new ChessGame(fen,
                 this,
                 choosePiecePromotionUI,
-                new Configurations(true, false, true));
+                configurations);
 
         boardGraphic = chessGame.drawBoard.boardGraphic;
         BOARD_PIXEL_SIZE = ChessBoard.BOARD_SIZE * DrawBoard.SQUARE_PIXEL_SIZE;
@@ -108,7 +112,6 @@ public class ChessGUI {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
-
 
     public ChessGUI()
     {

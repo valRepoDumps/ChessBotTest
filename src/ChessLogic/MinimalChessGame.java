@@ -22,7 +22,10 @@ import ChessResources.GetMovesLogic.PossibleMoves;
 import Evaluation.Evaluation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+
+import static java.util.Collections.min;
 
 
 public class MinimalChessGame implements Debuggable {
@@ -47,7 +50,7 @@ public class MinimalChessGame implements Debuggable {
     public static final int DRAW = 2;
     public static final int INDETERMINATE = 3;
 
-    public static final int INVALID_ENPASSANT_TARGET = -1;
+    public static final int INVALID_ENPASSANT_TARGET = 0;
 
     public static final int BLACK_CASTLE_QUEEN_ROOK_ID = 0;
     public static final int BLACK_CASTLE_QUEEN_ROOK_ARRIVE = 3;
@@ -187,12 +190,40 @@ public class MinimalChessGame implements Debuggable {
         MovesGeneration.generateMoves(this);
     }
 
+    public long getPiecesOnCols(int spaceId, int range, boolean color){
+        //get the threat bitboard on columns arround a space.
+        long pieces = (color == PieceData.WHITE ? getBoard().WHITE_PIECES : getBoard().BLACK_PIECES);
+        return getBoard().getNearFile(spaceId, range) & pieces;
+    }
+
+    public int countPiecesOnCols(int spaceId, int range, boolean color){
+        return BitMasks.countBit(getPiecesOnCols(spaceId, range, color));
+    }
+
+    public int countPiecesNearSpace(int spaceId, int range, boolean color){
+        return BitMasks.countBit(getPiecesNearSpace(spaceId, range, color));
+    }
+
+    public long getPiecesNearSpace(int spaceId, int range, boolean color){
+        if (color == PieceData.WHITE)
+            return getBoard().getRoundSpaceId(spaceId, range) &
+                getBoard().WHITE_PIECES;
+        else
+            return getBoard().getRoundSpaceId(spaceId, range) &
+                getBoard().BLACK_PIECES;
+    }
+
+    public boolean kingToMoveUnderThreat(){
+        return spaceUnderThreat(getKingToMoveSpaceId(), getBoard().OCCUPIED, -1L);
+    }
+
     public boolean spaceUnderThreat(int spaceId, short[] ids, long OCCUPIED, long setMoves) {
+        //ids: the list of piece id to iterate through.
         if (!ChessBoard.isValidSpaceId(spaceId)) return false;
 
         if (ids[0] == PieceData.BPAWN) {
             if ((BitMasks.PAWN_CAPTURE_MASKS[BitMasks.WIDX][spaceId]
-                    & chessBoard.getBitBoard(ids[0])&setMoves ) != 0) {
+                    & chessBoard.getBitBoard(ids[0])&setMoves) != 0) {
                 return true;
             }
         }
@@ -367,7 +398,6 @@ public class MinimalChessGame implements Debuggable {
         }
 
         finishTurn();
-        DebugMode.debugPrint(this, "Evaluation "+ Evaluation.evaluateGame(this));
         return true;
     }
 
@@ -425,6 +455,8 @@ public class MinimalChessGame implements Debuggable {
 
     private void endGame() {
         if (!configurations.isAllowGameEnd()) return;
+
+        possibleMoves = new PossibleMoves(this);
 
         System.out.println(this);
         if (endGameCode == WHITE_WON) {

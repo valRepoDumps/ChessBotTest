@@ -25,6 +25,13 @@ public class ChessHistoryTracker <ChessGame extends MinimalChessGame>{
     public void pushTurn(ChessGame game) {
         //System.out.println("PUSHED GAME: " + game.toString());
         history.add(game);
+        int currRepetitions = tableOfPositions.getOrDefault(game.getHashOfPosition(), 0);
+        if (currRepetitions == 2){
+            threeFoldRepitionFlag = true;
+        }
+        tableOfPositions.put(game.getHashOfPosition(), currRepetitions+1);
+
+        //System.out.println(tableOfPositions.toString());
         if (this.peekTurn() == null){
             Thread.dumpStack();
             exit(0);
@@ -54,7 +61,12 @@ public class ChessHistoryTracker <ChessGame extends MinimalChessGame>{
     //region GETTERS
     public ChessGame popTurn() {
         if (history.size() < 2) return null; // need at least current + one prior
-
+        threeFoldRepitionFlag = false;
+        if (tableOfPositions.getOrDefault(history.getLast().getHashOfPosition(), 0) != 2)
+            tableOfPositions.remove(history.getLast().getHashOfPosition());
+        else{
+            tableOfPositions.put(history.getLast().getHashOfPosition(), 1);
+        }
         history.removeLast(); // discard current
         return history.getLast(); // return previous
     }

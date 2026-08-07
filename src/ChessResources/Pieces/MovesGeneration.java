@@ -331,7 +331,6 @@ public class MovesGeneration {
                                         int spaceId, short pieceId){
         long unRefinedMoves = getQueenMoves(game.getBoard().OCCUPIED, spaceId);
 
-
         addBitBoardToPossibleMoves(game, spaceId,
                 unRefinedMoves & game.getBoard().EMPTY,
                 pieceId);
@@ -349,6 +348,31 @@ public class MovesGeneration {
 
     public static long getKingMoves(long notPieceOnSameSide, int spaceId){
         return BitMasks.KING_MOVE_MASKS[spaceId]&notPieceOnSameSide;
+    }
+
+    public static long getUniversalMoves(MinimalChessGame game, int spaceId, short pieceId){
+        switch (PieceData.getType(pieceId)){
+            case PieceData.QUEEN -> {
+                return getQueenMoves(game.getBoard().OCCUPIED, spaceId);
+            }
+            case PieceData.ROOK -> {
+                return getRookMoves(game.getBoard().OCCUPIED, spaceId);
+            }
+            case PieceData.BISHOP -> {
+                return getBishopMoves(game.getBoard().OCCUPIED,spaceId);
+            }
+            case PieceData.KNIGHT -> {
+                return getKnightMoves(game.getBoard().ANTI_TO_MOVE_PIECES, spaceId);
+            }
+            case PieceData.PAWN -> {
+                return BitMasks.pawnAttacks(spaceId, pieceId) &
+                        game.getBoard().NOT_TO_MOVE_PIECES;
+            }
+            case PieceData.KING -> {
+                return getKingMoves(game.getBoard().ANTI_TO_MOVE_PIECES, spaceId);
+            }
+        }
+        return 0L;
     }
 
     private static void addMove(MinimalChessGame game, int currSpaceId,
@@ -376,6 +400,8 @@ public class MovesGeneration {
             pieceCaptured = game.getBoard().getPiece(spaceIdCaptureAt);
         }
 
+        //basically, check whether the king is under threat, and if it is, whether the capture move can help the king.
+        //that's why there's set moves, it shows the space captured.
         if (!game.spaceUnderThreat(kingSpc, OCCUPIED, setMoves)){
             game.getPossibleMoves().addMoves(new ChessMove(currSpaceId,
                     spaceIdArriveAt, spaceIdCaptureAt,
