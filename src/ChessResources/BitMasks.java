@@ -3,7 +3,7 @@ package ChessResources;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.Pieces.PieceData;
 
-import java.util.HashMap;
+
 import java.util.Random;
 public class BitMasks {
     public static final int WIDX = 0;
@@ -52,10 +52,6 @@ public class BitMasks {
     public static final long[] KING_MOVE_MASKS = new long[ChessBoard.TOTAL_SPACES];
 
     //region RAY_MASKS
-    //used for king threats calc, thus include the pieces.
-    public static final long[][] D_RAY_MASK = new long[ChessBoard.TOTAL_SPACES][ChessBoard.TOTAL_SPACES];
-    public static final long[][] HV_RAY_MASK = new long[ChessBoard.TOTAL_SPACES][ChessBoard.TOTAL_SPACES];
-    public static final long[][] HVD_RAY_MASK = new long[ChessBoard.TOTAL_SPACES][ChessBoard.TOTAL_SPACES];
     //endregion
 
     private static final int ROOK_BITS   = 12;
@@ -227,8 +223,6 @@ public class BitMasks {
 
         //region PIECE_MASKS
         for (int i = 0; i < ChessBoard.TOTAL_SPACES; ++i){
-            int row = ChessBoard.getRow(i);
-            int col = ChessBoard.getCol(i);
 
             ROOK_MASKS[i] = (ROW_MASKS_NO_TIPS[ChessBoard.getRow(i)]|COL_MASKS_NO_TIPS[ChessBoard.getCol(i)])&
                     ~getSingleSpaceBitBoard(i);
@@ -247,8 +241,6 @@ public class BitMasks {
     static {
         assigneRowAndColMasks();
         preCalcPieceMasks();
-//        preCalcAllRaysMasks();
-//        findMagicsAtRuntime();
     }
     //region PIECE_MASKS
     public static void preCalcPieceMasks(){
@@ -289,15 +281,9 @@ public class BitMasks {
         if (color == PieceData.WHITE){
             if (row == 0) return 0L;
             pawnMoves = p >>> (-ChessBoard.getOffsets(ChessBoard.NORTH));
-//            if (row == 6){
-//                pawnMoves |= p >>> (-ChessBoard.getOffsets(2, ChessBoard.NORTH));
-//            }
         }else{
             if (row == 7) return 0L;
             pawnMoves = p << (ChessBoard.getOffsets(ChessBoard.SOUTH));
-//            if (row == 6){
-//                pawnMoves |= p << (ChessBoard.getOffsets(2, ChessBoard.SOUTH));
-//            }
         }
         return pawnMoves;
     }
@@ -445,93 +431,28 @@ public class BitMasks {
         }
     }
 
-//    public static void preCalcAllDirsMasks(){
-//        for (int i = 0; i < ChessBoard.TOTAL_SPACES; ++i){
-//            preCalcAllDirsMasksAt(i);
-//        }
-//    }
-
-//    public static void preCalcAllDirsMasksAt(int spaceId){
-//        long mask = preCalcRefinedHorizontalAndVerticalMove(spaceId) | preCalcRefinedDiagAtkMask(spaceId);
-//        HVD_TO_ATK_MASKS[spaceId] = new HashMap<>();
-//        for (long occ = mask; ; occ = (occ - 1) & mask) {
-//            if(HVD_TO_ATK_MASKS[spaceId].get(occ) != null){
-//                System.out.println("IMPOSSIBLE");
-//            }
-//
-//            HVD_TO_ATK_MASKS[spaceId].put(occ,
-//                    preCalcHorizontalAndVerticalAtkMask(spaceId, occ)|preCalcDiagAtkMask(spaceId, occ) );
-//            if (occ == 0) break;
-//        }
-//    }
-
-//    public static void preCalcAllRaysMasks(){
-//        for (int i = 0; i < ChessBoard.TOTAL_SPACES; ++i){
-//            for (int j = 0; j < ChessBoard.TOTAL_SPACES; ++j){
-//                D_RAY_MASK[i][j] = preCalcLRDownUpDiagRays(i, j);
-//                HV_RAY_MASK[i][j] = preCalcHAndVRays(i, j);
-//                HVD_RAY_MASK[i][j] = preCalcHVDRays(i, j);
-//            }
-//        }
-//    }
-
-//    public static long preCalcLRDownUpDiagRays(int from, int to){
-//
-//        long fromBitBoard = getSingleSpaceBitBoard(from);
-//        long toBitBoard = getSingleSpaceBitBoard(to);
-//        if (ChessBoard.getLRDownDiag(from) == ChessBoard.getLRDownDiag(to) ||
-//            ChessBoard.getLRUpDiag(from) == ChessBoard.getLRUpDiag(to)){
-//            long fromAtk = setBit(BitMasks.D_TO_ATK_MASKS[from].get(toBitBoard&BitMasks.BISHOP_MASKS[from]), to);
-//
-//            long toAtk = setBit(BitMasks.D_TO_ATK_MASKS[to].get(fromBitBoard&BitMasks.BISHOP_MASKS[to]), to);
-//
-//            return fromAtk & toAtk;
-//        }else{
-//            return 0L;
-//        }
-//    }
-
-//    public static long preCalcHAndVRays(int from, int to){
-//
-//        long fromBitBoard = getSingleSpaceBitBoard(from);
-//        long toBitBoard = getSingleSpaceBitBoard(to);
-//        if (ChessBoard.getRow(from) == ChessBoard.getRow(to)||
-//                ChessBoard.getCol(from) == ChessBoard.getCol(to)){
-//            long fromAtk = setBit(rookAttacks(from, toBitBoard&BitMasks.ROOK_MASKS[from]), to);
-//            long toAtk = setBit(rookAttacks(to, toBitBoard&BitMasks.ROOK_MASKS[to]), to);
-//
-//            return fromAtk & toAtk;
-//        }else{
-//            return 0L;
-//        }
-//    }
-
-//    public static long preCalcHVDRays(int from, int to){
-//        long hv = preCalcHAndVRays(from, to);
-//        long d = preCalcLRDownUpDiagRays(from, to);
-//
-//        if (hv != 0) return hv;
-//        return d;
-//    }
-
     public static long rookAttacks(int square, long occupancy) {
         long index = ((occupancy & BitMasks.ROOK_MASKS[square]) * ROOK_MAGICS[square])
                 >>> ROOK_SHIFTS[square];
         return HV_TO_ATK_MASKS[square][(int) index];
     }
 
-    /** Bishop attacks from {@code square} given the full board occupancy. */
+    /** Bishop attacks*/
     public static long bishopAttacks(int square, long occupancy) {
         long index = ((occupancy & BitMasks.BISHOP_MASKS[square]) * BISHOP_MAGICS[square])
                 >>> BISHOP_SHIFTS[square];
         return D_TO_ATK_MASKS[square][(int) index];
     }
 
-    /** Queen attacks (rook | bishop) from {@code square}. */
+    /** Queen attacks (rook | bishop) */
     public static long queenAttacks(int square, long occupancy) {
         return rookAttacks(square, occupancy) | bishopAttacks(square, occupancy);
     }
 
+    public static long pawnAttacks(int square, short pieceId){
+        int idx = (pieceId == PieceData.WPAWN ? WIDX : BIDX);
+        return BitMasks.PAWN_CAPTURE_MASKS[idx][square];
+    }
     //endregion
 
     //region HELPE
@@ -561,22 +482,6 @@ public class BitMasks {
             bitBoard &= bitBoard-1;
         }
         return i;
-    }
-
-    public static int getZeroesBeforeBit(long bitBoard){
-        return Long.numberOfTrailingZeros(bitBoard);
-    }
-    public static void printBitBoard(long bitBoard){
-        System.out.println(getBitBoardString(bitBoard));
-    }
-
-    public static String getBitBoardString(long bitBoard){
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < ChessBoard.TOTAL_SPACES; ++i){
-            sb.append((bitBoard & getSingleSpaceBitBoard(i)) != 0 ? "1 " : "0 ");
-            if ((i+1) % ChessBoard.BOARD_SIZE == 0) sb.append("\n");
-        }
-        return sb.toString();
     }
     //endregion
 
@@ -649,20 +554,6 @@ public class BitMasks {
                 }
                 return magic;
             }
-        }
-    }
-
-    private static void fillTable(int sq, boolean isRook, long magic, int shift) {
-        long mask = isRook ? BitMasks.ROOK_MASKS[sq] : BitMasks.BISHOP_MASKS[sq];
-        long[][] table = isRook ? HV_TO_ATK_MASKS : D_TO_ATK_MASKS;
-
-        for (long occ = mask; ; occ = (occ - 1) & mask) {
-            int  idx = (int) ((occ * magic) >>> shift);
-            long atk = isRook
-                    ? BitMasks.preCalcHorizontalAndVerticalAtkMask(sq, occ)
-                    : BitMasks.preCalcDiagAtkMask(sq, occ);
-            table[sq][idx] = atk;
-            if (occ == 0) break;
         }
     }
 

@@ -1,8 +1,5 @@
 package ChessResources.Pieces;
 
-import ChessLogic.MinimalChessGame;
-import ChessResources.ChessBoard.ChessBoard;
-import ChessResources.GetMovesLogic.ChessSpaces;
 import ChessResources.PreCalc;
 
 import javax.swing.*;
@@ -47,16 +44,6 @@ public class PieceData implements PieceConsts{
 
     public static final int TOTAL_PIECES = 12;
 
-    public static PieceData getUniqueClone(PieceData pieceData)
-    {
-        if (pieceData == null) return null;
-        return pieceData.getUniqueClone();
-    }
-
-    public static PieceData getClone(PieceData pieceData){
-        if (pieceData == null) return null;
-        return  pieceData.clone();
-    }
 
     public PieceData(short pieceId, boolean color, String name, ImageIcon graphic) {
 
@@ -106,10 +93,6 @@ public class PieceData implements PieceConsts{
     public PieceData clone(){
         return new PieceData(this);
     }
-    public PieceData getUniqueClone(){
-        return new PieceData(this);
-    }
-
     public short getPieceId() {
         return pieceId;
     }
@@ -126,10 +109,6 @@ public class PieceData implements PieceConsts{
         return PreCalc.PIECE_ID_TO_PIECE_DATA_MAP[pieceId].getGraphic();
     }
 
-    public static int getOppositeColor(short pieceId){
-        if (getColor(pieceId) == BLACK) return pieceId | PIECES_DIFF;
-        else return pieceId ^ PIECES_DIFF;
-    }
     public static boolean getColor(short pieceId){
         return (pieceId/PIECES_DIFF) == 0 ? BLACK:WHITE;
     }
@@ -142,25 +121,6 @@ public class PieceData implements PieceConsts{
 
     public static String getName(short pieceId){
         return PreCalc.PIECE_ID_TO_PIECE_DATA_MAP[pieceId].getName();
-    }
-
-    public static PieceData makePiece(short pieceId)
-    {
-        return switch (pieceId) {
-            case PieceData.BPAWN -> getUniqueClone(BPAWN_DATA);
-            case PieceData.WPAWN -> getUniqueClone(WPAWN_DATA);
-            case PieceData.BROOK -> getUniqueClone(BROOK_DATA);
-            case PieceData.WROOK -> getUniqueClone(WROOK_DATA);
-            case PieceData.BKNIGHT -> getUniqueClone(BKNIGHT_DATA);
-            case PieceData.WKNIGHT -> getUniqueClone(WKNIGHT_DATA);
-            case PieceData.BBISHOP -> getUniqueClone(BBISHOP_DATA);
-            case PieceData.WBISHOP -> getUniqueClone(WBISHOP_DATA);
-            case PieceData.BQUEEN -> getUniqueClone(BQUEEN_DATA);
-            case PieceData.WQUEEN -> getUniqueClone(WQUEEN_DATA);
-            case PieceData.BKING -> getUniqueClone(BKING_DATA);
-            case PieceData.WKING -> getUniqueClone(WKING_DATA);
-            default -> NO_PIECE;
-        };
     }
 
     public static int convertPieceIdToArrayIdx(short pieceId){

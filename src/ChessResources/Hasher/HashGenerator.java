@@ -1,7 +1,6 @@
 package ChessResources.Hasher;
 
 import ChessLogic.MinimalChessGame;
-import ChessResources.ChessBoard.ChessBoard;
 
 public class HashGenerator {
     ZobristHasher hasher1;

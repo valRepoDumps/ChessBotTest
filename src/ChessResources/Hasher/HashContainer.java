@@ -36,11 +36,6 @@ public class HashContainer {
         return h1 ^ h2;
     }
 
-//    @Override
-//    public HashContainer clone() {
-//        return new HashContainer(hash); //long[] is clone in constructor already.
-//    }
-
     @Override
     public String toString(){
         return Arrays.toString(hash);

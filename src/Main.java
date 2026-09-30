@@ -3,11 +3,7 @@
 import ChessGUI.ChessGUI;
 import ChessLogic.Configurations.Configurations;
 import ChessLogic.Debug.Tests;
-import ChessLogic.MinimalChessGame;
-import ChessResources.BitMasks;
-import ChessResources.ChessBoard.ChessBoard;
-import ChessResources.Pieces.PieceData;
-import Evaluation.Evaluation;
+
 
 String empty_board = "8/8/8/8/8/8/8/8 b - - ";
 String start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 ";
@@ -16,8 +12,10 @@ String killer_position = "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR 
 String cmk_position = "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 ";
 
 void main() {
-    ChessGUI gui = new ChessGUI(start_position);
-    Evaluation evaluator = new Evaluation(6);
-    evaluator.registerWhiteEvaluator(gui.chessGame);
-
+    ChessGUI gui = new ChessGUI(start_position,
+            new Configurations(true, false, true));
+//    //testings
+//    Evaluation evaluator = new Evaluation(6);
+//    evaluator.registerWhiteEvaluator(gui.chessGame);
+    Tests.perftTest();
 }

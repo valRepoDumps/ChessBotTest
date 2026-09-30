@@ -16,6 +16,10 @@ public class ChessBoard implements Debuggable {
     //region BOARD_SIZE
     public static final int BOARD_SIZE = 8;
     public static final int TOTAL_SPACES = BOARD_SIZE*BOARD_SIZE;
+    public static final int MAX_COL = BOARD_SIZE-1;
+    public static final int MAX_ROW = BOARD_SIZE-1;
+    public static final int MIN_COL = 0;
+    public static final int MIN_ROW = 0;
     //endregion
     public static final int INVALID_SPACE_ID = -1;
 
@@ -52,31 +56,34 @@ public class ChessBoard implements Debuggable {
     public static final boolean WHITE = PieceData.WHITE;
 
     protected long[] boardSquares = new long[PieceData.TOTAL_PIECES];
+    //list of all the bitboard containing the pieces.
 
-//    public ArrayList<Integer> currPieceLocationWhite = new ArrayList<>();
-//    public ArrayList<Integer> currPieceLocationBlack = new ArrayList<>();
     public short[] currPieceAtLocation = new short[ChessBoard.TOTAL_SPACES];
 
     protected ArrayList<StateChangeListener<BoardStateChange>> boardMoveListeners = new ArrayList<>();
     protected ArrayList<StateChangeListener<BoardStateChange>> stateChangeListeners = new ArrayList<>();
     protected boolean debugMode = false;
 
-    public long ANTI_TO_MOVE_PIECES;
-    public long ANTI_NOT_TO_MOVE_PIECES;
-    public long NOT_TO_MOVE_PIECES;
-    public long TO_MOVE_PIECES;
-    public long NOT_TO_MOVE_PIECES_AND_ENPASSANT;
+    public long ANTI_TO_MOVE_PIECES; //reverse of pieces that cna move this turn.
+    public long ANTI_NOT_TO_MOVE_PIECES;//reverse of pieces that cant move this turn.
+    public long NOT_TO_MOVE_PIECES; //pieces that cant move this turn.
+    public long TO_MOVE_PIECES; //pieces that cna move this turn
+    public long NOT_TO_MOVE_PIECES_AND_ENPASSANT; //bit board of pieces whose cant move this turn, and enpassant.
     public long TO_MOVE_PIECES_AND_ENPASSANT;
     public long EMPTY;
-    public long OCCUPIED;
+    public long OCCUPIED; //spaces on board thats occupied.
     public long WHITE_PIECES;
     public long BLACK_PIECES;
     public long ENPASSANT;
     public boolean CAN_CASTLE_KING;
     public boolean CAN_CASTLE_QUEEN;
     public long OCCUPIED_NO_KING;
+    public long KING_TO_MOVE_BITBOARD;
+    //bit board of the side to move king.
+
 
     public short[] TO_MOVE_THREATS_PIECE_ID;
+    //piece id of the piece whose turn to mov eis now.
     //endregion
 
     public final StateChangeListener<BoardStateChange> BOARD_STATE_CHANGE_LOGGER =
@@ -86,7 +93,6 @@ public class ChessBoard implements Debuggable {
                 int spaceIdArriveAt = boardStateChange.getSpaceIdArriveAt();
 
                 short pieceData = boardStateChange.getPiece();
-                short pieceDataAtArrival = boardStateChange.getPieceCaptured();
 
                 if (isValidSpaceId(spaceId)) currPieceAtLocation[spaceId] = PieceData.INVALID_PIECES;
                 if (isValidSpaceId(spaceIdArriveAt)) currPieceAtLocation[spaceIdArriveAt] = pieceData;
@@ -147,21 +153,6 @@ public class ChessBoard implements Debuggable {
     //endregion
 
     //region IMMEDIATE_SPACE_FUNCS
-
-    public static int getEastSpaceId(int currSpaceId, int offset)
-    { //user ensure good input
-        return getDirSpaceId(currSpaceId, offset,EAST);
-    }
-
-    public static int getWestSpaceId(int currSpaceId, int offset)
-    { //user ensure good input
-        return getDirSpaceId(currSpaceId, offset,WEST);
-    }
-
-    public static int getDirSpaceId(int spaceId, int offset, short dir){
-        return spaceId + getOffsets(offset, dir);
-    }
-
     public static int getOffsets(int offset, short dir){
         return directionOffsets[dir]*offset;
     }
@@ -173,13 +164,42 @@ public class ChessBoard implements Debuggable {
     public static int getNOffsets(short dir){
         return KNIGHT_OFFSETS[dir];
     }
-
-    public static int getNDirSpaceId(int spaceId, short dir){
-        return spaceId + getNOffsets(dir);
-    }
     //endregion
 
     //region GET_ROW_COL_FUNCS
+
+    public long getRoundSpaceId(int spaceId, int range){
+        return getNearFile(spaceId, range) &
+                getNearRow(spaceId, range);
+    }
+
+    public long getNearFile(int sqr, int range){
+        int currFile = ChessBoard.getCol(sqr);
+        long ans = 0L;
+        for (int i = currFile; i >= 0 && i >= currFile-range; --i){
+            ans |= BitMasks.COL_MASKS[i];
+        }
+
+        for (int i = currFile; i <= ChessBoard.MAX_COL && i <= currFile+range; ++i){
+            ans |= BitMasks.COL_MASKS[i];
+        }
+
+        return ans;
+    }
+
+    public long getNearRow(int sqr, int range){
+        int currRow = ChessBoard.getRow(sqr);
+        long ans = 0L;
+        for (int i = currRow; i >= 0 && i >= currRow-range; --i){
+            ans |= BitMasks.ROW_MASKS[i];
+        }
+
+        for (int i = currRow+1; i <= ChessBoard.MAX_ROW && i <= currRow+range; ++i){
+            ans |= BitMasks.ROW_MASKS[i];
+        }
+        return ans;
+    }
+
     public static int getCol(int spaceId)
     {
         assert spaceId >= 0 && spaceId < BOARD_SIZE*BOARD_SIZE;
@@ -221,9 +241,6 @@ public class ChessBoard implements Debuggable {
                 | boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.WKING)];
     }
 
-    public long getEmptySpacesBitBoard(){
-        return ~(getWhitePieceBitBoard() | getBlackPieceBitBoard());
-    }
     public long getBitBoard(short pieceId){
         if (!PieceData.isValidPieceId(pieceId))
             throw new IllegalArgumentException("Invalid pieceId input at getBitBoard: " + pieceId);
@@ -268,14 +285,14 @@ public class ChessBoard implements Debuggable {
     }
 
     protected void movePiecePrimitive(int spaceIdToMove, int spaceIdArriveAt,
-                                       short pieceIdToMove, short pieceIdArriveAt)
+                                       short pieceIdToMove)
     {
         setPieceAt(spaceIdToMove, PieceData.INVALID_PIECES, pieceIdToMove);
-        setPieceAt(spaceIdArriveAt, pieceIdToMove, pieceIdArriveAt);
+        setPieceAt(spaceIdArriveAt, pieceIdToMove, PieceData.INVALID_PIECES);
     }
 
     protected void movePiece(int spaceIdToMove, int spaceIdArriveAt,
-                             short pieceIdToMove, short pieceIdArriveAt)
+                             short pieceIdToMove)
     {
         //move piece and just overwrite piece in that location. Only movePieceCapture should be public.
 
@@ -283,9 +300,9 @@ public class ChessBoard implements Debuggable {
         //assume enemy piece disappear before allied piece lands. this function dont handle capture.
         //notifyMoveListener(new BoardStateChange(capturedPiece, spaceIdArriveAt, ChessBoard.INVALID_SPACE_ID));
 
-        movePiecePrimitive(spaceIdToMove, spaceIdArriveAt, pieceIdToMove, pieceIdArriveAt);
+        movePiecePrimitive(spaceIdToMove, spaceIdArriveAt, pieceIdToMove);
         StateChangeListener.notifyListeners(this.boardMoveListeners,
-                new BoardStateChange(pieceIdToMove, spaceIdToMove, spaceIdArriveAt, pieceIdArriveAt));
+                new BoardStateChange(pieceIdToMove, spaceIdToMove, spaceIdArriveAt, PieceData.INVALID_PIECES));
     }
 
     public void movePieceCapture(int spaceIdToMove,
@@ -296,7 +313,7 @@ public class ChessBoard implements Debuggable {
         short pieceIdToMove = getPiece(spaceIdToMove);
 
         deSpawnPieceAt(spaceIdCaptureAt, pieceIdCapture);
-        movePiece(spaceIdToMove, spaceIdArriveAt, pieceIdToMove, PieceData.INVALID_PIECES); //piece land.
+        movePiece(spaceIdToMove, spaceIdArriveAt, pieceIdToMove); //piece land.
     }
 
     public short getPiece(int spaceId)
@@ -309,38 +326,6 @@ public class ChessBoard implements Debuggable {
             return PieceData.INVALID_PIECES;
         }
     }
-
-    public boolean isPieceAt(int spaceId)
-    {
-        if (!isValidSpaceId(spaceId)) return false;
-        return (OCCUPIED & BitMasks.getSingleSpaceBitBoard(spaceId)) != 0;
-    }
-
-    public boolean isEnemyPieceAt(int spaceId, boolean pieceColor)
-    {
-        long pieceBoard = BitMasks.getSingleSpaceBitBoard(spaceId);
-        if (!isValidSpaceId(spaceId)) return false;
-
-        if (pieceColor == PieceData.WHITE){
-            return (BLACK_PIECES & pieceBoard) != 0;
-        }else{
-            return (WHITE_PIECES&pieceBoard) != 0;
-        }
-    }
-
-    public boolean isAlliedPieceAt(int spaceId, boolean pieceColor)
-    {
-        long pieceBoard = BitMasks.getSingleSpaceBitBoard(spaceId);
-        if (!isValidSpaceId(spaceId)) return false;
-
-        if (pieceColor == PieceData.WHITE){
-            return (WHITE_PIECES & pieceBoard) != 0;
-        }else{
-            return (BLACK_PIECES & pieceBoard) != 0;
-        }
-    }
-
-
     //endregion
 
     //region MISC_FUNCS
@@ -359,12 +344,6 @@ public class ChessBoard implements Debuggable {
         int row = '8' - rowId; // '8' -> row 0, '1' -> row 7
         return row*BOARD_SIZE + col;
     }
-
-    public boolean isEmptySpaceAt(int spaceId)
-    {
-        return (OCCUPIED&BitMasks.getSingleSpaceBitBoard(spaceId)) == 0;
-    }
-
     //endregion
 
     //region LISTENERS
@@ -375,47 +354,6 @@ public class ChessBoard implements Debuggable {
     }
     public void addStateChangeListener(StateChangeListener<BoardStateChange> stateChangeListener){
         stateChangeListeners.add(stateChangeListener);
-    }
-    //endregion
-
-    //region UNDO_MOVE
-    public void undoBoardState(ArrayList<BoardStateChange> boardStateChanges)
-    {
-        if (boardStateChanges == null)
-        {
-            throw new NullPointerException("boardStateChange is null!");
-        }
-
-        for (int i = boardStateChanges.size()-1; i>=0; --i) {
-            BoardStateChange boardStateChange = boardStateChanges.get(i);
-
-           // BoardStateChange boardStateChange = boardStateChanges.get(i);
-
-            assert (boardStateChange.getSpaceIdArriveAt() != INVALID_SPACE_ID ||
-                    boardStateChange.getSpaceId() != INVALID_SPACE_ID);
-            int spaceId = boardStateChange.getSpaceId();
-            int spaceIdArriveAt = boardStateChange.getSpaceIdArriveAt();
-            short piece = boardStateChange.getPiece();
-            short pieceCaptured = boardStateChange.getPieceCaptured();
-
-            if (boardStateChange.getSpaceIdArriveAt() == INVALID_SPACE_ID) {//piece is taken out of board, thus must be spawned back in.
-                setPieceAt(boardStateChange.getSpaceId(),
-                        boardStateChange.getPiece(),
-                        getPiece(spaceId));
-            } else if (boardStateChange.getSpaceId() == INVALID_SPACE_ID) {
-                //piece is spawned, must be taken out of board.
-                setPieceAt(boardStateChange.getSpaceIdArriveAt(),
-                        PieceData.INVALID_PIECES,
-                        piece);
-            } else {
-                setPieceAt(spaceIdArriveAt,
-                        PieceData.INVALID_PIECES,
-                        piece);
-                setPieceAt(spaceId,
-                        piece,
-                        PieceData.INVALID_PIECES);
-            }
-        }
     }
     //endregion
 
@@ -435,7 +373,6 @@ public class ChessBoard implements Debuggable {
     public void generateBitMasks(boolean color, int enPassantTarget){
         long kingBM;
         long queenBM;
-        long kingBitBoard;
         if (color == PieceData.WHITE) {
             WHITE_PIECES = getWhitePieceBitBoard();
             BLACK_PIECES = getBlackPieceBitBoard();
@@ -443,7 +380,7 @@ public class ChessBoard implements Debuggable {
             NOT_TO_MOVE_PIECES = BLACK_PIECES;
             kingBM = BitMasks.WHITE_CASTLE_KING;
             queenBM = BitMasks.WHITE_CASTLE_QUEEN;
-            kingBitBoard = getBitBoard(PieceData.WKING);
+            KING_TO_MOVE_BITBOARD = getBitBoard(PieceData.WKING);
 
             TO_MOVE_THREATS_PIECE_ID = PreCalc.WHITE_THREAT_IDS;
         }else{
@@ -453,7 +390,7 @@ public class ChessBoard implements Debuggable {
             NOT_TO_MOVE_PIECES = WHITE_PIECES;
             kingBM = BitMasks.BLACK_CASTLE_KING;
             queenBM = BitMasks.BLACK_CASTLE_QUEEN;
-            kingBitBoard = getBitBoard(PieceData.BKING);
+            KING_TO_MOVE_BITBOARD = getBitBoard(PieceData.BKING);
 
             TO_MOVE_THREATS_PIECE_ID = PreCalc.BLACK_THREAT_IDS;
         }
@@ -461,7 +398,7 @@ public class ChessBoard implements Debuggable {
         ANTI_TO_MOVE_PIECES = ~TO_MOVE_PIECES;
         ANTI_NOT_TO_MOVE_PIECES = ~NOT_TO_MOVE_PIECES;
         OCCUPIED = TO_MOVE_PIECES|NOT_TO_MOVE_PIECES;
-        OCCUPIED_NO_KING = OCCUPIED&(~kingBitBoard);
+        OCCUPIED_NO_KING = OCCUPIED&(~KING_TO_MOVE_BITBOARD);
         EMPTY = ~OCCUPIED;
 
         if (PropertiesStats.isValidEnPassantTarget(enPassantTarget))
@@ -474,7 +411,7 @@ public class ChessBoard implements Debuggable {
 
         CAN_CASTLE_KING = ((EMPTY & kingBM) == kingBM);
         CAN_CASTLE_QUEEN = ((EMPTY & queenBM) == queenBM);
-    };
+    }
 
     public void setBoard(ChessBoard board){
         boardSquares = Arrays.copyOf(board.boardSquares, board.boardSquares.length);
@@ -497,6 +434,7 @@ public class ChessBoard implements Debuggable {
 
         OCCUPIED_NO_KING = board.OCCUPIED_NO_KING;
         TO_MOVE_THREATS_PIECE_ID = board.TO_MOVE_THREATS_PIECE_ID;
+        KING_TO_MOVE_BITBOARD = board.KING_TO_MOVE_BITBOARD;
 
         debugMode = board.debugMode;
     }
