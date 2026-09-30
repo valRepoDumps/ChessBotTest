@@ -1,10 +1,8 @@
 package Evaluation;
-import ChessLogic.ChessGame;
 import ChessLogic.Configurations.Configurations;
 import ChessLogic.MinimalChessGame;
 import ChessResources.BitMasks;
 import ChessResources.ChessBoard.ChessBoard;
-import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
 import ChessResources.ChessListener.StateChangeListener;
 import ChessResources.GetMovesLogic.ChessMove;
 import ChessResources.GetMovesLogic.PossibleMoves;
@@ -12,10 +10,8 @@ import ChessResources.Pieces.MovesGeneration;
 import ChessResources.Pieces.PieceData;
 
 import java.util.Comparator;
-import java.util.Objects;
 
 import static java.lang.Math.max;
-import static java.lang.System.exit;
 
 public class Evaluation {
     public static final int NEG_INF_SCORE = -90000;
@@ -428,7 +424,7 @@ public class Evaluation {
         registerGame(testGame);
         for (int i = 1; i <= depth; ++i){
             followPrincipalVariation = true;
-            negaMaxSearch(i, NEG_INF_SCORE, -NEG_INF_SCORE, true);
+            negaMaxSearch(i, NEG_INF_SCORE, -NEG_INF_SCORE);
             System.out.println("Depth: " + i + " Nodes: " + nodes);
         }
 
@@ -495,7 +491,7 @@ public class Evaluation {
         return alpha;
     }
 
-    int negaMaxSearch(int currDepth, int alpha, int beta, boolean isRootCall){
+    int negaMaxSearch(int currDepth, int alpha, int beta){
         principalVariationLen[singleHalfMoves] = singleHalfMoves;
         boolean foundPrincipalVariationMove = false;
 
@@ -537,12 +533,12 @@ public class Evaluation {
             int score;
 
             if (foundPrincipalVariationMove){
-                score = -negaMaxSearch(currDepth-1, -alpha-1, -alpha, false);
+                score = -negaMaxSearch(currDepth-1, -alpha-1, -alpha);
                 if ((score > alpha) && (score < beta)){
-                    score = -negaMaxSearch(currDepth-1, -beta, -alpha, false);
+                    score = -negaMaxSearch(currDepth-1, -beta, -alpha);
                 }
             }else{
-                score = -negaMaxSearch(currDepth-1, -beta, -alpha, false);
+                score = -negaMaxSearch(currDepth-1, -beta, -alpha);
             }
 
             --singleHalfMoves;

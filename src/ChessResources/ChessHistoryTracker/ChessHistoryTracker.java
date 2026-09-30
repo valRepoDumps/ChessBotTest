@@ -1,6 +1,5 @@
 package ChessResources.ChessHistoryTracker;
 
-import ChessLogic.ChessGame;
 import ChessLogic.MinimalChessGame;
 
 import ChessResources.Hasher.HashContainer;
@@ -14,7 +13,6 @@ public class ChessHistoryTracker <ChessGame extends MinimalChessGame>{
     //region PRE_CONSTRUCTOR
     protected ArrayList<ChessGame> history = new ArrayList<>();
     protected Hashtable<HashContainer, Integer> tableOfPositions = new Hashtable<>();
-    ChessGame tmpStore;
     protected boolean threeFoldRepitionFlag = false;
     //endregion
 

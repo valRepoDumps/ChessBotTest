@@ -1,15 +1,12 @@
 package ChessResources.ChessBoard;
 
-import ChessLogic.Debug.DebugMode;
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
 import ChessResources.ChessListener.StateChangeListener;
 import ChessResources.Pieces.PieceData;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
+
 import java.util.function.IntConsumer;
 
 import static ChessResources.ChessBoard.ChessBoard.BOARD_SIZE;
