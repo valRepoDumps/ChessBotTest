@@ -4,11 +4,13 @@ import ChessLogic.MinimalChessGameCodec;
 import ChessLogic.MinimalChessGame;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -30,7 +32,20 @@ public final class GameSaveManager {
             String fen,
             long savedAtEpochMs,
             int formatVersion,
-            int totalMovesElapsed) {}
+            int totalMovesElapsed) {
+        public String isoSeconds() {
+            return Instant.parse(savedAt).truncatedTo(ChronoUnit.SECONDS).toString();
+        }
+
+        public JsonObject toJson(){
+            JsonObject s = new JsonObject();
+            s.addProperty("save_id", saveId);
+            s.addProperty("name", saveName);
+            s.addProperty("saved_at", isoSeconds());
+            s.addProperty("fen", fen);
+            return s;
+        }
+    }
 
     private static final Pattern SAFE_ID = Pattern.compile("[A-Za-z0-9_-]{1,64}");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
