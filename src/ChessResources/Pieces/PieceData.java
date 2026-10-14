@@ -9,7 +9,6 @@ public class PieceData implements PieceConsts{
     public static final boolean BLACK = false;
     public static final boolean WHITE = true;
 
-
     //public static final short EMPTY_SPACE = 0;
     public final static short PIECES_DIFF = 6;
 

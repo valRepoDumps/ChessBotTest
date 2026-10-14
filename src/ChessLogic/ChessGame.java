@@ -55,12 +55,13 @@ public class ChessGame extends MinimalChessGame{
 //                System.out.println(Arrays.toString(gameProperties) + " " + piece + " in" + shorts.getColor(piece));
                 selectedSpaceId = spaceId;
                 drawBoard.highlightSpace(spaceId);
-                possibleMoves.highlightPossibleMoves(selectedSpaceId, drawBoard);
+                drawBoard.highlightPossibleMoves(selectedSpaceId, possibleMoves);
             }
         }
         else
         {
             drawBoard.unHighlightSpace(spaceId);
+
             drawBoard.unHighlightSpace(selectedSpaceId);
 
             ChessMove move = possibleMoves.getMove(selectedSpaceId, spaceId);
@@ -79,14 +80,14 @@ public class ChessGame extends MinimalChessGame{
             }
             else//case user choose an unmoveable square
             {
-                possibleMoves.unHighlightPossibleMoves(selectedSpaceId, drawBoard);
+                drawBoard.unHighlightPossibleMoves(selectedSpaceId, possibleMoves);
                 //unhighlight possible moves relating to previous selected space id
 
                 selectedSpaceId = spaceId;
                 drawBoard.highlightSpace(spaceId);
                 if (PieceData.isValidPieceId(piece))
                 {
-                    possibleMoves.highlightPossibleMoves(selectedSpaceId, drawBoard);
+                    drawBoard.highlightPossibleMoves(selectedSpaceId, possibleMoves);
                 }
             }
         }

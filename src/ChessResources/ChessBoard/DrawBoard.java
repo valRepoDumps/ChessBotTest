@@ -2,6 +2,8 @@ package ChessResources.ChessBoard;
 
 import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
 import ChessResources.ChessListener.StateChangeListener;
+import ChessResources.GetMovesLogic.ChessMove;
+import ChessResources.GetMovesLogic.PossibleMoves;
 import ChessResources.Pieces.PieceData;
 
 import javax.swing.*;
@@ -123,6 +125,20 @@ public class DrawBoard {
     private void resetSpace(JButton space) {
         space.setIcon(null);
         space.setBorder(null);
+    }
+
+    public void highlightPossibleMoves(int spaceId, PossibleMoves pm)
+    {
+        for (ChessMove move : pm.canMoveToFrom(spaceId)){
+            this.highlightSpace(move.getSpaceIdArriveAt());
+        }
+    }
+
+    public void unHighlightPossibleMoves(int spaceId, PossibleMoves pm)
+    {
+        for (ChessMove move : pm.canMoveToFrom(spaceId)){
+            this.unHighlightSpace(move.getSpaceIdArriveAt());
+        }
     }
 
     public void highlightSpace(int spaceId) {

@@ -34,9 +34,9 @@ public class MinimalChessGame implements Debuggable {
 
     PropertiesStats gameProperties = new PropertiesStats();
 
-    private int currEnPassantTarget = INVALID_ENPASSANT_TARGET;
+    int currEnPassantTarget = INVALID_ENPASSANT_TARGET;
 
-    private int endGameCode = INDETERMINATE;
+    int endGameCode = INDETERMINATE;
     public static final int WHITE_WON = 0;
     public static final int BLACK_WON = 1;
     public static final int DRAW = 2;
@@ -123,6 +123,53 @@ public class MinimalChessGame implements Debuggable {
         }
     }
 
+    public String toFen() {
+        MinimalChessGame g = this;
+        ChessBoard board = g.getBoard();
+        StringBuilder sb = new StringBuilder();
+
+        for (int row = 0; row < ChessBoard.BOARD_SIZE; row++) {
+            int empty = 0;
+            for (int col = 0; col < ChessBoard.BOARD_SIZE; col++) {
+                char c = pieceChar(board.getPiece(row * ChessBoard.BOARD_SIZE + col));
+                if (c == 0) { empty++; continue; }
+                if (empty > 0) { sb.append(empty); empty = 0; }
+                sb.append(c);
+            }
+            if (empty > 0) sb.append(empty);
+            if (row < ChessBoard.MAX_ROW) sb.append('/');
+        }
+
+        PropertiesStats p = g.getGameProperties();
+        sb.append(' ').append(p.getSideToMove() == ChessBoard.WHITE ? 'w' : 'b').append(' ');
+
+        int castlingStart = sb.length();
+        if (p.canWhiteCastleKing())  sb.append('K');
+        if (p.canWhiteCastleQueen()) sb.append('Q');
+        if (p.canBlackCastleKing())  sb.append('k');
+        if (p.canBlackCastleQueen()) sb.append('q');
+        if (sb.length() == castlingStart) sb.append('-');
+
+        int ep = p.getEnPassantTarget();
+        sb.append(' ').append(PropertiesStats.isValidEnPassantTarget(ep)
+                ? ChessBoard.convertSpaceIdToSquareNotation(ep) : "-");
+        sb.append(' ').append(p.getHalfMovesSinceCaptureOrPawnMove());
+        sb.append(' ').append(p.getTotalMovesElapsed());
+        return sb.toString();
+    }
+
+    private static char pieceChar(short piece) {
+        return switch (piece) {
+            case PieceData.WKING -> 'K';   case PieceData.BKING -> 'k';
+            case PieceData.WQUEEN -> 'Q';  case PieceData.BQUEEN -> 'q';
+            case PieceData.WROOK -> 'R';   case PieceData.BROOK -> 'r';
+            case PieceData.WBISHOP -> 'B'; case PieceData.BBISHOP -> 'b';
+            case PieceData.WKNIGHT -> 'N'; case PieceData.BKNIGHT -> 'n';
+            case PieceData.WPAWN -> 'P';   case PieceData.BPAWN -> 'p';
+            default -> (char) 0;
+        };
+    }
+
     public void fenTranslator(String fen){
         String[] args = fen.trim().split(" ");
         chessBoard.setUpPieces(args[0]);
@@ -151,7 +198,7 @@ public class MinimalChessGame implements Debuggable {
         } else if (args[3].length() == 2 && Character.isAlphabetic(args[3].charAt(0))
                 && Character.isDigit(args[3].charAt(1))) {
             gameProperties.setEnPassantTarget(ChessBoard.convertSquareNotationToSpaceId(
-                    args[3].charAt(0), args[3].charAt(1)));
+                    args[3]));
         } else
             throw new IllegalArgumentException("Invalid files and ranks input (" + args[3] + ").");
 
@@ -407,7 +454,7 @@ public class MinimalChessGame implements Debuggable {
         getBoard().generateBitMasks(getCurrentColorToMove(), getEnpassantTarget());
     }
 
-    private void tryEndGame(){
+    public void tryEndGame(){
         aSideWon();
         if (endGameCode != INDETERMINATE)
             endGame();
@@ -428,6 +475,14 @@ public class MinimalChessGame implements Debuggable {
             DebugMode.debugPrint(this, "NO REASON");
         }
         if (isDebuggable()) DebugMode.debugPrint(this, chessHistoryTracker);
+    }
+
+    public void undoTurn(int numTurns) throws OutOfOldTurns, NullPointerException {
+        if (!chessHistoryTracker.canUndoNTurns(numTurns))
+            throw new OutOfOldTurns("Not enough past turns (" + numTurns + ") available to undo.");
+        for (int i = 0; i < numTurns; ++i){
+            undoTurn();
+        }
     }
 
     public void undoTurn() throws OutOfOldTurns, NullPointerException {
@@ -504,6 +559,9 @@ public class MinimalChessGame implements Debuggable {
         StateChangeListener.notifyListeners(listener, this);
     }
 
+    public void removeTurnEndListener(StateChangeListener<MinimalChessGame> listener){
+        endTurnListeners.remove(listener);   // remove(Object), uses equals -> same reference for lambdas
+    }
     public Configurations getConfigurations(){
         return configurations;
     }

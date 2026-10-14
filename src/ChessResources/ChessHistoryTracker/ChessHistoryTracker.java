@@ -21,7 +21,6 @@ public class ChessHistoryTracker <ChessGame extends MinimalChessGame>{
 
     //region HELPERS
     public void pushTurn(ChessGame game) {
-        //System.out.println("PUSHED GAME: " + game.toString());
         history.add(game);
         int currRepetitions = tableOfPositions.getOrDefault(game.getHashOfPosition(), 0);
         if (currRepetitions == 2){
@@ -40,12 +39,15 @@ public class ChessHistoryTracker <ChessGame extends MinimalChessGame>{
     public int totalTurns(){
         return history.size();
     }
-    public boolean isEmpty(){return history.isEmpty();}
+    public boolean isEmpty(){return history.size() < 2;} //<2 is essentially empty as it cannot pop.
 
+    public boolean canUndoNTurns(int turns){
+        return history.size()-turns >= 1;
+    }
     //region SETTERS
     public ChessGame peekTurn()
     {
-        if (isEmpty()) return null;
+        if (history.isEmpty()) return null;
         return history.getLast();
     }
 

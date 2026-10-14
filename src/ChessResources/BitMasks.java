@@ -77,6 +77,7 @@ public class BitMasks {
 
     //endregion
 
+    //region MAGICS
     // ---- Bishop magics ----
     public static final long[] BISHOP_MAGICS =
     { 0x8183004420820L, 0x42802018c010000L, 0x3210011461000018L, 0x102208200880000L,
@@ -116,15 +117,13 @@ public class BitMasks {
             0x9041200402382L, 0xc301040a0810602L, 0xc01000830200143L, 0x2190005500021L,
             0xa40d005004120801L, 0x8802000401089002L, 0x4029080091102204L, 0x2841810400538122L
     };
-
+    //endregion
     //region DIAG&HORIZON_MASKS
 
     public static final long[][] HV_TO_ATK_MASKS = new long[64][ROOK_SIZE];
     public static final long[][] D_TO_ATK_MASKS = new long[64][BISHOP_SIZE];
 //    public static final HashMap<Long, Long>[] HVD_TO_ATK_MASKS = new HashMap[ChessBoard.TOTAL_SPACES];
     //endregion
-    //endregion
-
 
     //region ROW_AND_COL_MASKS
     public static void assigneRowAndColMasks(){

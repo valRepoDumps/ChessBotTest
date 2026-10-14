@@ -1,4 +1,4 @@
-package Evaluation;
+package ChessLogic.Evaluation;
 import ChessLogic.Configurations.Configurations;
 import ChessLogic.MinimalChessGame;
 import ChessResources.BitMasks;
@@ -17,138 +17,90 @@ public class Evaluation {
     public static final int NEG_INF_SCORE = -90000;
     public static final int BIG_MOVE_SCORE = 10000;
     public static final int MAX_HALF_MOVES = 128;
-    static final int[] MATERIAL_SCORE = new int[PieceData.TOTAL_PIECES];
+    public static final int[] MATERIAL_SCORE = new int[PieceData.TOTAL_PIECES];
     public static final ChessMove INVALID_MOVES = null;
 
     //region POSITIONAL_SCORES
-    static final double [] PAWN_POSITIONAL_MODIFIER = {
-           9,   9,   9,   9,   9,   9,   9,   9,
-           3,   3,   3,   4,   4,   3,   3,   3,
-           2,   2,   2,   3,   3,   2,   2,   2,
-         1.5, 1.5, 1.5,   2,   2, 1.5, 1.5, 1.5,
-        1.25,1.25, 1.5,   2,   2, 1.5,1.25,1.25,
-           1,   1,   1,1.25,1.25,   1,   1,   1,
-           1,   1,   1, .25, .25,   1,   1,   1,
-           1,   1,   1,   1,   1,   1,   1,   1
+    private static double[] filled(double v) {
+        double[] a = new double[64];
+        java.util.Arrays.fill(a, v);
+        return a;
+    }
+
+    static final int MAX_MOBILITY = 14;
+
+    // mobility weight (cp per available move); still editable per square later
+    static final double[] PAWN_POSITIONAL_MODIFIER   = filled(1);
+    static final double[] KNIGHT_POSITIONAL_MODIFIER = filled(1);
+    static final double[] BISHOP_POSITIONAL_MODIFIER = filled(1);
+    static final double[] ROOK_POSITIONAL_MODIFIER   = filled(1);
+    static final double[] QUEEN_POSITIONAL_MODIFIER  = filled(1);
+    static final double[] KING_POSITIONAL_MODIFIER   = filled(1);
+
+    static final int[] PAWN_POSITIONAL_SCORE = {
+            0,   0,   0,   0,   0,   0,   0,   0,
+            80,  80,  80,  80,  80,  80,  80,  80,
+            30,  30,  30,  40,  40,  30,  30,  30,
+            20,  20,  20,  30,  30,  20,  20,  20,
+            10,  10,  15,  25,  25,  15,  10,  10,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   0, -15, -15,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0
     };
 
-    static final double [] KNIGHT_POSITIONAL_MODIFIER = {
-       .25,  .5,  .5,  .5,  .5,  .5, .5, .25,
-        .5,   1,   1,   1,   1,   1,  1,  .5,
-        .5,   1,1.25,   2,   2,1.25,  1,  .5,
-        .5,   1, 1.5,   3,   3, 1.5,  1,  .5,
-        .5,   1, 1.5,   3,   3, 1.5,  1,  .5,
-        .5,   1,1.25,1.25,1.25,1.25,  1,  .5,
-        .5,   1,   1,   1,   1,   1,  1,  .5,
-       .25, .25,  .5,  .5,  .5,  .5,.25,  .9
+    static final int[] KNIGHT_POSITIONAL_SCORE = {
+            -50, -40, -30, -30, -30, -30, -40, -50,
+            -40, -20,   0,   0,   0,   0, -20, -40,
+            -30,   0,  10,  15,  15,  10,   0, -30,
+            -30,   5,  15,  20,  20,  15,   5, -30,
+            -30,   0,  15,  20,  20,  15,   0, -30,
+            -30,   5,  10,  15,  15,  10,   5, -30,
+            -40, -20,   0,   5,   5,   0, -20, -40,
+            -50, -40, -30, -30, -30, -30, -40, -50
     };
 
-    static final double [] BISHOP_POSITIONAL_MODIFIER = {
-        1,   1,  1,  1,  1,  1,  1,  1,
-        1,   1,  1,  1,  1,  1,  1,  1,
-        1,   1,  1,1.5,1.5,  1,  1,  1,
-        1,   1,1.5,  3,  3, 1.5, 1,  1,
-        1,   1,1.5,  3,  3, 1.5, 1,  1,
-        1, 1.5,  1,  1,  1,  1,1.5,  1,
-        1,   3,  1,  1,  1,  1,  3,  1,
-        1,   1,.25,  1,  1,.25,  1,  1
-    };
-    static final double [] ROOK_POSITIONAL_MODIFIER = {
-        5,   5,   5, 5, 5,   5,  5,  5,
-        5,   5,   5, 5, 5,   5,  5,  5,
-        1,   1, 1.5, 2, 2, 1.5,  1,  1,
-        1,   1, 1.5, 2, 2, 1.5,  1,  1,
-        1,   1, 1.5, 2, 2, 1.5,  1,  1,
-        1,   1, 1.5, 2, 2, 1.5,  1,  1,
-        1,   1, 1.5, 2, 2, 1.5,  1,  1,
-        1,   1, 1.5, 2, 2, 1.5,  1,  1
+    static final int[] BISHOP_POSITIONAL_SCORE = {
+            -20, -10, -10, -10, -10, -10, -10, -20,
+            -10,   0,   0,   0,   0,   0,   0, -10,
+            -10,   0,   5,  10,  10,   5,   0, -10,
+            -10,   5,   5,  15,  15,   5,   5, -10,
+            -10,   0,  10,  15,  15,  10,   0, -10,
+            -10,  10,  10,  10,  10,  10,  10, -10,
+            -10,  15,   0,   0,   0,   0,  15, -10,
+            -20, -10, -15, -10, -10, -15, -10, -20
     };
 
-    static final double [] QUEEN_POSITIONAL_MODIFIER = {
-        5,   5,   5, 5, 5,   5,  5,  5,
-        5,   5,   5, 5, 5,   5,  5,  5,
-        1,   1, 1.5, 3, 3, 1.5,  1,  1,
-        1,   1,   2, 1, 1,   2,  1,  0,
-        1,   1,   2, 1, 1,   2,  1,  1,
-        1,   1, 1.5, 2, 2, 1.5,  1,  1,
-        1,   3, 1.5, 2, 2, 1.5,  3,  1,
-        1,   1, 1.5, 2, 2, 1.5,  1,  1
+    static final int[] ROOK_POSITIONAL_SCORE = {
+            0,   0,   0,   0,   0,   0,   0,   0,
+            25,  25,  25,  25,  25,  25,  25,  25,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   5,  10,  10,   5,   0,   0
     };
 
-    static final double [] KING_POSITIONAL_MODIFIER = {
-        1,   1,  1,  1,  1,  1,  1,  1,
-        1,   1,  1,  1,  1,  1,  1,  1,
-        1,   1,  1,  1,  1,  1,  1,  1,
-        1,   1,  1,  1,  1,  1,  1,  1,
-        1,   1,  1,  1,  1,  1,  1,  1,
-        1,   1,  1,  1,  1,  1,  1,  1,
-        1,   1,  1,  1,  1,  1,  1,  1,
-        1,   5,  1,  1,  1,  1,  5,  1
+    static final int[] QUEEN_POSITIONAL_SCORE = {
+            -10,  -5,  -5,  -5,  -5,  -5,  -5, -10,
+            -5,   5,   5,   5,   5,   5,   5,  -5,
+            -5,   0,   5,   5,   5,   5,   0,  -5,
+            -5,   0,   5,  10,  10,   5,   0,  -5,
+            -5,   0,   5,  10,  10,   5,   0,  -5,
+            -5,   0,   5,   5,   5,   5,   0,  -5,
+            -5,   0,   0,   0,   0,   0,   0,  -5,
+            -10,  -5,  -5,   0,   0,  -5,  -5, -10
     };
 
-    static final int [] PAWN_POSITIONAL_SCORE = {
-            90, 90, 90, 90, 90, 90, 90, 90,
-            30, 30, 30, 40, 40, 30, 30, 30,
-            20, 20, 20, 30, 30, 20, 20, 20,
-            10, 10, 10, 20, 20, 10, 10, 10,
-            5,   5, 10, 20, 20, 10, 5 ,  5,
-            0,   0,  0,  5,  5,  0,  0,  0,
-            0,   0,  0,-10,-10,  0,  0,  0,
-            0,   0,  0,  0,  0,  0,  0,  0
-    };
-
-    static final int [] KNIGHT_POSITIONAL_SCORE = {
-            -10, -5, -5, -5, -5, -5, -5, -10,
-            -5,   0,  0,  0,  0,  0,  0, -5,
-            -5,   0,  5, 20, 20,  5,  0, -5,
-            -5,   0, 10, 30, 30, 10,  0, -5,
-            -5,   0, 10, 30, 30, 10,  0,  -5,
-            -5,   0,  5,  5,  5,  5,  0,  -5,
-            -5,   0,  0,  0,  0,  0,  0,  -5,
-            -10,-10, -5, -5, -5, -5,-10,  -5
-    };
-
-    static final int [] BISHOP_POSITIONAL_SCORE = {
-            0,   0,  0,  0, 0 , 0 , 0 , 0 ,
-            0,   0,  0,  0,  0,  0,  0, 0 ,
-            0,   0,  0, 10, 10,  0,  0, 0 ,
-            0,   0, 10, 30, 30, 10,  0, 0 ,
-            0,   0, 10, 30, 30, 10,  0,  0,
-            0,  10,  0,  0,  0,  0, 10,  0,
-            0,  30,  0,  0,  0,  0, 30,  0,
-            0,   0,-10,  0,  0,-10,  0,  0
-    };
-    static final int [] ROOK_POSITIONAL_SCORE = {
-            50, 50, 50, 50, 50, 50, 50, 50,
-            50, 50, 50, 50, 50, 50, 50, 50,
-            0,   0, 10, 20, 20, 10,  0, 0 ,
-            0,   0, 10, 20, 20, 10,  0, 0 ,
-            0,   0, 10, 20, 20, 10,  0,  0,
-            0,   0, 10, 20, 20, 10,  0,  0,
-            0,   0, 10, 20, 20, 10,  0,  0,
-            0,   0, 10, 20, 20, 10,  0,  0
-    };
-
-    static final int [] QUEEN_POSITIONAL_SCORE = {
-            50, 50, 50, 50, 50, 50, 50, 50,
-            50, 50, 50, 50, 50, 50, 50, 50,
-            0,   0, 10, 30, 30, 10,  0, 0 ,
-            0,   0, 20, 50, 50, 20,  0, 0 ,
-            0,   0, 20, 50, 50, 20,  0,  0,
-            0,   0, 10, 20, 20, 10,  0,  0,
-            0,  30, 10, 20, 20, 10, 30,  0,
-            0,   0,-10, 20, 20,-10,  0,  0
-    };
-
-    static final int [] KING_POSITIONAL_SCORE = {
-            0,   0,  0,  0,  0,  0,  0,  0,
-            0,   0,  0,  0,  0,  0,  0,  0,
-            0,   0,  0,  0,  0,  0,  0,  0,
-            0,   0,  0,  0,  0,  0,  0,  0,
-            0,   0,  0,  0,  0,  0,  0,  0,
-            0,   0,  0,  0,  0,  0,  0,  0,
-            0,   0,  0,  0,  0,  0,  0,  0,
-            0,  50, 50,  0,  0,  0, 50,  0
+    static final int[] KING_POSITIONAL_SCORE = {
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,  20,  30,   0,   0,   0,  30,  20
     };
 
 
@@ -160,7 +112,7 @@ public class Evaluation {
         24, 25, 26, 27, 28, 29, 30, 31,
         16, 17, 18, 19, 20, 21, 22, 23,
          8,  9, 10, 11, 12, 13, 14, 15,
-         1,  1,  2,  3,  4,  5,  6,  7
+         0,  1,  2,  3,  4,  5,  6,  7
     };
 
     static final int[][] POSITIONAL_SCORES = new int[PieceData.PIECES_DIFF][];
@@ -175,32 +127,26 @@ public class Evaluation {
     static final int[] KING_CAPTURE_SCORE = new int[PieceData.TOTAL_PIECES];
 
     //[attacker][defender]
-    static final int[][] CAPTURE_SCORES = new int[PieceData.TOTAL_PIECES][];
+    public static final int[][] CAPTURE_SCORES = new int[PieceData.TOTAL_PIECES][];
 
-    private final StateChangeListener<MinimalChessGame> EVALUATOR_BLACK_PLAYS =
-            (MinimalChessGame game)->{
-                if (game.getCurrentColorToMove() == PieceData.BLACK && game.sideWon() == MinimalChessGame.INDETERMINATE) {
-                    moveEvaluator(game);
-                }
-            };
-    private final StateChangeListener<MinimalChessGame> EVALUATOR_WHITE_PLAYS =
-            (MinimalChessGame game)->{
-                if (game.getCurrentColorToMove() == PieceData.WHITE && game.sideWon() == MinimalChessGame.INDETERMINATE) {
-                    moveEvaluator(game);
-                }
-            };
+//    private final StateChangeListener<MinimalChessGame> EVALUATOR_BLACK_PLAYS =
+//            (MinimalChessGame game)->{
+//                if (game.getCurrentColorToMove() == PieceData.BLACK && game.sideWon() == MinimalChessGame.INDETERMINATE) {
+//                    moveEvaluator(game);
+//                }
+//            };
 
     //region STATIC
     static {
         MATERIAL_SCORE[PieceData.WPAWN] = 100;
-        MATERIAL_SCORE[PieceData.WBISHOP] = 350;
+        MATERIAL_SCORE[PieceData.WBISHOP] = 310;
         MATERIAL_SCORE[PieceData.WKNIGHT] = 300;
         MATERIAL_SCORE[PieceData.WROOK] = 500;
         MATERIAL_SCORE[PieceData.WQUEEN] = 900;
         MATERIAL_SCORE[PieceData.WKING] = 30000;
 
         MATERIAL_SCORE[PieceData.BPAWN] = -100;
-        MATERIAL_SCORE[PieceData.BBISHOP] = -350;
+        MATERIAL_SCORE[PieceData.BBISHOP] = -310;
         MATERIAL_SCORE[PieceData.BKNIGHT] = -300;
         MATERIAL_SCORE[PieceData.BROOK] = -500;
         MATERIAL_SCORE[PieceData.BQUEEN] = -900;
@@ -291,6 +237,18 @@ public class Evaluation {
     public int singleHalfMoves;
     private final Comparator<ChessMove> sortFunc = Comparator.comparingInt(this::scoreMove).reversed();
 
+    private boolean sideToMove = PieceData.WHITE;
+    private boolean isEvaluationOn = false;
+
+    private final StateChangeListener<MinimalChessGame> EVALUATOR =
+            (MinimalChessGame game)->{
+                if (game != null && isEvaluationOn &&
+                        game.getCurrentColorToMove() == sideToMove &&
+                        game.sideWon() == MinimalChessGame.INDETERMINATE) {
+                    moveEvaluator(game);
+                }
+            };
+
     public Evaluation(int depth){
         this.depth = depth;
         resetEvaluation();
@@ -309,6 +267,7 @@ public class Evaluation {
         scorePrincipalVariation = false;
     }
 
+    //region SCORE
     static int getMaterialScore(short pieceData, boolean sideToMove) {
         return sideToMove == PieceData.WHITE
                 ? MATERIAL_SCORE[pieceData]
@@ -316,20 +275,17 @@ public class Evaluation {
     }
 
     private int getPositionalScore(short pieceData, int sqr){
-        int idx = PieceData.getColor(pieceData) == PieceData.WHITE
-                ? sqr : MIRRORED_IDX[sqr];
+        boolean isWhite = PieceData.getColor(pieceData) == PieceData.WHITE;
+        int type = PieceData.getType(pieceData);
+        int idx = isWhite ? sqr : MIRRORED_IDX[sqr];
 
-        int pieceValue = (int) (PieceData.getColor(pieceData) == PieceData.WHITE
-                        ? POSITIONAL_SCORES[PieceData.getType(pieceData)][idx] +
-                        POSITIONAL_MODIFIERS[PieceData.getType(pieceData)][idx] *
-                        max(1, BitMasks.countBit(MovesGeneration.getUniversalMoves(game, sqr, pieceData)))
-                        : -POSITIONAL_SCORES[PieceData.getType(pieceData)][idx] +
-                        POSITIONAL_MODIFIERS[PieceData.getType(pieceData)][idx] *
-                        max(1, BitMasks.countBit(MovesGeneration.getUniversalMoves(game, sqr, pieceData))));
+        int mobility = (int) Math.min(MAX_MOBILITY,
+                max(1, BitMasks.countBit(MovesGeneration.getUniversalMoves(game, sqr, pieceData))));
 
-        return game.getCurrentColorToMove() == PieceData.WHITE
-                ? pieceValue
-                : -pieceValue;
+        int value = (int) (POSITIONAL_SCORES[type][idx] + POSITIONAL_MODIFIERS[type][idx] * mobility);
+
+        // positive if the piece belongs to the side to move, negative otherwise
+        return isWhite == (game.getCurrentColorToMove() == PieceData.WHITE) ? value : -value;
     }
 
     private int getCaptureScore(ChessMove move){
@@ -363,6 +319,7 @@ public class Evaluation {
                 getPositionalScore(move.getPieceId(),
                         move.getSpaceIdToMove());
     }
+    //endregion
 
     public int evaluateGame(){
         int currScore = 0;
@@ -390,27 +347,40 @@ public class Evaluation {
                 3,
                 game.getCurrentColorToMove())*5;
 
-        if (game.countPiecesOnCols(
-                game.getKingSpaceId(game.getCurrentColorToMove()),
-                1,
-                game.getCurrentColorToMove()
-            ) < 5
-        ){
-            currScore-=100; //
-        }
+        boolean us = game.getCurrentColorToMove();
+        if (game.countPiecesOnCols(game.getKingSpaceId(us), 1, us) < 5)   currScore -= 30;
+        if (game.countPiecesOnCols(game.getKingSpaceId(!us), 1, !us) < 5) currScore += 30;
 
         return currScore;
     }
 
-    public void registerBlackEvaluator(MinimalChessGame game){
-        game.addTurnEndListener(EVALUATOR_BLACK_PLAYS);
+    public void turnEvaluatorOnOff(boolean adjustment){
+        isEvaluationOn = adjustment;
     }
 
-    public void registerWhiteEvaluator(MinimalChessGame game){
-        game.addTurnEndListener(EVALUATOR_WHITE_PLAYS);
+    public void attach(MinimalChessGame game, boolean isEvaluationOn) {
+        turnEvaluatorOnOff(isEvaluationOn);
+        if (game != null) {
+            game.removeTurnEndListener(EVALUATOR);   // avoid double registration
+            game.addTurnEndListener(EVALUATOR);      // notifies immediately
+        }
     }
 
-    public void registerGame(MinimalChessGame game){
+    /** Re-check "is it the bot's turn right now?" without waiting for a turn end. */
+    public void kick(MinimalChessGame game) {
+        StateChangeListener.notifyListeners(EVALUATOR, game);
+    }
+
+    public void changeSideToMove(boolean newSideToMove){
+        this.sideToMove = newSideToMove;
+    }
+
+    public void unregisterEvaluator(MinimalChessGame game){
+        if (game != null)
+            game.removeTurnEndListener(EVALUATOR);
+    }
+
+    private void registerGame(MinimalChessGame game){
         this.game = game;
     }
 
@@ -435,6 +405,7 @@ public class Evaluation {
         System.out.println("Nodes visited: " + nodes);
     }
 
+    //region SEARCH_FUNCS
     private void enablePrincipalVariationScoring(PossibleMoves currPossibleMoves){
         followPrincipalVariation = false;
         for (int i = 0; i < currPossibleMoves.currLen; ++i){
@@ -579,4 +550,5 @@ public class Evaluation {
         }
         return alpha;
     }
+    //endregion
 }

@@ -58,8 +58,6 @@ public class ChessBoard implements Debuggable {
     protected long[] boardSquares = new long[PieceData.TOTAL_PIECES];
     //list of all the bitboard containing the pieces.
 
-    public short[] currPieceAtLocation = new short[ChessBoard.TOTAL_SPACES];
-
     protected ArrayList<StateChangeListener<BoardStateChange>> boardMoveListeners = new ArrayList<>();
     protected ArrayList<StateChangeListener<BoardStateChange>> stateChangeListeners = new ArrayList<>();
     protected boolean debugMode = false;
@@ -86,29 +84,8 @@ public class ChessBoard implements Debuggable {
     //piece id of the piece whose turn to mov eis now.
     //endregion
 
-    public final StateChangeListener<BoardStateChange> BOARD_STATE_CHANGE_LOGGER =
-            (BoardStateChange boardStateChange)->{
-
-                int spaceId = boardStateChange.getSpaceId();
-                int spaceIdArriveAt = boardStateChange.getSpaceIdArriveAt();
-
-                short pieceData = boardStateChange.getPiece();
-
-                if (isValidSpaceId(spaceId)) currPieceAtLocation[spaceId] = PieceData.INVALID_PIECES;
-                if (isValidSpaceId(spaceIdArriveAt)) currPieceAtLocation[spaceIdArriveAt] = pieceData;
-                // Only update arrays/sets when the target index is valid
-                    // arriveAt invalid means a piece was removed from 'spaceId' (source)
-                if (!ChessBoard.isValidSpaceId(spaceIdArriveAt) &&
-                        ChessBoard.isValidSpaceId(spaceId) &&
-                        PieceData.isValidPieceId(pieceData)){
-                    currPieceAtLocation[spaceId] = PieceData.INVALID_PIECES;
-                }
-            };
-
     //region CONSTRUCTOR
     public ChessBoard(){
-        Arrays.fill(currPieceAtLocation, PieceData.INVALID_PIECES);
-        addStateChangeListener(BOARD_STATE_CHANGE_LOGGER);
     }
     
     public ChessBoard(String piecePlacement)
@@ -116,6 +93,7 @@ public class ChessBoard implements Debuggable {
         this();
         setUpPieces(piecePlacement);
     }
+
     //endregion
 
     //region SETTING_UP_BOARD
@@ -167,7 +145,6 @@ public class ChessBoard implements Debuggable {
     //endregion
 
     //region GET_ROW_COL_FUNCS
-
     public long getRoundSpaceId(int spaceId, int range){
         return getNearFile(spaceId, range) &
                 getNearRow(spaceId, range);
@@ -222,7 +199,6 @@ public class ChessBoard implements Debuggable {
     //endregion
 
     //region PIECE_FUNCS
-
     public long getBlackPieceBitBoard(){
         return boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.BPAWN)]
                 | boardSquares[PieceData.convertPieceIdToArrayIdx(PieceData.BROOK)]
@@ -246,6 +222,10 @@ public class ChessBoard implements Debuggable {
             throw new IllegalArgumentException("Invalid pieceId input at getBitBoard: " + pieceId);
 
         return boardSquares[PieceData.convertPieceIdToArrayIdx(pieceId)];
+    }
+
+    public long[] getBitBoard(){
+        return boardSquares;
     }
 
     protected void setPieceAt(int spaceId, short piece, short previousPiece)
@@ -319,12 +299,18 @@ public class ChessBoard implements Debuggable {
     public short getPiece(int spaceId)
     {
         if (isValidSpaceId(spaceId)){
-            return currPieceAtLocation[spaceId];
+            for (short pieceId = 0; pieceId < PieceData.TOTAL_PIECES; ++pieceId){
+                if (BitMasks.getBit(
+                    this.getBitBoard(pieceId), spaceId
+                ) != 0){
+                    return pieceId;
+                }
+            }
         }
         else {
             DebugMode.debugPrint(this, "Invalid spaceId at getPiece");
-            return PieceData.INVALID_PIECES;
         }
+        return PieceData.INVALID_PIECES;
     }
     //endregion
 
@@ -332,6 +318,15 @@ public class ChessBoard implements Debuggable {
     public static boolean isValidSpaceId(int spaceId)
     {
         return spaceId >= 0 && spaceId < BOARD_SIZE*BOARD_SIZE;
+    }
+
+    public static String convertSpaceIdToSquareNotation(int spaceId) {
+        if (spaceId < 0 || spaceId >= 64) {
+            throw new IllegalArgumentException("Invalid spaceId: " + spaceId);
+        }
+        char colId = (char) ('a' + (spaceId % 8));
+        char rowId = (char) ('8' - (spaceId / 8));
+        return "" + colId + rowId;
     }
 
     public static int convertSquareNotationToSpaceId(char colId, char rowId)
@@ -343,6 +338,11 @@ public class ChessBoard implements Debuggable {
         int col = colId - 'a';
         int row = '8' - rowId; // '8' -> row 0, '1' -> row 7
         return row*BOARD_SIZE + col;
+    }
+
+    public static int convertSquareNotationToSpaceId(String notation)
+    {
+        return convertSquareNotationToSpaceId(notation.charAt(0), notation.charAt(1));
     }
     //endregion
 
@@ -415,7 +415,6 @@ public class ChessBoard implements Debuggable {
 
     public void setBoard(ChessBoard board){
         boardSquares = Arrays.copyOf(board.boardSquares, board.boardSquares.length);
-        currPieceAtLocation = board.currPieceAtLocation.clone();
 
         ANTI_TO_MOVE_PIECES = board.ANTI_TO_MOVE_PIECES;
         ANTI_NOT_TO_MOVE_PIECES = board.ANTI_NOT_TO_MOVE_PIECES;
