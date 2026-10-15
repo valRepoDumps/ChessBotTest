@@ -9,6 +9,8 @@ import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.GameSaver.GameSaveManager;
 import ChessResources.GetMovesLogic.ChessMove;
 import ChessResources.Pieces.PieceData;
+import FrontEndConnection.ForeignEngines.EngineDetector;
+import FrontEndConnection.ForeignEngines.ReadEngineInput;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -136,6 +138,7 @@ public class FrontEndAPI implements Debuggable {
                 case "load_game"       -> loadGameRequest(req, id);
                 case "list_saves"      -> listSavesRequest(id);
                 case "undo_turn"       -> undoTurnRequest(req, id);
+                case "list_engines"     -> listEngines(req, id);
                 default                -> failure(id, "Unknown message type: " + type);
             };
         } catch (Exception e) {
@@ -154,6 +157,17 @@ public class FrontEndAPI implements Debuggable {
     //endregion
 
     //region handlers
+    private JsonObject listEngines(JsonObject req, String id){
+        JsonArray engines = new JsonArray();
+        for (EngineDetector.Engine engine : EngineDetector.detect(EngineDetector.ENGINES_FOLDER)){
+            engines.add(engine.toJson());
+        }
+        JsonObject o = base("list_engines_response", id);
+        o.addProperty("ok", true);
+        o.add("engines", engines);
+        return o;
+    }
+
     private JsonObject updateBoardRequest(String id){
         return updateBoardRequest(id, false);
     }
@@ -260,7 +274,7 @@ public class FrontEndAPI implements Debuggable {
         o.addProperty("ok", true);
         o.addProperty("save_id", meta.saveId());
         o.addProperty("name", meta.saveName());
-        o.addProperty("saved_at", isoSeconds(meta.savedAt()));
+        o.addProperty("saved_at", meta.isoSeconds());
         return o;
     }
 
@@ -300,12 +314,7 @@ public class FrontEndAPI implements Debuggable {
 
         JsonArray arr = new JsonArray();
         for (GameSaveManager.SaveMeta m : metas) {
-            JsonObject s = new JsonObject();
-            s.addProperty("save_id", m.saveId());
-            s.addProperty("name", m.saveName());
-            s.addProperty("saved_at", isoSeconds(m.savedAt()));
-            s.addProperty("fen", m.fen());
-            arr.add(s);
+            arr.add(m.toJson());
         }
         JsonObject o = base("list_saves_response", id);
         o.addProperty("ok", true);
@@ -425,10 +434,6 @@ public class FrontEndAPI implements Debuggable {
 
     private static String describe(Exception e) {
         return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-    }
-
-    private static String isoSeconds(String isoInstant) {
-        return Instant.parse(isoInstant).truncatedTo(ChronoUnit.SECONDS).toString();
     }
 
     //endregion

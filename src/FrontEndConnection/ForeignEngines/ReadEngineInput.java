@@ -1,6 +1,12 @@
-package FrontEndConnection;
+package FrontEndConnection.ForeignEngines;
+
+import ChessLogic.MinimalChessGame;
+import ChessResources.ChessBoard.ChessBoard;
+import ChessResources.GetMovesLogic.ChessMove;
+import ChessResources.Pieces.PieceData;
 
 import java.io.*;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class ReadEngineInput implements AutoCloseable {
@@ -8,6 +14,9 @@ public class ReadEngineInput implements AutoCloseable {
     private final BufferedReader in;
     private final BufferedWriter out;
 
+    public static final String STOCKFISH_PATH =
+            "D:\\Coding\\Java\\ChessBot\\ChessBot\\resources\\Engines\\stockfish\\stockfish-windows-x86-64-universal.exe";
+    public static final int DEFAULT_TIME_MS = 1000;
     public ReadEngineInput(String path) throws IOException {
         process = new ProcessBuilder(path).redirectErrorStream(true).start();
         in = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -18,6 +27,14 @@ public class ReadEngineInput implements AutoCloseable {
 
         send("isready");
         waitFor("readyok");
+    }
+
+    public static ReadEngineInput getStockfishEngine(){
+        try {
+            return new ReadEngineInput(STOCKFISH_PATH);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void send(String cmd) throws IOException {
@@ -39,6 +56,7 @@ public class ReadEngineInput implements AutoCloseable {
         send("position fen " + fen);
         send("go movetime " + moveTimeMs);
         String line;
+
         while ((line = in.readLine()) != null) {
             if (line.startsWith("info ")) {
                 Info info = Info.parse(line);
@@ -48,6 +66,32 @@ public class ReadEngineInput implements AutoCloseable {
             }
         }
         throw new IOException("Engine closed unexpectedly");
+    }
+    public String bestMove(String fen, int moveTimeMs) throws IOException {
+        return bestMove(fen, moveTimeMs, info ->{});
+    }
+    public ChessMove bestMove(MinimalChessGame game) throws IOException {
+        String move = bestMove(game.toFen(), DEFAULT_TIME_MS);
+        if (Objects.equals(move, "(none)")){
+            return null;
+        }
+
+        int startIdx = ChessBoard.convertSquareNotationToSpaceId(move.substring(0, 2));
+        int endIdx = ChessBoard.convertSquareNotationToSpaceId(move.substring(2,4));
+
+        short promotionId = PieceData.INVALID_PIECES;
+
+        if (move.length() == 5){
+            switch(move.charAt(4)){
+                case 'q': promotionId = PieceData.QUEEN;
+                case 'r': promotionId = PieceData.ROOK;
+                case 'b': promotionId = PieceData.BISHOP;
+                case 'n': promotionId = PieceData.KNIGHT;
+                default: promotionId = PieceData.INVALID_PIECES;
+            }
+        }
+
+        return game.getPossibleMoves().getMove(startIdx, endIdx, promotionId);
     }
 
     @Override
