@@ -4,9 +4,6 @@ public class Configurations {
     private boolean enableBoardGraphic;
     private boolean debugMode;
     private boolean allowGameEnd;
-    public Configurations(){
-        this(false,false,false);
-    }
 
     public Configurations(boolean enableBoardGraphic,
                           boolean debugMode, boolean allowGameEnd){
@@ -60,9 +57,4 @@ public class Configurations {
     //endregion
     //endregion
 
-    //region HELPER
-    public static Configurations createCloneGameConfig(){
-        return new Configurations(false, false, false);
-    }
-    //endregion
 }

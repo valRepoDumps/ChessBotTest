@@ -3,6 +3,7 @@ package ChessResources.GetMovesLogic;
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.ChessBoard.DrawBoard;
+import ChessResources.Pieces.PieceData;
 
 import java.util.*;
 
@@ -57,24 +58,15 @@ public class PossibleMoves {
         this.currLen = pm.currLen;
     }
 
-    public void highlightPossibleMoves(int spaceId, DrawBoard drawBoard)
-    {
+    public ArrayList<ChessMove> canMoveToFrom(int spaceId){
+        ArrayList<ChessMove> ans = new ArrayList<>();
         for (int i = 0; i < currLen; ++i){
             ChessMove move = possibleMoves[i];
             if (move.spaceIdToMove == spaceId){
-                drawBoard.highlightSpace(move.spaceIdArriveAt);
+                ans.add(move);
             }
         }
-    }
-
-    public void unHighlightPossibleMoves(int spaceId, DrawBoard drawBoard)
-    {
-        for (int i = 0; i < currLen; ++i){
-            ChessMove move = possibleMoves[i];
-            if (move.spaceIdToMove == spaceId){
-                drawBoard.unHighlightSpace(move.spaceIdArriveAt);
-            }
-        }
+        return ans;
     }
 
     public boolean isEmpty(){
@@ -88,14 +80,28 @@ public class PossibleMoves {
         return getMove(spaceId, spaceIdArriveAt) != null;
     }
 
-    public ChessMove getMove(int spaceId, int spaceIdArriveAt){
+    public ChessMove getMove(int spaceId, int spaceIdArriveAt, short promotedPieceType){
         for (int i = 0; i < currLen; ++i){
             ChessMove move = possibleMoves[i];
             if (move.spaceIdToMove == spaceId && move.spaceIdArriveAt == spaceIdArriveAt){
-                return move;
+                if (!move.isPromotion() || PieceData.getType(promotedPieceType) == PieceData.INVALID_PIECES) {
+                    return move;
+                }
+                else{
+                    if (PieceData.getType(move.getPromotionPieceId()) == PieceData.getType(promotedPieceType)){
+                        return move;
+                    }
+                    else{
+                        continue;
+                    }
+                }
             }
         }
         return null;
+    }
+
+    public ChessMove getMove(int spaceId, int spaceIdArriveAt){
+        return getMove(spaceId, spaceIdArriveAt, PieceData.INVALID_PIECES);
     }
 
     public ChessMove getMovePromotion(int spaceId, int spaceIdArriveAt, short pieceIdPromotion){

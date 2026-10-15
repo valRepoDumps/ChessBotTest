@@ -4,9 +4,7 @@ import ChessLogic.Configurations.Configurations;
 import ChessLogic.MinimalChessGame;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.GetMovesLogic.ChessMove;
-import ChessResources.GetMovesLogic.ChessSpaces;
 import ChessResources.GetMovesLogic.PossibleMoves;
-import com.sun.source.tree.ArrayAccessTree;
 
 import java.util.*;
 
@@ -84,26 +82,6 @@ public class Tests {
         }
 
         return numPos;
-    }
-
-    public static boolean assertNoMoveDuplicates(MinimalChessGame game,
-                                                 PossibleMoves pm){
-        HashMap<ChessMove, ChessMove> map = new HashMap<>();
-        for (int i = 0; i < pm.currLen; ++i){
-            ChessMove moves = pm.getMoves()[i];
-            if (map.getOrDefault(moves, null) == null){
-                map.put(moves, moves);
-            }else{
-//                System.out.println("REPEATS FOUND!");
-//                System.out.println(moves);
-//                if (moves.isPromotion()) System.out.println("Promotion " + moves.getDoublePawnPushId());
-
-                System.out.println(map.get(moves));
-                game.getBoard().printBoard();
-                return false;
-            }
-        }
-        return true;
     }
 
     public static ArrayList<int[]> perftDriver(String fen, int maxDepths){

@@ -1,92 +1,108 @@
-package Evaluation;
-import ChessLogic.ChessGame;
+package ChessLogic.Evaluation;
 import ChessLogic.Configurations.Configurations;
 import ChessLogic.MinimalChessGame;
 import ChessResources.BitMasks;
 import ChessResources.ChessBoard.ChessBoard;
-import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
 import ChessResources.ChessListener.StateChangeListener;
 import ChessResources.GetMovesLogic.ChessMove;
 import ChessResources.GetMovesLogic.PossibleMoves;
+import ChessResources.Pieces.MovesGeneration;
 import ChessResources.Pieces.PieceData;
 
 import java.util.Comparator;
-import java.util.Objects;
 
-import static java.lang.System.exit;
+import static java.lang.Math.max;
 
 public class Evaluation {
     public static final int NEG_INF_SCORE = -90000;
     public static final int BIG_MOVE_SCORE = 10000;
     public static final int MAX_HALF_MOVES = 128;
-    static final int[] MATERIAL_SCORE = new int[PieceData.TOTAL_PIECES];
+    public static final int[] MATERIAL_SCORE = new int[PieceData.TOTAL_PIECES];
     public static final ChessMove INVALID_MOVES = null;
 
     //region POSITIONAL_SCORES
-    static final int [] PAWN_POSITIONAL_SCORE = {
-        90, 90, 90, 90, 90, 90, 90, 90,
-        30, 30, 30, 40, 40, 30, 30, 30,
-        20, 20, 20, 30, 30, 20, 20, 20,
-        10, 10, 10, 20, 20, 10, 10, 10,
-        5,   5, 10, 20, 20, 10, 5 ,  5,
-        0,   0,  0,  5,  5,  0,  0,  0,
-        0,   0,  0,-10,-10,  0,  0,  0,
-        0,   0,  0,  0,  0,  0,  0,  0
+    private static double[] filled(double v) {
+        double[] a = new double[64];
+        java.util.Arrays.fill(a, v);
+        return a;
+    }
+
+    static final int MAX_MOBILITY = 14;
+
+    // mobility weight (cp per available move); still editable per square later
+    static final double[] PAWN_POSITIONAL_MODIFIER   = filled(1);
+    static final double[] KNIGHT_POSITIONAL_MODIFIER = filled(1);
+    static final double[] BISHOP_POSITIONAL_MODIFIER = filled(1);
+    static final double[] ROOK_POSITIONAL_MODIFIER   = filled(1);
+    static final double[] QUEEN_POSITIONAL_MODIFIER  = filled(1);
+    static final double[] KING_POSITIONAL_MODIFIER   = filled(1);
+
+    static final int[] PAWN_POSITIONAL_SCORE = {
+            0,   0,   0,   0,   0,   0,   0,   0,
+            80,  80,  80,  80,  80,  80,  80,  80,
+            30,  30,  30,  40,  40,  30,  30,  30,
+            20,  20,  20,  30,  30,  20,  20,  20,
+            10,  10,  15,  25,  25,  15,  10,  10,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   0, -15, -15,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0
     };
 
-    static final int [] KNIGHT_POSITIONAL_SCORE = {
-        -10, -5, -5, -5, -5, -5, -5, -10,
-        -5,   0,  0,  0,  0,  0,  0, -5,
-        -5,   0,  5, 20, 20,  5,  0, -5,
-        -5,   0, 10, 30, 30, 10,  0, -5,
-        -5,   0, 10, 30, 30, 10,  0,  -5,
-        -5,   0,  5,  5,  5,  5,  0,  -5,
-        -5,   0,  0,  0,  0,  0,  0,  -5,
-        -10,-10, -5, -5, -5, -5,-10,  -5
+    static final int[] KNIGHT_POSITIONAL_SCORE = {
+            -50, -40, -30, -30, -30, -30, -40, -50,
+            -40, -20,   0,   0,   0,   0, -20, -40,
+            -30,   0,  10,  15,  15,  10,   0, -30,
+            -30,   5,  15,  20,  20,  15,   5, -30,
+            -30,   0,  15,  20,  20,  15,   0, -30,
+            -30,   5,  10,  15,  15,  10,   5, -30,
+            -40, -20,   0,   5,   5,   0, -20, -40,
+            -50, -40, -30, -30, -30, -30, -40, -50
     };
 
-    static final int [] BISHOP_POSITIONAL_SCORE = {
-        0,   0,  0,  0, 0 , 0 , 0 , 0 ,
-        0,   0,  0,  0,  0,  0,  0, 0 ,
-        0,   0,  0, 10, 10,  0,  0, 0 ,
-        0,   0, 10, 30, 30, 10,  0, 0 ,
-        0,   0, 10, 30, 30, 10,  0,  0,
-        0,  10,  0,  0,  0,  0, 10,  0,
-        0,  30,  0,  0,  0,  0, 30,  0,
-        0,   0,-10,  0,  0,-10,  0,  0
-    };
-    static final int [] ROOK_POSITIONAL_SCORE = {
-        50, 50, 50, 50, 50, 50, 50, 50,
-        50, 50, 50, 50, 50, 50, 50, 50,
-        0,   0, 10, 20, 20, 10,  0, 0 ,
-        0,   0, 10, 20, 20, 10,  0, 0 ,
-        0,   0, 10, 20, 20, 10,  0,  0,
-        0,   0, 10, 20, 20, 10,  0,  0,
-        0,   0, 10, 20, 20, 10,  0,  0,
-        0,   0, 10, 20, 20, 10,  0,  0
+    static final int[] BISHOP_POSITIONAL_SCORE = {
+            -20, -10, -10, -10, -10, -10, -10, -20,
+            -10,   0,   0,   0,   0,   0,   0, -10,
+            -10,   0,   5,  10,  10,   5,   0, -10,
+            -10,   5,   5,  15,  15,   5,   5, -10,
+            -10,   0,  10,  15,  15,  10,   0, -10,
+            -10,  10,  10,  10,  10,  10,  10, -10,
+            -10,  15,   0,   0,   0,   0,  15, -10,
+            -20, -10, -15, -10, -10, -15, -10, -20
     };
 
-    static final int [] QUEEN_POSITIONAL_SCORE = {
-        50, 50, 50, 50, 50, 50, 50, 50,
-        50, 50, 50, 50, 50, 50, 50, 50,
-        0,   0, 10, 30, 30, 10,  0, 0 ,
-        0,   0, 20, 50, 50, 20,  0, 0 ,
-        0,   0, 20, 50, 50, 20,  0,  0,
-        0,   0, 10, 20, 20, 10,  0,  0,
-        0,  30, 10, 20, 20, 10, 30,  0,
-        0,   0,-10, 20, 20,-10,  0,  0
+    static final int[] ROOK_POSITIONAL_SCORE = {
+            0,   0,   0,   0,   0,   0,   0,   0,
+            25,  25,  25,  25,  25,  25,  25,  25,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   5,  10,  10,   5,   0,   0,
+            0,   0,   5,  10,  10,   5,   0,   0
     };
 
-    static final int [] KING_POSITIONAL_SCORE = {
-        0,   0,  0,  0,  0,  0,  0,  0,
-        0,   0,  0,  0,  0,  0,  0,  0,
-        0,   0,  0,  0,  0,  0,  0,  0,
-        0,   0,  0,  0,  0,  0,  0,  0,
-        0,   0,  0,  0,  0,  0,  0,  0,
-        0,   0,  0,  0,  0,  0,  0,  0,
-        0,   0,  0,  0,  0,  0,  0,  0,
-        0,  50, 50,  0,  0,  0, 50,  0
+    static final int[] QUEEN_POSITIONAL_SCORE = {
+            -10,  -5,  -5,  -5,  -5,  -5,  -5, -10,
+            -5,   5,   5,   5,   5,   5,   5,  -5,
+            -5,   0,   5,   5,   5,   5,   0,  -5,
+            -5,   0,   5,  10,  10,   5,   0,  -5,
+            -5,   0,   5,  10,  10,   5,   0,  -5,
+            -5,   0,   5,   5,   5,   5,   0,  -5,
+            -5,   0,   0,   0,   0,   0,   0,  -5,
+            -10,  -5,  -5,   0,   0,  -5,  -5, -10
     };
+
+    static final int[] KING_POSITIONAL_SCORE = {
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,   0,   0,   0,   0,   0,   0,   0,
+            0,  20,  30,   0,   0,   0,  30,  20
+    };
+
 
     static final int [] MIRRORED_IDX = {
         56, 57, 58, 59, 60, 61, 62, 63,
@@ -100,6 +116,7 @@ public class Evaluation {
     };
 
     static final int[][] POSITIONAL_SCORES = new int[PieceData.PIECES_DIFF][];
+    static final double[][] POSITIONAL_MODIFIERS = new double[PieceData.PIECES_DIFF][];
     //endregion
 
     static final int[] PAWN_CAPTURE_SCORE = new int[PieceData.TOTAL_PIECES];
@@ -110,35 +127,26 @@ public class Evaluation {
     static final int[] KING_CAPTURE_SCORE = new int[PieceData.TOTAL_PIECES];
 
     //[attacker][defender]
-    static final int[][] CAPTURE_SCORES = new int[PieceData.TOTAL_PIECES][];
+    public static final int[][] CAPTURE_SCORES = new int[PieceData.TOTAL_PIECES][];
 
-    private final StateChangeListener<MinimalChessGame> EVALUATOR =
-            this::negaMaxSearch;
-
-    private final StateChangeListener<MinimalChessGame> EVALUATOR_BLACK_PLAYS =
-            (MinimalChessGame game)->{
-                if (game.getCurrentColorToMove() == PieceData.BLACK && game.sideWon() == MinimalChessGame.INDETERMINATE) {
-                    moveEvaluator(game);
-                }
-            };
-    private final StateChangeListener<MinimalChessGame> EVALUATOR_WHITE_PLAYS =
-            (MinimalChessGame game)->{
-                if (game.getCurrentColorToMove() == PieceData.WHITE && game.sideWon() == MinimalChessGame.INDETERMINATE) {
-                    moveEvaluator(game);
-                }
-            };
+//    private final StateChangeListener<MinimalChessGame> EVALUATOR_BLACK_PLAYS =
+//            (MinimalChessGame game)->{
+//                if (game.getCurrentColorToMove() == PieceData.BLACK && game.sideWon() == MinimalChessGame.INDETERMINATE) {
+//                    moveEvaluator(game);
+//                }
+//            };
 
     //region STATIC
     static {
         MATERIAL_SCORE[PieceData.WPAWN] = 100;
-        MATERIAL_SCORE[PieceData.WBISHOP] = 350;
+        MATERIAL_SCORE[PieceData.WBISHOP] = 310;
         MATERIAL_SCORE[PieceData.WKNIGHT] = 300;
         MATERIAL_SCORE[PieceData.WROOK] = 500;
         MATERIAL_SCORE[PieceData.WQUEEN] = 900;
         MATERIAL_SCORE[PieceData.WKING] = 30000;
 
         MATERIAL_SCORE[PieceData.BPAWN] = -100;
-        MATERIAL_SCORE[PieceData.BBISHOP] = -350;
+        MATERIAL_SCORE[PieceData.BBISHOP] = -310;
         MATERIAL_SCORE[PieceData.BKNIGHT] = -300;
         MATERIAL_SCORE[PieceData.BROOK] = -500;
         MATERIAL_SCORE[PieceData.BQUEEN] = -900;
@@ -150,6 +158,13 @@ public class Evaluation {
         POSITIONAL_SCORES[PieceData.ROOK] = ROOK_POSITIONAL_SCORE;
         POSITIONAL_SCORES[PieceData.QUEEN] = QUEEN_POSITIONAL_SCORE;
         POSITIONAL_SCORES[PieceData.KING] = KING_POSITIONAL_SCORE;
+
+        POSITIONAL_MODIFIERS[PieceData.PAWN] = PAWN_POSITIONAL_MODIFIER;
+        POSITIONAL_MODIFIERS[PieceData.KNIGHT] = KNIGHT_POSITIONAL_MODIFIER;
+        POSITIONAL_MODIFIERS[PieceData.BISHOP] = BISHOP_POSITIONAL_MODIFIER;
+        POSITIONAL_MODIFIERS[PieceData.ROOK] = ROOK_POSITIONAL_MODIFIER;
+        POSITIONAL_MODIFIERS[PieceData.QUEEN] = QUEEN_POSITIONAL_MODIFIER;
+        POSITIONAL_MODIFIERS[PieceData.KING] = KING_POSITIONAL_MODIFIER;
 
         PAWN_CAPTURE_SCORE[PieceData.BPAWN] = PAWN_CAPTURE_SCORE[PieceData.WPAWN] = 105;
         PAWN_CAPTURE_SCORE[PieceData.WKNIGHT] = PAWN_CAPTURE_SCORE[PieceData.BKNIGHT] = 205;
@@ -208,6 +223,7 @@ public class Evaluation {
         CAPTURE_SCORES[PieceData.WKING] = KING_CAPTURE_SCORE;
     }
 
+    private MinimalChessGame game;
     private ChessMove[][] killerMoves;
     private int[][] historyMoves;
     private int[] principalVariationLen;
@@ -220,6 +236,18 @@ public class Evaluation {
     public int nodes;
     public int singleHalfMoves;
     private final Comparator<ChessMove> sortFunc = Comparator.comparingInt(this::scoreMove).reversed();
+
+    private boolean sideToMove = PieceData.WHITE;
+    private boolean isEvaluationOn = false;
+
+    private final StateChangeListener<MinimalChessGame> EVALUATOR =
+            (MinimalChessGame game)->{
+                if (game != null && isEvaluationOn &&
+                        game.getCurrentColorToMove() == sideToMove &&
+                        game.sideWon() == MinimalChessGame.INDETERMINATE) {
+                    moveEvaluator(game);
+                }
+            };
 
     public Evaluation(int depth){
         this.depth = depth;
@@ -239,22 +267,25 @@ public class Evaluation {
         scorePrincipalVariation = false;
     }
 
+    //region SCORE
     static int getMaterialScore(short pieceData, boolean sideToMove) {
         return sideToMove == PieceData.WHITE
                 ? MATERIAL_SCORE[pieceData]
                 : - MATERIAL_SCORE[pieceData];
     }
 
-    static int getPositionalScore(short pieceData, int sqr, boolean sideToMove){
-        int idx = PieceData.getColor(pieceData) == PieceData.WHITE
-                ? sqr : MIRRORED_IDX[sqr];
-        int pieceValue = PieceData.getColor(pieceData) == PieceData.WHITE
-                ? POSITIONAL_SCORES[PieceData.getType(pieceData)][idx]
-                : -POSITIONAL_SCORES[PieceData.getType(pieceData)][idx];
+    private int getPositionalScore(short pieceData, int sqr){
+        boolean isWhite = PieceData.getColor(pieceData) == PieceData.WHITE;
+        int type = PieceData.getType(pieceData);
+        int idx = isWhite ? sqr : MIRRORED_IDX[sqr];
 
-        return sideToMove == PieceData.WHITE
-                ? pieceValue
-                : -pieceValue;
+        int mobility = (int) Math.min(MAX_MOBILITY,
+                max(1, BitMasks.countBit(MovesGeneration.getUniversalMoves(game, sqr, pieceData))));
+
+        int value = (int) (POSITIONAL_SCORES[type][idx] + POSITIONAL_MODIFIERS[type][idx] * mobility);
+
+        // positive if the piece belongs to the side to move, negative otherwise
+        return isWhite == (game.getCurrentColorToMove() == PieceData.WHITE) ? value : -value;
     }
 
     private int getCaptureScore(ChessMove move){
@@ -284,14 +315,13 @@ public class Evaluation {
 
         return getCaptureScore(move) +
                 getPositionalScore(move.getPieceId(),
-                        move.getSpaceIdArriveAt(),
-                        PieceData.getColor(move.getPieceId())) -
+                        move.getSpaceIdArriveAt()) -
                 getPositionalScore(move.getPieceId(),
-                        move.getSpaceIdToMove(),
-                        PieceData.getColor(move.getPieceId()));
+                        move.getSpaceIdToMove());
     }
+    //endregion
 
-    public static int evaluateGame(MinimalChessGame game){
+    public int evaluateGame(){
         int currScore = 0;
         short piece;
         int sqr;
@@ -303,37 +333,79 @@ public class Evaluation {
                 sqr = Long.numberOfTrailingZeros(bb);
                 bb = BitMasks.unSetBit(bb, sqr);
                 currScore += getMaterialScore(piece, game.getGameProperties().getSideToMove());
-                currScore += getPositionalScore(piece, sqr, game.getGameProperties().getSideToMove());
-                //System.out.println(currScore + " " + PieceData.getName(piece) + " " + sqr + " " + game.getGameProperties().getSideToMove());
+                currScore += getPositionalScore(piece, sqr);
+
             }
         }
+
+        currScore -= game.countPiecesNearSpace(
+                game.getKingSpaceId(!game.getCurrentColorToMove()),
+                3,
+                game.getCurrentColorToMove())*5;
+        currScore += game.countPiecesNearSpace(
+                game.getKingSpaceId(game.getCurrentColorToMove()),
+                3,
+                game.getCurrentColorToMove())*5;
+
+        boolean us = game.getCurrentColorToMove();
+        if (game.countPiecesOnCols(game.getKingSpaceId(us), 1, us) < 5)   currScore -= 30;
+        if (game.countPiecesOnCols(game.getKingSpaceId(!us), 1, !us) < 5) currScore += 30;
 
         return currScore;
     }
 
-    public void registerGenericEvaluator(MinimalChessGame game){
-        game.addTurnEndListener(EVALUATOR);
+    public void turnEvaluatorOnOff(boolean adjustment){
+        isEvaluationOn = adjustment;
     }
 
-    public void registerBlackEvaluator(MinimalChessGame game){
-        game.addTurnEndListener(EVALUATOR_BLACK_PLAYS);
+    public void attach(MinimalChessGame game, boolean isEvaluationOn) {
+        turnEvaluatorOnOff(isEvaluationOn);
+        if (game != null) {
+            game.removeTurnEndListener(EVALUATOR);   // avoid double registration
+            game.addTurnEndListener(EVALUATOR);      // notifies immediately
+        }
     }
 
-    public void registerWhiteEvaluator(MinimalChessGame game){
-        game.addTurnEndListener(EVALUATOR_WHITE_PLAYS);
+    /** Re-check "is it the bot's turn right now?" without waiting for a turn end. */
+    public void kick(MinimalChessGame game) {
+        StateChangeListener.notifyListeners(EVALUATOR, game);
+    }
+
+    public void changeSideToMove(boolean newSideToMove){
+        this.sideToMove = newSideToMove;
+    }
+
+    public void unregisterEvaluator(MinimalChessGame game){
+        if (game != null)
+            game.removeTurnEndListener(EVALUATOR);
+    }
+
+    private void registerGame(MinimalChessGame game){
+        this.game = game;
     }
 
     private void moveEvaluator(MinimalChessGame game){
-        System.out.println("Black Eval: " + evaluateGame(game));
+        resetEvaluation();
 
-        negaMaxSearch(game);
+        Configurations oldConfig = game.getConfigurations();
+        game.changeConfigurations(new Configurations(false, false, false));
+        MinimalChessGame testGame = game.cloneMinimalGame();
+        game.changeConfigurations(oldConfig);
+        registerGame(testGame);
+        for (int i = 1; i <= depth; ++i){
+            followPrincipalVariation = true;
+            negaMaxSearch(i, NEG_INF_SCORE, -NEG_INF_SCORE);
+            System.out.println("Depth: " + i + " Nodes: " + nodes);
+        }
 
-        game.movePiece(bestMove);
-
-        System.out.println("Current Side Eval: " + evaluateGame(game));
+        System.out.println("Before movement eval: " + evaluateGame());
+        game.movePiece(principalVariationTable[0][0]);
+        registerGame(game);
+        System.out.println("Current Side Eval: " + evaluateGame());
         System.out.println("Nodes visited: " + nodes);
     }
 
+    //region SEARCH_FUNCS
     private void enablePrincipalVariationScoring(PossibleMoves currPossibleMoves){
         followPrincipalVariation = false;
         for (int i = 0; i < currPossibleMoves.currLen; ++i){
@@ -348,30 +420,10 @@ public class Evaluation {
         }
     }
 
-    private void negaMaxSearch(MinimalChessGame game){
-        resetEvaluation();
-        if (game == null){
-            System.out.println("GAME IS NULL\n");
-        }
-        assert game != null;
-
-        Configurations oldConfig = game.getConfigurations();
-        game.changeConfigurations(new Configurations(false, false, false));
-        MinimalChessGame testGame = game.cloneMinimalGame();
-        game.changeConfigurations(oldConfig);
-
-        for (int i = 1; i <= depth; ++i){
-            followPrincipalVariation = true;
-            negaMaxSearch(testGame, i, NEG_INF_SCORE, -NEG_INF_SCORE, true);
-            System.out.println("Depth: " + i + " Nodes: " + nodes);
-        }
-
-    }
-
-    private int quiescenceSearch(MinimalChessGame game, int alpha, int beta){
+    private int quiescenceSearch(int alpha, int beta){
         ++nodes;
 
-        int eval = evaluateGame(game);
+        int eval = evaluateGame();
 
         if (eval >= beta){
             return beta;
@@ -391,7 +443,7 @@ public class Evaluation {
             game.movePiece(move);
 
             ++singleHalfMoves;
-            int score = -quiescenceSearch(game, -beta, -alpha);
+            int score = -quiescenceSearch(-beta, -alpha);
             --singleHalfMoves;
 
             try {
@@ -410,11 +462,20 @@ public class Evaluation {
         return alpha;
     }
 
-    int negaMaxSearch(MinimalChessGame game, int currDepth, int alpha, int beta, boolean isRootCall){
+    int negaMaxSearch(int currDepth, int alpha, int beta){
         principalVariationLen[singleHalfMoves] = singleHalfMoves;
         boolean foundPrincipalVariationMove = false;
+
+        if (game.kingToMoveUnderThreat()){
+            ++currDepth;
+        }
+
         if (currDepth == 0) {
-            return quiescenceSearch(game, alpha, beta);
+            return quiescenceSearch(alpha, beta);
+        }
+
+        if (singleHalfMoves > MAX_HALF_MOVES){
+            return evaluateGame();
         }
 
         if (game.sideWon() != MinimalChessGame.INDETERMINATE){
@@ -422,10 +483,7 @@ public class Evaluation {
             return NEG_INF_SCORE/2 - currDepth; // side to move has been checkmated
         }
 
-
         ++nodes;
-        int oldAlpha = alpha;
-        ChessMove currBestMove = INVALID_MOVES;
 
         PossibleMoves currPossibleMoves = game.getCurrentPossibleMoves().getClone();
 
@@ -442,15 +500,16 @@ public class Evaluation {
             game.movePiece(move);
 
             ++singleHalfMoves;
+
             int score;
 
             if (foundPrincipalVariationMove){
-                score = -negaMaxSearch(game, currDepth-1, -alpha-1, -alpha, false);
+                score = -negaMaxSearch(currDepth-1, -alpha-1, -alpha);
                 if ((score > alpha) && (score < beta)){
-                    score = -negaMaxSearch(game, currDepth-1, -beta, -alpha, false);
+                    score = -negaMaxSearch(currDepth-1, -beta, -alpha);
                 }
             }else{
-                score = -negaMaxSearch(game, currDepth-1, -beta, -alpha, false);
+                score = -negaMaxSearch(currDepth-1, -beta, -alpha);
             }
 
             --singleHalfMoves;
@@ -459,6 +518,7 @@ public class Evaluation {
             } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
+
             if (score >= beta){
                 if (!move.isCapture()) {
                     killerMoves[1][singleHalfMoves] = killerMoves[0][singleHalfMoves];
@@ -486,17 +546,9 @@ public class Evaluation {
                             principalVariationLen[singleHalfMoves + 1] - (singleHalfMoves + 1));
 
                 principalVariationLen[singleHalfMoves] = principalVariationLen[singleHalfMoves+1];
-
-                if (isRootCall) {
-                    currBestMove = move;
-//                    System.out.println("Update best moves: ");
-//                    System.out.println(move);
-                }
             }
-        }
-        if (alpha != oldAlpha) {
-            bestMove = currBestMove;
         }
         return alpha;
     }
+    //endregion
 }

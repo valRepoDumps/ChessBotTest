@@ -3,10 +3,10 @@ package ChessResources.ChessHistoryTracker.BoardStateChanges;
 import ChessResources.Pieces.PieceData;
 
 public class BoardStateChange{
-    private short piece;
-    private int spaceIdArriveAt;
-    private int spaceId;
-    private short pieceCaptured;
+    private final short piece;
+    private final int spaceIdArriveAt;
+    private final int spaceId;
+    private final short pieceCaptured;
 
     public BoardStateChange(short piece, int spaceId,
                             int spaceIdArriveAt, short pieceCaptured)

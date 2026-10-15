@@ -9,7 +9,9 @@ import ChessResources.PreCalc;
 import java.util.Random;
 
 public final class ZobristHasher {
-    long[] hashList = new long[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE*PieceData.TOTAL_PIECES];
+    private final long seed;
+    long[] hashList =
+            new long[ChessBoard.BOARD_SIZE*ChessBoard.BOARD_SIZE*PieceData.TOTAL_PIECES];
 
     long[] castlingRights = new long[16];
     long sideToMoveIsBlack;
@@ -17,14 +19,8 @@ public final class ZobristHasher {
     private final Random rand;
 
     public ZobristHasher(long seed){
+        this.seed = seed;
         rand = new Random(seed);
-
-        constructRandomHashes();
-    }
-
-    public ZobristHasher(){
-        rand = new Random();
-
         constructRandomHashes();
     }
 
@@ -71,4 +67,7 @@ public final class ZobristHasher {
         return key;
     }
 
+    public long getSeed() {
+        return seed;
+    }
 }

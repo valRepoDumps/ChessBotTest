@@ -1,6 +1,5 @@
 package ChessResources.GetMovesLogic;
 
-import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.Pieces.PieceData;
 
 import java.util.Objects;
@@ -149,8 +148,14 @@ public class ChessMove {
     }
 
     public String toString(){
-        StringBuffer str = new StringBuffer(PieceData.getName(pieceId));
-        str.append(":" + spaceIdToMove + " -> " + spaceIdArriveAt + " (" + spaceIdCaptureAt +")");
+        StringBuilder str = new StringBuilder(PieceData.getName(pieceId));
+        str.append(":")
+                .append(spaceIdToMove)
+                .append(" -> ")
+                .append(spaceIdArriveAt)
+                .append(" (")
+                .append(spaceIdCaptureAt)
+                .append(")");
         if (isCapture()){
             str.append(" Captures");
         }

@@ -1,9 +1,6 @@
 package ChessResources.ChessListener;
 
-import ChessLogic.MinimalChessGame;
-
 import java.util.ArrayList;
-import java.util.List;
 
 @FunctionalInterface
 public interface StateChangeListener<T> {

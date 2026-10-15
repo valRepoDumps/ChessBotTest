@@ -129,7 +129,6 @@ public class PropertiesStats {
         properties &= ~HALF_MOVES_SINCE_CAPTURE_OR_PAWN_MOVE;
     }
 
-
     public void setHalfMoves(int count){
         resetHalfMoves();
         properties |= ((long) count << HALF_MOVES_SHIFT);
@@ -147,6 +146,10 @@ public class PropertiesStats {
     public void incrementTotalMoves() {
         setTotalMovesElapsed(getTotalMovesElapsed()+1);
         int current = getTotalMovesElapsed();
+    }
+
+    public long toRaw(){
+        return properties;
     }
 
     @Override

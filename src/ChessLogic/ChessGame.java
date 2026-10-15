@@ -3,17 +3,12 @@ package ChessLogic;
 import ChessGUI.ChessGUI;
 import ChessLogic.Configurations.Configurations;
 import ChessLogic.Debug.DebugMode;
-import ChessResources.BitMasks;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.ChessBoard.DrawBoard;
 import ChessResources.ChessErrors.OutOfOldTurns;
 import ChessResources.GetMovesLogic.ChessMove;
-import ChessResources.GetMovesLogic.PossibleMoves;
 import ChessResources.Pieces.PieceData;
-import Evaluation.Evaluation;
 
-import java.util.Arrays;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class ChessGame extends MinimalChessGame{
@@ -26,12 +21,6 @@ public class ChessGame extends MinimalChessGame{
     public static final int INVALID_SPACE_ID = -1;
     public int selectedSpaceId = INVALID_SPACE_ID;
     //endregion
-
-    public static final Function<Boolean, Short> DEFAULT_PROMOTION_FUNC =
-            (Boolean color) -> {
-                if (color == PieceData.BLACK) return PieceData.BQUEEN;
-                else return PieceData.WQUEEN;
-            };
 
     public ChessGame(String fen, ChessGUI chessGUI, Function<Boolean, Short> choosePromotionPiece,
                      Configurations configurations) {
@@ -66,12 +55,13 @@ public class ChessGame extends MinimalChessGame{
 //                System.out.println(Arrays.toString(gameProperties) + " " + piece + " in" + shorts.getColor(piece));
                 selectedSpaceId = spaceId;
                 drawBoard.highlightSpace(spaceId);
-                possibleMoves.highlightPossibleMoves(selectedSpaceId, drawBoard);
+                drawBoard.highlightPossibleMoves(selectedSpaceId, possibleMoves);
             }
         }
         else
         {
             drawBoard.unHighlightSpace(spaceId);
+
             drawBoard.unHighlightSpace(selectedSpaceId);
 
             ChessMove move = possibleMoves.getMove(selectedSpaceId, spaceId);
@@ -90,14 +80,14 @@ public class ChessGame extends MinimalChessGame{
             }
             else//case user choose an unmoveable square
             {
-                possibleMoves.unHighlightPossibleMoves(selectedSpaceId, drawBoard);
+                drawBoard.unHighlightPossibleMoves(selectedSpaceId, possibleMoves);
                 //unhighlight possible moves relating to previous selected space id
 
                 selectedSpaceId = spaceId;
                 drawBoard.highlightSpace(spaceId);
                 if (PieceData.isValidPieceId(piece))
                 {
-                    possibleMoves.highlightPossibleMoves(selectedSpaceId, drawBoard);
+                    drawBoard.highlightPossibleMoves(selectedSpaceId, possibleMoves);
                 }
             }
         }

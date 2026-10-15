@@ -9,7 +9,6 @@ import ChessResources.ChessBoard.ChessBoard;
 
 import ChessResources.ChessErrors.OutOfOldTurns;
 
-import ChessResources.ChessHistoryTracker.BoardStateChanges.BoardStateChange;
 import ChessResources.ChessHistoryTracker.ChessHistoryTracker;
 import ChessResources.ChessListener.StateChangeListener;
 import ChessResources.GetMovesLogic.ChessMove;
@@ -19,11 +18,7 @@ import ChessResources.Pieces.MovesGeneration;
 import ChessResources.Pieces.PieceData;
 import ChessResources.GetMovesLogic.PossibleMoves;
 
-import Evaluation.Evaluation;
-
 import java.util.ArrayList;
-import java.util.List;
-
 
 public class MinimalChessGame implements Debuggable {
     public ChessBoard chessBoard;
@@ -39,15 +34,15 @@ public class MinimalChessGame implements Debuggable {
 
     PropertiesStats gameProperties = new PropertiesStats();
 
-    private int currEnPassantTarget = INVALID_ENPASSANT_TARGET;
+    int currEnPassantTarget = INVALID_ENPASSANT_TARGET;
 
-    private int endGameCode = INDETERMINATE;
+    int endGameCode = INDETERMINATE;
     public static final int WHITE_WON = 0;
     public static final int BLACK_WON = 1;
     public static final int DRAW = 2;
     public static final int INDETERMINATE = 3;
 
-    public static final int INVALID_ENPASSANT_TARGET = -1;
+    public static final int INVALID_ENPASSANT_TARGET = 0;
 
     public static final int BLACK_CASTLE_QUEEN_ROOK_ID = 0;
     public static final int BLACK_CASTLE_QUEEN_ROOK_ARRIVE = 3;
@@ -62,24 +57,6 @@ public class MinimalChessGame implements Debuggable {
     public static final int WHITE_CASTLE_KING_ROOK_ARRIVE = 61;
 
     public MinimalChessGame(){}
-
-//    public MinimalChessGame(ChessBoard chessBoard, Configurations configurations) {
-//        this.hashGenerator = new HashGenerator(this);
-//        this.configurations = configurations;
-//        this.chessBoard = chessBoard;
-//        possibleMoves = new PossibleMoves(this);
-//        calculateHash();
-//    }
-
-//    public MinimalChessGame(ChessBoard chessBoard, PropertiesStats gameProperties, Configurations configurations) {
-//        this(chessBoard, configurations);
-//        this.gameProperties = gameProperties;
-//        updateConfigurations();
-//        generateBitMasks();
-//        generatePossibleMoves();
-//        calculateHash();
-//        chessHistoryTracker.pushTurn(cloneMinimalGame());
-//    }
 
     public MinimalChessGame(String fen, ChessBoard chessBoard, Configurations configurations) {
         this.hashGenerator = new HashGenerator(this);
@@ -146,6 +123,53 @@ public class MinimalChessGame implements Debuggable {
         }
     }
 
+    public String toFen() {
+        MinimalChessGame g = this;
+        ChessBoard board = g.getBoard();
+        StringBuilder sb = new StringBuilder();
+
+        for (int row = 0; row < ChessBoard.BOARD_SIZE; row++) {
+            int empty = 0;
+            for (int col = 0; col < ChessBoard.BOARD_SIZE; col++) {
+                char c = pieceChar(board.getPiece(row * ChessBoard.BOARD_SIZE + col));
+                if (c == 0) { empty++; continue; }
+                if (empty > 0) { sb.append(empty); empty = 0; }
+                sb.append(c);
+            }
+            if (empty > 0) sb.append(empty);
+            if (row < ChessBoard.MAX_ROW) sb.append('/');
+        }
+
+        PropertiesStats p = g.getGameProperties();
+        sb.append(' ').append(p.getSideToMove() == ChessBoard.WHITE ? 'w' : 'b').append(' ');
+
+        int castlingStart = sb.length();
+        if (p.canWhiteCastleKing())  sb.append('K');
+        if (p.canWhiteCastleQueen()) sb.append('Q');
+        if (p.canBlackCastleKing())  sb.append('k');
+        if (p.canBlackCastleQueen()) sb.append('q');
+        if (sb.length() == castlingStart) sb.append('-');
+
+        int ep = p.getEnPassantTarget();
+        sb.append(' ').append(PropertiesStats.isValidEnPassantTarget(ep)
+                ? ChessBoard.convertSpaceIdToSquareNotation(ep) : "-");
+        sb.append(' ').append(p.getHalfMovesSinceCaptureOrPawnMove());
+        sb.append(' ').append(p.getTotalMovesElapsed());
+        return sb.toString();
+    }
+
+    private static char pieceChar(short piece) {
+        return switch (piece) {
+            case PieceData.WKING -> 'K';   case PieceData.BKING -> 'k';
+            case PieceData.WQUEEN -> 'Q';  case PieceData.BQUEEN -> 'q';
+            case PieceData.WROOK -> 'R';   case PieceData.BROOK -> 'r';
+            case PieceData.WBISHOP -> 'B'; case PieceData.BBISHOP -> 'b';
+            case PieceData.WKNIGHT -> 'N'; case PieceData.BKNIGHT -> 'n';
+            case PieceData.WPAWN -> 'P';   case PieceData.BPAWN -> 'p';
+            default -> (char) 0;
+        };
+    }
+
     public void fenTranslator(String fen){
         String[] args = fen.trim().split(" ");
         chessBoard.setUpPieces(args[0]);
@@ -174,7 +198,7 @@ public class MinimalChessGame implements Debuggable {
         } else if (args[3].length() == 2 && Character.isAlphabetic(args[3].charAt(0))
                 && Character.isDigit(args[3].charAt(1))) {
             gameProperties.setEnPassantTarget(ChessBoard.convertSquareNotationToSpaceId(
-                    args[3].charAt(0), args[3].charAt(1)));
+                    args[3]));
         } else
             throw new IllegalArgumentException("Invalid files and ranks input (" + args[3] + ").");
 
@@ -187,12 +211,40 @@ public class MinimalChessGame implements Debuggable {
         MovesGeneration.generateMoves(this);
     }
 
+    public long getPiecesOnCols(int spaceId, int range, boolean color){
+        //get the threat bitboard on columns arround a space.
+        long pieces = (color == PieceData.WHITE ? getBoard().WHITE_PIECES : getBoard().BLACK_PIECES);
+        return getBoard().getNearFile(spaceId, range) & pieces;
+    }
+
+    public int countPiecesOnCols(int spaceId, int range, boolean color){
+        return BitMasks.countBit(getPiecesOnCols(spaceId, range, color));
+    }
+
+    public int countPiecesNearSpace(int spaceId, int range, boolean color){
+        return BitMasks.countBit(getPiecesNearSpace(spaceId, range, color));
+    }
+
+    public long getPiecesNearSpace(int spaceId, int range, boolean color){
+        if (color == PieceData.WHITE)
+            return getBoard().getRoundSpaceId(spaceId, range) &
+                getBoard().WHITE_PIECES;
+        else
+            return getBoard().getRoundSpaceId(spaceId, range) &
+                getBoard().BLACK_PIECES;
+    }
+
+    public boolean kingToMoveUnderThreat(){
+        return spaceUnderThreat(getKingToMoveSpaceId(), getBoard().OCCUPIED, -1L);
+    }
+
     public boolean spaceUnderThreat(int spaceId, short[] ids, long OCCUPIED, long setMoves) {
+        //ids: the list of piece id to iterate through.
         if (!ChessBoard.isValidSpaceId(spaceId)) return false;
 
         if (ids[0] == PieceData.BPAWN) {
             if ((BitMasks.PAWN_CAPTURE_MASKS[BitMasks.WIDX][spaceId]
-                    & chessBoard.getBitBoard(ids[0])&setMoves ) != 0) {
+                    & chessBoard.getBitBoard(ids[0])&setMoves) != 0) {
                 return true;
             }
         }
@@ -232,20 +284,6 @@ public class MinimalChessGame implements Debuggable {
     public boolean spaceUnderThreat(int spaceId, long OCCUPIED, long setMoves){
         if (!ChessBoard.isValidSpaceId(spaceId)) return false;
         return spaceUnderThreat(spaceId, getBoard().TO_MOVE_THREATS_PIECE_ID, OCCUPIED, setMoves);
-    }
-
-    public boolean isAlliedPieceAt(int spaceId, boolean color){
-        return chessBoard.isAlliedPieceAt(spaceId, color);
-    }
-    public boolean isAlliedPieceAt(int spaceId){
-        return chessBoard.isAlliedPieceAt(spaceId, getCurrentColorToMove());
-    }
-
-    public boolean isEnemyPieceAt(int spaceId, boolean color){
-        return chessBoard.isEnemyPieceAt(spaceId, color);
-    }
-    public boolean isEnemyPieceAt(int spaceId){
-        return chessBoard.isEnemyPieceAt(spaceId, getCurrentColorToMove());
     }
 
     public int getKingSpaceId(boolean color){
@@ -367,7 +405,6 @@ public class MinimalChessGame implements Debuggable {
         }
 
         finishTurn();
-        DebugMode.debugPrint(this, "Evaluation "+ Evaluation.evaluateGame(this));
         return true;
     }
 
@@ -417,7 +454,7 @@ public class MinimalChessGame implements Debuggable {
         getBoard().generateBitMasks(getCurrentColorToMove(), getEnpassantTarget());
     }
 
-    private void tryEndGame(){
+    public void tryEndGame(){
         aSideWon();
         if (endGameCode != INDETERMINATE)
             endGame();
@@ -426,17 +463,26 @@ public class MinimalChessGame implements Debuggable {
     private void endGame() {
         if (!configurations.isAllowGameEnd()) return;
 
-        System.out.println(this);
+        possibleMoves = new PossibleMoves(this);
+
         if (endGameCode == WHITE_WON) {
-            System.out.println("WHITE WON");
+            DebugMode.debugPrint(this, "WHITE WON");
         } else if (endGameCode == BLACK_WON) {
-            System.out.println("BLACK WON");
+            DebugMode.debugPrint(this, "BLACK WON");
         } else if (endGameCode == DRAW) {
-            System.out.println("DRAW");
+            DebugMode.debugPrint(this, "DRAW");
         } else {
-            System.out.println("NO REASON. ");
+            DebugMode.debugPrint(this, "NO REASON");
         }
         if (isDebuggable()) DebugMode.debugPrint(this, chessHistoryTracker);
+    }
+
+    public void undoTurn(int numTurns) throws OutOfOldTurns, NullPointerException {
+        if (!chessHistoryTracker.canUndoNTurns(numTurns))
+            throw new OutOfOldTurns("Not enough past turns (" + numTurns + ") available to undo.");
+        for (int i = 0; i < numTurns; ++i){
+            undoTurn();
+        }
     }
 
     public void undoTurn() throws OutOfOldTurns, NullPointerException {
@@ -513,6 +559,9 @@ public class MinimalChessGame implements Debuggable {
         StateChangeListener.notifyListeners(listener, this);
     }
 
+    public void removeTurnEndListener(StateChangeListener<MinimalChessGame> listener){
+        endTurnListeners.remove(listener);   // remove(Object), uses equals -> same reference for lambdas
+    }
     public Configurations getConfigurations(){
         return configurations;
     }
