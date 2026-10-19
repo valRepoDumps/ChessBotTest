@@ -409,16 +409,20 @@ public class MinimalChessGame implements Debuggable {
     }
 
     private void aSideWon() {
+        if (!ChessBoard.isValidSpaceId(getKingToMoveSpaceId())) {
+            //king is eaten branch. shouldnt happen unless invalid position setup.
+            endGameCode = getCurrentColorToMove() == PieceData.WHITE ? BLACK_WON : WHITE_WON;
+            return;
+        }
+
         if (!getPossibleMoves().isEmpty()) {
             if (gameProperties.getHalfMovesSinceCaptureOrPawnMove() >= 100) {
+                //>= 100 moves without capture or pawnmove branch;
                 endGameCode = DRAW; return;
             }
             if (chessHistoryTracker.isThreeFoldRepitionFlag()) {
+                //threefold repetition branch
                 endGameCode = DRAW; return;
-            }
-            if (!ChessBoard.isValidSpaceId(getKingToMoveSpaceId())) {
-                endGameCode = getCurrentColorToMove() == PieceData.WHITE ? WHITE_WON : BLACK_WON;
-                return;
             }
             endGameCode = INDETERMINATE;
             return;

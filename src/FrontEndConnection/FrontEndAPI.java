@@ -9,8 +9,11 @@ import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.GameSaver.GameSaveManager;
 import ChessResources.GetMovesLogic.ChessMove;
 import ChessResources.Pieces.PieceData;
-import FrontEndConnection.ForeignEngines.EngineDetector;
-import FrontEndConnection.ForeignEngines.ReadEngineInput;
+import Engine.Engine;
+import Engine.EngineDetector;
+import Engine.EngineProperty.CompositeEngineProperty;
+import Engine.EngineProperty.EngineProperty;
+import Engine.ForeignEngine;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -21,8 +24,6 @@ import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
 
@@ -32,7 +33,7 @@ import java.util.regex.Pattern;
 public class FrontEndAPI implements Debuggable {
     public static final int PORT = 8765;
     public volatile MinimalChessGame game;     // replaced by new_game / load_game
-    public Evaluation evaluation = new Evaluation(5);
+    public Evaluation evaluation = new Evaluation();
 
     String url;
     public boolean isDebuggable = true;
@@ -74,9 +75,17 @@ public class FrontEndAPI implements Debuggable {
                 WebSocket.Listener.super.onOpen(webSocket);
             }
 
+            // A text message can arrive in several pieces; only the piece with last == true ends it.
+            private final StringBuilder partial = new StringBuilder();
+
             @Override
             public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
-                handleMessage(webSocket, data.toString());
+                partial.append(data);
+                if (last) {
+                    String message = partial.toString();
+                    partial.setLength(0);
+                    handleMessage(webSocket, message);
+                }
                 return WebSocket.Listener.super.onText(webSocket, data, last);
             }
 
@@ -116,6 +125,7 @@ public class FrontEndAPI implements Debuggable {
     //region dispatch
 
     private void handleMessage(WebSocket ws, String raw) {
+//        DebugMode.debugPrint(this, "Received: " + raw);
         JsonObject req;
         try {
             req = JsonParser.parseString(raw).getAsJsonObject();
@@ -131,15 +141,21 @@ public class FrontEndAPI implements Debuggable {
         JsonObject response;
         try {
             response = switch (type == null ? "" : type) {
-                case "move_request"    -> moveRequest(req, id);
-                case "get_valid_moves" -> capturableRequest(req, id);
-                case "new_game"        -> newGameRequest(req, id);
-                case "save_game"       -> saveGameRequest(req, id);
-                case "load_game"       -> loadGameRequest(req, id);
-                case "list_saves"      -> listSavesRequest(id);
-                case "undo_turn"       -> undoTurnRequest(req, id);
-                case "list_engines"     -> listEngines(req, id);
-                default                -> failure(id, "Unknown message type: " + type);
+                case "move_request"        -> moveRequest(req, id);
+                case "computer_move"       -> computerMoveRequest(req, id);
+                case "get_valid_moves"     -> capturableRequest(req, id);
+                case "new_game"            -> newGameRequest(req, id);
+                case "save_game"           -> saveGameRequest(req, id);
+                case "load_game"           -> loadGameRequest(req, id);
+                case "delete_save"         -> deleteSaveRequest(req, id);
+                case "list_saves"          -> listSavesRequest(id);
+                case "undo_turn"           -> undoTurnRequest(req, id);
+                case "list_engines"        -> listEngines(req, id);
+                case "use_engine"          -> useEngine(req, id);
+                case "list_engine_options" -> listEngineOptions(req, id);
+                case "set_engine_option"   -> setEngineOption(req, id);
+                case "set_engine_preset"   -> setEnginePreset(req, id);
+                default                    -> failure(id, "Unknown message type: " + type);
             };
         } catch (Exception e) {
             // bad square, missing field, corrupt save, ... -> a well-formed rejection instead of silence
@@ -157,10 +173,95 @@ public class FrontEndAPI implements Debuggable {
     //endregion
 
     //region handlers
+    private Engine currentEngine() {
+        Engine engine = evaluation.getEngine();
+        if (engine == null) throw new IllegalStateException("No engine selected");
+        return engine;
+    }
+
+    /** Always returns the presets; the raw option list only when the request has "advanced": true. */
+    private JsonObject listEngineOptions(JsonObject req, String id) {
+        Engine engine = currentEngine();
+
+        JsonArray presets = new JsonArray();
+        for (CompositeEngineProperty preset : CompositeEngineProperty.PRESETS) {
+            presets.add(preset.toJson(engine));
+        }
+
+        JsonObject o = base("list_engine_options_response", id);
+        o.addProperty("ok", true);
+        o.add("preset_options", presets);
+
+        if (req.has("advanced") && req.get("advanced").getAsBoolean()) {
+            JsonArray advanced = new JsonArray();
+            for (EngineProperty<?> option : engine.getOptions()) {
+                advanced.add(option.toJson());
+            }
+            o.add("advanced_options", advanced);
+        }
+        return o;
+    }
+
+    /** {"type":"set_engine_option","property":"Hash","value":"256"}  (value omitted for buttons) */
+    private JsonObject setEngineOption(JsonObject req, String id) throws IOException {
+        Engine engine = currentEngine();
+        String name = require(req, "property");
+        engine.setOption(name, str(req, "value"));   // parsed + validated by the property
+
+        JsonObject o = base("set_engine_option_response", id);
+        o.addProperty("ok", true);
+        o.add("property", engine.getTypedProperty(name).toJson());
+        return o;
+    }
+
+    /** {"type":"set_engine_preset","preset":"elo","values":[true,1500]} - one value per option, in order */
+    private JsonObject setEnginePreset(JsonObject req, String id) throws IOException {
+        Engine engine = currentEngine();
+        String label = require(req, "preset");
+
+        CompositeEngineProperty preset = CompositeEngineProperty.PRESETS.stream()
+                .filter(p -> p.getLabel().equalsIgnoreCase(label))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unknown preset: " + label));
+
+        List<String> values = new ArrayList<>();
+        for (var v : req.getAsJsonArray("values")) values.add(v.getAsString());
+        preset.applyText(engine, values);
+
+        JsonObject o = base("set_engine_preset_response", id);
+        o.addProperty("ok", true);
+        o.add("preset", preset.toJson(engine));
+        return o;
+    }
+
+    private JsonObject useEngine(JsonObject req, String id){
+        JsonObject engineJson = req.getAsJsonObject("engine");
+        boolean builtin = engineJson.has("builtin") && engineJson.get("builtin").getAsBoolean();
+
+        try {
+            if (builtin) evaluation.useDefaultEngine();
+            else evaluation.addNewEngine(new ForeignEngine(require(engineJson, "path")));
+            evaluation.evaluateGame();
+        }
+        catch (Exception e){
+            return failure(id, e.getMessage());
+        }
+
+        return updateBoardRequest(id);
+    }
+
     private JsonObject listEngines(JsonObject req, String id){
         JsonArray engines = new JsonArray();
-        for (EngineDetector.Engine engine : EngineDetector.detect(EngineDetector.ENGINES_FOLDER)){
-            engines.add(engine.toJson());
+
+        // the built-in engine is always available and is the default one
+        JsonObject builtIn = new JsonObject();
+        builtIn.addProperty("name", "MyEngine");
+        builtIn.addProperty("author", "Built-in");
+        builtIn.addProperty("builtin", true);
+        engines.add(builtIn);
+
+        for (EngineDetector.EngineInfo engineInfo : EngineDetector.detect(EngineDetector.ENGINES_FOLDER)){
+            engines.add(engineInfo.toJson());
         }
         JsonObject o = base("list_engines_response", id);
         o.addProperty("ok", true);
@@ -177,13 +278,32 @@ public class FrontEndAPI implements Debuggable {
         o.addProperty("ok", true);
         o.addProperty("fen", game.toFen());
         o.addProperty("is_new_game", isNewGame);
+
+        String result;
+        switch(game.sideWon()){
+            case MinimalChessGame.DRAW -> {
+                result = "draw";
+            }
+            case MinimalChessGame.BLACK_WON -> result = "b";
+            case MinimalChessGame.WHITE_WON -> result = "w";
+            default -> result = "indeterminate";
+        }
+        o.addProperty("game_over", result);
         return o;
+    }
+
+    private JsonObject computerMoveRequest(JsonObject req, String id) throws IOException {
+        switch (require(req, "computer_side")) {
+            case "b" -> adjustEvaluator(true, PieceData.BLACK);
+            case "w" -> adjustEvaluator(true, PieceData.WHITE);
+            default  -> { return failure(id, "No computer side selected"); }
+        }
+        return updateBoardRequest(id);   // unchanged board if it was not the computer's turn
     }
 
     private JsonObject moveRequest(JsonObject req, String id) {
         int from = ChessBoard.convertSquareNotationToSpaceId(require(req, "from"));
         int to = ChessBoard.convertSquareNotationToSpaceId(require(req, "to"));
-        String computerSide = require(req, "computer_side");
 
         String promotion = require(req, "promotion");
 
@@ -200,15 +320,6 @@ public class FrontEndAPI implements Debuggable {
 
         ChessMove move = game.getPossibleMoves().getMove(from, to, promotedPieceId);
 
-        //if user want evaluator turned off, turned it off before move.
-        if (computerSide.equals("false")) {
-            adjustEvaluator(false, PieceData.WHITE);
-        }
-        else if (computerSide.equals("w") && game.getCurrentColorToMove() == PieceData.WHITE){
-            //if evalutor is on same saide as user, turn it off, then reanable it later after user move.
-            adjustEvaluator(false, PieceData.WHITE);
-        }
-
         if (move == null) {
             return failure(id,
                     game.sideWon() != MinimalChessGame.INDETERMINATE
@@ -217,12 +328,6 @@ public class FrontEndAPI implements Debuggable {
         }
         if (!game.movePiece(move)) return failure(id, "Move could not be applied");
 
-        //user dont want evaluator turned off, so add it later.
-        //will auto move for user if the move falls on the opposite side of curent user move.
-        switch (computerSide) {
-            case "b" -> adjustEvaluator(true, PieceData.BLACK);
-            case "w" -> adjustEvaluator(true, PieceData.WHITE);
-        }
         return updateBoardRequest(id);
     }
 
@@ -280,7 +385,6 @@ public class FrontEndAPI implements Debuggable {
 
     private JsonObject loadGameRequest(JsonObject req, String id) {
         String saveId = require(req, "save_id");
-        String computerSide = require(req, "computer_side");
 
         MinimalChessGame loaded;
         GameSaveManager.SaveMeta meta;
@@ -295,15 +399,12 @@ public class FrontEndAPI implements Debuggable {
 
         installGame(loaded);
 
-        switch (computerSide) { //adjust before install, so immediately run when game is installed.
-            case "false" -> adjustEvaluator(false, PieceData.WHITE);
-            case "b" -> adjustEvaluator(true, PieceData.BLACK);
-            case "w" -> adjustEvaluator(true, PieceData.WHITE);
-        }
-
         return updateBoardRequest(id, true);
     }
 
+    private JsonObject deleteSaveRequest(JsonObject req, String id){
+        return failure(id, "tést");
+    }
     private JsonObject listSavesRequest(String id) {
         List<GameSaveManager.SaveMeta> metas;
         try {
@@ -344,15 +445,14 @@ public class FrontEndAPI implements Debuggable {
     //region helpers
 
     private void installGame(MinimalChessGame g) {
-        evaluation.unregisterEvaluator(this.game);
         this.game = g;
         evaluation.attach(g, false);
     }
 
-    private void adjustEvaluator(boolean turnEvaluatorOn, boolean sideToMove) {
+    private void adjustEvaluator(boolean turnEvaluatorOn, boolean sideToMove) throws IOException {
         evaluation.changeSideToMove(sideToMove);
         evaluation.turnEvaluatorOnOff(turnEvaluatorOn);
-        if (turnEvaluatorOn) evaluation.kick(game);   // if it's already the bot's turn, move now
+        if (turnEvaluatorOn) evaluation.evaluateGame();
     }
 
     /** save_0001, save_0002, ... continuing from the highest existing number. */
@@ -435,6 +535,5 @@ public class FrontEndAPI implements Debuggable {
     private static String describe(Exception e) {
         return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
     }
-
     //endregion
 }
