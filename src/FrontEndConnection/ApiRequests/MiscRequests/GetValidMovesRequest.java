@@ -3,15 +3,16 @@ package FrontEndConnection.ApiRequests.MiscRequests;
 import ChessLogic.Debug.DebugMode;
 import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.GetMovesLogic.ChessMove;
+import Common.JsonUtils;
 import FrontEndConnection.ApiRequests.ApiRequest;
 import FrontEndConnection.FrontEndState;
 import com.google.gson.JsonObject;
 
 import java.util.List;
 
+import static Common.JsonUtils.movesToJsonArray;
 import static Common.JsonUtils.require;
 import static FrontEndConnection.ApiRequests.ApiRequest.base;
-import static FrontEndConnection.ApiRequests.ApiRequest.movesToJsonArray;
 
 public final class GetValidMovesRequest implements ApiRequest {
     @Override
@@ -21,7 +22,7 @@ public final class GetValidMovesRequest implements ApiRequest {
 
         List<ChessMove> moves = state.getGame().getPossibleMoves().canMoveToFrom(spaceId);
         JsonObject o = base("get_valid_moves_response", id);
-        o.add("moves", movesToJsonArray(moves));
+        o.add("moves", JsonUtils.movesToJsonArray(moves));
         return o;
     }
 }

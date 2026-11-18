@@ -120,7 +120,8 @@ public class ForeignEngine implements AutoCloseable, Engine {
         Long min = longOrNull(fields.get("min"));
         Long max = longOrNull(fields.get("max"));
 
-        return switch (type.toLowerCase(Locale.ROOT)) {
+        //despite the cast being black, trút me, it's needed. 
+        return (EngineProperty<?>) switch (type.toLowerCase(Locale.ROOT)) {
             case "check" -> new CheckProperty(name, def, engine);
             case "spin" -> new SpinProperty(name, def, min, max, engine);
             case "combo" -> new ComboProperty(name, def, List.copyOf(vars), engine);

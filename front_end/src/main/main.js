@@ -2,9 +2,9 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { send, state } from './state.js';
+import { send, state, hooks } from './state.js';
 import { setupWebSocket } from './websocket.js';
-import './ipc.js';                      // registers all ipcMain handlers
+import { initIpc } from './ipc.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const preloadPath = path.join(__dirname, '../preload/preload.js');
@@ -17,12 +17,18 @@ function createWindow() {
     backgroundColor: '#1d1b19',
     webPreferences: {
       preload: preloadPath,
-      contextIsolation: false,
-      nodeIntegration: false, //allow usage of import in renderer. 
-      //MAKE SURE APP NEVER RENDER ANY OUTSIDE STUFF!! (NO LINK ONLINE, OR OUTSIDE THE APP)
-      //MAKE SURE USER NEVER PROVIDE STUFF RENDERER RUNS. 
+      contextIsolation: true,
+      nodeIntegration: false
     },
   });
+
+  // The game needs the window, so it is created here, not at the top of the file.
+  const game = initIpc(state.win);
+  hooks.update_board = game.onUpdateBoard;
+  hooks.notice = game.onNotice;
+  hooks.saves = game.onSaves;
+  hooks.connection = game.onConnection;
+
   state.win.setMenuBarVisibility(false);
   state.win.loadFile(indexPath);
   state.win.webContents.on('did-finish-load', () => send('connection', !!state.client));
