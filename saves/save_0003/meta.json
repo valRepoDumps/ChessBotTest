@@ -1,0 +1,9 @@
+{
+  "saveId": "save_0003",
+  "saveName": "test",
+  "savedAt": "2026-10-19T10:01:34.413338100Z",
+  "fen": "rnbqkbnr/pp1ppppp/8/8/3p4/2N5/PPP1PPPP/R1BQKBNR w KQkq - 1 3",
+  "savedAtEpochMs": 1792404094413,
+  "formatVersion": 1,
+  "totalMovesElapsed": 3
+}

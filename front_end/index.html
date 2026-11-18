@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+<title>Chessboard</title>
+<link rel = "stylesheet" href = "styles.css">
+</head>
+<body>
+  <div id = "left-container">
+    <div id="toolbar">
+      <button id="btn-new">New game</button>
+      <button id="btn-undo">Undo</button>
+      <button id="btn-saves">Save / load</button>
+      <button id="btn-computer">vs Computer: Off</button>
+    </div>
+  </div>
+
+  <div id = "middle-container">
+    <div id="status"><span id="dot"></span><span id="conn">Waiting for external application</span></div>
+    <div id="board"></div>
+    <div id="msg"></div>
+  </div>
+
+  <div id = "right-container">
+    <section id="editor" class="panel" hidden>
+      <div class="row" id="palette">
+      </div>
+
+      <div class="row" id ="side-to-move">
+        <label>Side to move: 
+          <select id="e-turn"><option value="w">White</option><option value="b">Black</option></select></label>
+      </div>
+
+      <div class="row" id ="castling">
+        <div class = "text">Castling:</div>
+        <label><input type="checkbox" id="e-cK" checked> White O-O</label>
+        <label><input type="checkbox" id="e-cQ" checked> White O-O-O</label>
+        <label><input type="checkbox" id="e-ck" checked> Black O-O</label>
+        <label><input type="checkbox" id="e-cq" checked> Black O-O-O</label>
+      </div>
+
+      <div class="row">
+        <label>En passant <input id="e-ep" value="-" maxlength="2"></label>
+        <label>Halfmove <input id="e-half" type="number" min="0" value="0"></label>
+        <label>Fullmove <input id="e-full" type="number" min="1" value="1"></label>
+      </div>
+
+      <div class="row" id = "fen">
+        <label for="e-fen">FEN</label><input id="e-fen" spellcheck="false">
+
+        <button id="btn-initial">Starting position</button>
+        <button id="btn-clear">Clear board</button>
+        <button id="btn-apply-fen">Apply FEN</button>
+      </div>
+
+      <div class="row" id = "cancel-start-btns">
+        <span style="flex:1"></span>
+        <button id="btn-cancel">Cancel</button>
+        <button id="btn-start" class="primary">Start game</button>
+      </div>
+    </section>
+
+    <section id="saves" class="panel" hidden>
+      <div class="row">
+        <input id="save-name" placeholder="Save name" maxlength="60">
+        <button id="btn-save" class="primary">Save game</button>
+        <button id="btn-refresh">Refresh</button>
+      </div>
+      <ul id="save-list"></ul>
+    </section>
+
+  <section id="vs-computer" class="panel" hidden>
+    <div class="row">
+      <label><input type="checkbox" id="vc-on"> Play against the computer</label>
+    </div>
+    
+    <fieldset id="vc-options" disabled>
+      <div class="row">
+        <label>Computer plays
+          <select id="vc-side">
+            <option value="b">Black</option>
+            <option value="w">White</option>
+          </select>
+        </label>
+        <button id="btn-refresh-engines">Refresh</button>
+      </div>
+      <ul id="engine-list">
+
+      </ul>
+      <div id="engine-options" hidden>
+        <div id="preset-options"></div>
+
+        <button id="btn-advanced">Show advanced options</button>
+        <div id="advanced-options" hidden>
+          <div id="advanced-list"></div>
+          <button id="btn-apply-advanced" class="primary">Apply</button>
+        </div>
+      </div>
+    </fieldset>
+  </section>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

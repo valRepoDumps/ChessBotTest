@@ -1,6 +1,7 @@
-package FrontEndConnection.ForeignEngines;
+package Engine;
 
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -23,15 +24,17 @@ import java.util.concurrent.*;
  * You can also pass a file instead of a folder (for example your own jar); its parent folder is used.
  *
  * Usage:
- *   List<EngineDetector.Engine> all = EngineDetector.detect(Path.of("C:/chess"));
- *   Optional<EngineDetector.Engine> first = EngineDetector.detectFirst(Path.of("C:/chess"));
+ *   List<EngineDetector.EngineInfo> all = EngineDetector.detect(Path.of("C:/chess"));
+ *   Optional<EngineDetector.EngineInfo> first = EngineDetector.detectFirst(Path.of("C:/chess"));
  *
  * Warning: this launches programs. Point it at a folder meant for engines, not at Downloads
  * or Program Files, where it could start installers or unrelated apps for a moment.
  */
 public final class EngineDetector {
     public static final Path ENGINES_FOLDER = Path.of("D:\\Coding\\Java\\ChessBot\\ChessBot\\resources\\Engines");
-    public record Engine(Path path, String name, String author) {
+
+    public record EngineInfo(Path path, String name, String author) {
+        @NotNull
         @Override
         public String toString() {
             return name + " (" + path + ")";
@@ -50,6 +53,7 @@ public final class EngineDetector {
             System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
 
     private static final int DEFAULT_DEPTH = 2;
+
     private static final int PROBE_TIMEOUT_SECONDS = 5;
 
     /** Files that are never the engine itself (checked on every OS). */
@@ -65,28 +69,29 @@ public final class EngineDetector {
     private EngineDetector() {}
 
     /** All engines within 2 levels of the known folder. */
-    public static List<Engine> detect(Path known) {
+    public static List<EngineInfo> detect(Path known) {
         return detect(known, DEFAULT_DEPTH, Integer.MAX_VALUE);
     }
 
     /** All engines within maxDepth levels of the known folder. */
-    public static List<Engine> detect(Path known, int maxDepth) {
+    public static List<EngineInfo> detect(Path known, int maxDepth) {
         return detect(known, maxDepth, Integer.MAX_VALUE);
     }
 
     /** The first engine found (stops probing as soon as one answers). */
-    public static Optional<Engine> detectFirst(Path known) {
+    public static Optional<EngineInfo> detectFirst(Path known) {
         return detect(known, DEFAULT_DEPTH, 1).stream().findFirst();
     }
 
-    private static List<Engine> detect(Path known, int maxDepth, int limit) {
+    private static List<EngineInfo> detect(Path known, int maxDepth, int limit) {
         Path root = Files.isRegularFile(known) ? known.toAbsolutePath().getParent() : known;
-        List<Engine> engines = new ArrayList<>();
+        List<EngineInfo> engineInfos = new ArrayList<>();
+
         for (Path candidate : candidates(root, maxDepth)) {
-            probe(candidate).ifPresent(engines::add);
-            if (engines.size() >= limit) break;
+            probe(candidate).ifPresent(engineInfos::add);
+            if (engineInfos.size() >= limit) break;
         }
-        return engines;
+        return engineInfos;
     }
 
     /** Files that might be programs, shallowest first. Nothing is launched here. */
@@ -97,14 +102,16 @@ public final class EngineDetector {
         try {
             Files.walkFileTree(root, EnumSet.noneOf(FileVisitOption.class), maxDepth,
                     new SimpleFileVisitor<Path>() {
+                        @NotNull
                         @Override
-                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                        public FileVisitResult visitFile(@NotNull Path file, @NotNull BasicFileAttributes attrs) {
                             if (looksLikeProgram(file)) hits.add(file.toAbsolutePath().normalize());
                             return FileVisitResult.CONTINUE;
                         }
 
+                        @NotNull
                         @Override
-                        public FileVisitResult visitFileFailed(Path file, IOException e) {
+                        public FileVisitResult visitFileFailed(@NotNull Path file, IOException e) {
                             return FileVisitResult.CONTINUE;   // permission denied etc.
                         }
                     });
@@ -128,8 +135,9 @@ public final class EngineDetector {
     }
 
     /** Launches the file, sends "uci", and waits briefly for "uciok". */
-    private static Optional<Engine> probe(Path exe) {
+    private static Optional<EngineInfo> probe(Path exe) {
         Process proc = null;
+
         try {
             proc = new ProcessBuilder(exe.toString())
                     .directory(exe.getParent().toFile())   // engines often load nets/weights from their own folder
@@ -159,9 +167,10 @@ public final class EngineDetector {
         }
     }
 
-    private static Optional<Engine> readIdentity(BufferedReader in, Path exe) {
+    private static Optional<EngineInfo> readIdentity(BufferedReader in, Path exe) {
         String name = null;
         String author = null;
+
         try {
             String line;
             while ((line = in.readLine()) != null) {
@@ -172,7 +181,7 @@ public final class EngineDetector {
                     author = line.substring(10).trim();
                 } else if (line.equals("uciok")) {
                     String shown = (name != null && !name.isEmpty()) ? name : exe.getFileName().toString();
-                    return Optional.of(new Engine(exe, shown, author));
+                    return Optional.of(new EngineInfo(exe, shown, author));
                 }
             }
         } catch (IOException ignored) {

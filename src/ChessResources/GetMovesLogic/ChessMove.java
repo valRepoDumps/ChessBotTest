@@ -1,5 +1,6 @@
 package ChessResources.GetMovesLogic;
 
+import ChessResources.ChessBoard.ChessBoard;
 import ChessResources.Pieces.PieceData;
 
 import java.util.Objects;
@@ -182,6 +183,22 @@ public class ChessMove {
 
     public static boolean isCastlingFlag(long flags){
         return (flags & CASTLING) != 0;
+    }
+
+    public String toUciMove(){
+        StringBuilder ans = new StringBuilder();
+
+        ans.append(ChessBoard.convertSpaceIdToSquareNotation(spaceIdToMove));
+        ans.append(ChessBoard.convertSpaceIdToSquareNotation(spaceIdArriveAt));
+        if (isPromotion()){
+            switch (PieceData.getType(getPromotionPieceId())){
+                case PieceData.QUEEN -> ans.append('q');
+                case PieceData.ROOK -> ans.append('r');
+                case PieceData.BISHOP -> ans.append('b');
+                case PieceData.KNIGHT -> ans.append('n');
+            }
+        }
+        return ans.toString();
     }
 
     //endregion
