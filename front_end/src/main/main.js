@@ -17,8 +17,10 @@ function createWindow() {
     backgroundColor: '#1d1b19',
     webPreferences: {
       preload: preloadPath,
-      contextIsolation: true,
-      nodeIntegration: false,
+      contextIsolation: false,
+      nodeIntegration: false, //allow usage of import in renderer. 
+      //MAKE SURE APP NEVER RENDER ANY OUTSIDE STUFF!! (NO LINK ONLINE, OR OUTSIDE THE APP)
+      //MAKE SURE USER NEVER PROVIDE STUFF RENDERER RUNS. 
     },
   });
   state.win.setMenuBarVisibility(false);
