@@ -1,0 +1,229 @@
+{
+  "configurations": {
+    "enableBoardGraphic": false,
+    "debugMode": false,
+    "allowGameEnd": true
+  },
+  "board": {
+    "pieceTypes": 12,
+    "bitboards": [
+      "80000fb00",
+      "42",
+      "24",
+      "81",
+      "8",
+      "10",
+      "f7000000000000",
+      "4000040000000000",
+      "2400000000000000",
+      "8100000000000000",
+      "800000000000000",
+      "1000000000000000"
+    ]
+  },
+  "properties": {
+    "raw": "303e00",
+    "sideToMove": "white",
+    "castlingFlag": 15,
+    "enPassantTarget": 0,
+    "halfMoves": 1,
+    "totalMoves": 3
+  },
+  "hash": [
+    "529014d00716c437",
+    "736fdb4405d22e3c"
+  ],
+  "currEnPassantTarget": 0,
+  "version": 1,
+  "hashGenerator": {
+    "seed1": "426c229c43ac29ec",
+    "seed2": "e65f89e9c064b6e"
+  },
+  "history": [
+    {
+      "configurations": {
+        "enableBoardGraphic": false,
+        "debugMode": false,
+        "allowGameEnd": true
+      },
+      "board": {
+        "pieceTypes": 12,
+        "bitboards": [
+          "ff00",
+          "42",
+          "24",
+          "81",
+          "8",
+          "10",
+          "ff000000000000",
+          "4200000000000000",
+          "2400000000000000",
+          "8100000000000000",
+          "800000000000000",
+          "1000000000000000"
+        ]
+      },
+      "properties": {
+        "raw": "101e00",
+        "sideToMove": "white",
+        "castlingFlag": 15,
+        "enPassantTarget": 0,
+        "halfMoves": 0,
+        "totalMoves": 1
+      },
+      "hash": [
+        "80e34923cd37d1d",
+        "5d2b66210ae9122"
+      ],
+      "currEnPassantTarget": 0
+    },
+    {
+      "configurations": {
+        "enableBoardGraphic": false,
+        "debugMode": false,
+        "allowGameEnd": true
+      },
+      "board": {
+        "pieceTypes": 12,
+        "bitboards": [
+          "ff00",
+          "42",
+          "24",
+          "81",
+          "8",
+          "10",
+          "f7000800000000",
+          "4200000000000000",
+          "2400000000000000",
+          "8100000000000000",
+          "800000000000000",
+          "1000000000000000"
+        ]
+      },
+      "properties": {
+        "raw": "103f2b",
+        "sideToMove": "black",
+        "castlingFlag": 15,
+        "enPassantTarget": 43,
+        "halfMoves": 1,
+        "totalMoves": 1
+      },
+      "hash": [
+        "188280b89c9be6ce",
+        "50f58e6feb14954b"
+      ],
+      "currEnPassantTarget": 43
+    },
+    {
+      "configurations": {
+        "enableBoardGraphic": false,
+        "debugMode": false,
+        "allowGameEnd": true
+      },
+      "board": {
+        "pieceTypes": 12,
+        "bitboards": [
+          "400fb00",
+          "42",
+          "24",
+          "81",
+          "8",
+          "10",
+          "f7000800000000",
+          "4200000000000000",
+          "2400000000000000",
+          "8100000000000000",
+          "800000000000000",
+          "1000000000000000"
+        ]
+      },
+      "properties": {
+        "raw": "203e12",
+        "sideToMove": "white",
+        "castlingFlag": 15,
+        "enPassantTarget": 18,
+        "halfMoves": 1,
+        "totalMoves": 2
+      },
+      "hash": [
+        "b54ab72c3d771e1a",
+        "4ac633875c54e380"
+      ],
+      "currEnPassantTarget": 18
+    },
+    {
+      "configurations": {
+        "enableBoardGraphic": false,
+        "debugMode": false,
+        "allowGameEnd": true
+      },
+      "board": {
+        "pieceTypes": 12,
+        "bitboards": [
+          "400fb00",
+          "42",
+          "24",
+          "81",
+          "8",
+          "10",
+          "f7000800000000",
+          "4000040000000000",
+          "2400000000000000",
+          "8100000000000000",
+          "800000000000000",
+          "1000000000000000"
+        ]
+      },
+      "properties": {
+        "raw": "205f00",
+        "sideToMove": "black",
+        "castlingFlag": 15,
+        "enPassantTarget": 0,
+        "halfMoves": 2,
+        "totalMoves": 2
+      },
+      "hash": [
+        "f0809fc93131e79b",
+        "dee21754c9c2966a"
+      ],
+      "currEnPassantTarget": 0
+    },
+    {
+      "configurations": {
+        "enableBoardGraphic": false,
+        "debugMode": false,
+        "allowGameEnd": true
+      },
+      "board": {
+        "pieceTypes": 12,
+        "bitboards": [
+          "80000fb00",
+          "42",
+          "24",
+          "81",
+          "8",
+          "10",
+          "f7000000000000",
+          "4000040000000000",
+          "2400000000000000",
+          "8100000000000000",
+          "800000000000000",
+          "1000000000000000"
+        ]
+      },
+      "properties": {
+        "raw": "303e00",
+        "sideToMove": "white",
+        "castlingFlag": 15,
+        "enPassantTarget": 0,
+        "halfMoves": 1,
+        "totalMoves": 3
+      },
+      "hash": [
+        "529014d00716c437",
+        "736fdb4405d22e3c"
+      ],
+      "currEnPassantTarget": 0
+    }
+  ]
+}
