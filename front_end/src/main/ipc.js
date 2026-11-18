@@ -2,6 +2,8 @@
 import { ipcMain } from 'electron';
 import { request } from './state.js';
 import { boardRequest } from './api/boardRequest.js';
+import { savesRequest } from './api/savesRequest.js';
+import { optionRequest } from './api/optionRequest.js';
 
 ipcMain.handle('list-saves',  () => savesRequest('list_saves', {failPrefix: 'Listing saves failed'}));
 
