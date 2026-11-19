@@ -5,9 +5,12 @@ import ChessLogic.Evaluation.Evaluation;
 import ChessLogic.MinimalChessGame;
 import ChessResources.GameSaver.GameSaveManager;
 import Engine.Engine;
+import Player.PlayerState;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,6 +26,9 @@ public class FrontEndState implements Debuggable {
     private final GameSaveManager saves;
     public boolean isDebuggable = true;
 
+    private ArrayList<PlayerState> localPlayers = new ArrayList<>();
+    private PlayerState currentOpponent = null;
+    
     public FrontEndState(MinimalChessGame game, Path saveDir) {
         this.game = game;
         this.saves = new GameSaveManager(saveDir);
@@ -71,5 +77,17 @@ public class FrontEndState implements Debuggable {
             if (mt.matches()) max = Math.max(max, Integer.parseInt(mt.group(1)));
         }
         return String.format("save_%04d", max + 1);
+    }
+
+    public PlayerState getCurrentOpponent() {
+        return currentOpponent;
+    }
+
+    public void setCurrentOpponent(PlayerState currentOpponent) {
+        this.currentOpponent = currentOpponent;
+    }
+
+    public void addLocalPlayer(PlayerState playerState){
+        localPlayers.add(playerState);
     }
 }

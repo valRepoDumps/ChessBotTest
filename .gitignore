@@ -31,3 +31,6 @@ bin/
 
 ### node_modules ###
 node_modules/
+
+### installed engine ###
+target/classes/Engines*
